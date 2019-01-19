@@ -806,7 +806,34 @@ def compute_phase_harmonic_color_compl(X, J, L, delta, l_max, batch_size):
     return phase_harmonics_color_compl
 
 
+# compute spatial averaging
+def compute_phase_harmonic_cor_inv(X, J, L, delta, l_max, batch_size):
 
+    M, N = X.shape[-2], X.shape[-1]
+    M_padded, N_padded = prepare_padding_size(M, N, J)
+
+    filters = filters_bank(M_padded, N_padded, J, L)
+
+    psi = filters['psi']
+    phi = [filters['phi'][j] for j in range(J)]
+
+    psi, phi = cast(psi, phi, torch.cuda.FloatTensor)
+    # cast in torch.FloatTensor to keep on CPU
+
+    phase_harmonics = phase_harmonic_cor(X[0:batch_size].cuda(), phi, psi, J, L, delta, l_max).cpu() # (nb,nc,nch,Mj,Nj,2)
+    # remove .cuda() to keep on CPU
+
+    nb_batches = X.shape[0] // batch_size
+
+    for idx_batch in tqdm(range(1, nb_batches)):
+        phase_harmonics_tmp = phase_harmonic_cor(X[idx_batch * batch_size: (idx_batch + 1) * batch_size].cuda(), phi,
+                                                 psi, J, L, delta, l_max).cpu()
+        # remove .cuda() to keep on CPU
+        phase_harmonics = torch.cat([phase_harmonics, phase_harmonics_tmp], dim=0)
+
+    phase_harmonics_inv = torch.mean(torch.mean(phase_harmonics,-2,True),-3,True)
+
+    return phase_harmonics_inv
 
 
 

@@ -2,7 +2,7 @@ import torch
 import torchvision
 from utils import rgb2yuv
 
-from representation_complex import compute_phase_harmonic_cor
+from representation_complex import compute_phase_harmonic_cor_inv
 
 from complex_utils import complex_log
 from utils import mean_std, standardize_feature
@@ -25,6 +25,6 @@ batch_size = 1
 delta = 1
 l_max = L
 
-Sim = compute_phase_harmonic_cor(im, J, L, delta, l_max, batch_size)
+Sim = compute_phase_harmonic_cor_inv(im, J, L, delta, l_max, batch_size)
 print (Sim.shape)
 
