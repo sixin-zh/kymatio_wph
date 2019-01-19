@@ -111,8 +111,8 @@ class PhaseHarmonics2d(object):
                     
                     # We can then compute correlation coefficients
                     pemul_c = mul(xpsi_c, pexpsi_prime_c) # (nb,nc,M,N,2)
-                    pecorr_c = torch.mean(torch.mean(pemul_c,2,True),3,True) # (nb,nc,1,1,2) #cdgmm vs. mul?
-                    print('idx,pecorr_c',idxc,pecorr_c.shape)
+                    pecorr_c = torch.mean(torch.mean(pemul_c,-2,True),-3,True) # (nb,nc,1,1,2) #cdgmm vs. mul?
+                    #print('idx,pecorr_c',idxc,pecorr_c.shape)
                     # compute mean along spatial domain, save to Sout
                     Sout[...,idxc,:,:,:] = pecorr_c
                     
