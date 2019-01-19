@@ -107,7 +107,7 @@ class PhaseHarmonics2d(object):
                     # compute [x * psi_{j2,thate2}]^{2^(j2-j1)}
                     hatxpsi_prime_c = cdgmm(hatx_c, hatpsi[n2][0]) # (nb,nc,M,N,2)
                     xpsi_prime_c = ifft2_c2c(hatxpsi_prime_c) # (nb,nc,M,N,2)
-                    pexpsi_prime_c = conjugate(phase_exp(xpsi_prime_c,k2)) # (nb,nc,M,N,2)
+                    pexpsi_prime_c = conjugate(self.phase_exp(xpsi_prime_c,k2)) # (nb,nc,M,N,2)
                     
                     # We can then compute correlation coefficients
                     pecorr_c = np.mean(np.mean(mul(xpsi_c, pexpsi_prime_c),-2,keepdim=True),-3,keepdim=True) #cdgmm vs. mul?
