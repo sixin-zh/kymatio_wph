@@ -60,6 +60,7 @@ class PhaseHarmonics2d(object):
         J = self.J
         M = self.M
         N = self.N
+        j_max = self.j_max
         hatphi = self.Phi # low pass
         hatpsi = self.Psi # high pass
         
@@ -78,7 +79,7 @@ class PhaseHarmonics2d(object):
             set_meta = True
             self.meta = dict()
         
-        # out coefficients: S
+        # out coefficients:
         nb_channels = (J * j_max - (j_max * (j_max + 1)) // 2) * L * (2 * l_max + 1) + J * L * l_max
         Sout = input.data.new(input.size(0), input.size(1), nb_channels, \
                               1, 1, 2) # no spatial phiJ
