@@ -103,7 +103,7 @@ class PhaseHarmonics2d(object):
 
                 if (j1 < j2 <= j1 + j_max and periodic_dis(theta1, theta2, L) <= l_max) \
                    or (j1 == j2 and 0 < periodic_signed_dis(theta1, theta2, L) <= l_max):
-                    k2 = 2**(j_2-j_1)
+                    k2 = 2**(j2-j1)
                     # compute [x * psi_{j2,thate2}]^{2^(j2-j1)}
                     hatxpsi_prime_c = cdgmm(hatx_c, hatpsi[n2][0]) # (nb,nc,M,N,2)
                     xpsi_prime_c = ifft2_c2c(hatxpsi_prime_c) # (nb,nc,M,N,2)
