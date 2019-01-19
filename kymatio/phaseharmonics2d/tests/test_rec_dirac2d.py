@@ -32,9 +32,10 @@ l_max = -1
 k_max = 2
 
 # kymatio scattering
-from kymatio.phaseharmonics2d.phase_harmonics_k_simple import PhaseHarmonics2d
+from kymatio.phaseharmonics2d.phase_harmonics_k_simple \
+    import PhaseHarmonics2d
 
-wph_op = PhaseHarmonics2d(M=N, N=N, J=J, L=L, j_max, l_max, k_max)
+wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max, k_max)
 
 SJx0 = wph_op(im)
 print (SJx0.shape)
