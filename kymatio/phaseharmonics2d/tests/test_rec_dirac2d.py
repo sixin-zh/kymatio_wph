@@ -39,7 +39,7 @@ wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max)
 Sim,Smeta = wph_op(im)
 for key,val in Smeta.items():
     print (key, "=>", val, ":", Sim[0,0,key,0,0,0], "+i ", Sim[0,0,key,0,0,1])
-print Sim.shape
+print (Sim.shape)
 
 # ---- Reconstruct marks. At initiation, every point has the average value of the marks.----#
 '''
