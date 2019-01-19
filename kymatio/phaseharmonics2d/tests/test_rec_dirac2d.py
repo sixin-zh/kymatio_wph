@@ -28,14 +28,13 @@ J = 5
 L = 4
 M, N = im.shape[-2], im.shape[-1]
 j_max = 1
-l_max = -1
-k_max = 2
+l_max = L
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_simple \
     import PhaseHarmonics2d
 
-wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max, k_max)
+wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max)
 
 Sim,Smeta = wph_op(im)
 print (Smeta)
