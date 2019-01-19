@@ -1,3 +1,4 @@
+# TEST ON CPU
 
 #import pandas as pd
 import numpy as np
@@ -26,19 +27,19 @@ im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 J = 5
 L = 4
 M, N = im.shape[-2], im.shape[-1]
+j_max = 1
+l_max = -1
+k_max = 2
 
 # kymatio scattering
+from kymatio.phaseharmonics2d.phase_harmonics_k_simple import PhaseHarmonics2d
 
+wph_op = PhaseHarmonics2d(M=N, N=N, J=J, L=L, j_max, l_max, k_max)
 
-from kymatio.scatrec2d.scattering2d_pp import Scat2d
-
-
-scattering_op = Scat2d(M=N, N=N, J=J, L=L)
-
-SJx0 = scattering_op(im)
-print (SJx0)
+SJx0 = wph_op(im)
+print (SJx0.shape)
 # ---- Reconstruct marks. At initiation, every point has the average value of the marks.----#
-
+'''
 
 #---- Optimisation with torch----#
 # recontruct x by matching || Sx - Sx0 ||^2
@@ -60,3 +61,4 @@ for step in range(0, nb_steps + 1):
 # plot x
 plt.imshow(x.detach().cpu().numpy().reshape((M,N)))
 plt.show()
+'''
