@@ -25,11 +25,11 @@ class PhaseHarmonics2d(object):
         self.gpu = gpu # if to use gpu
         if self.l_max > self.L:
             raise (ValueError('l_max must be <= L'))
-
+        
         self.pre_pad = False # no padding
         self.cache = False # cache filter bank
         self.build()
-
+        
     def build(self):
         self.meta = None
         self.modulus = Modulus()
@@ -86,7 +86,7 @@ class PhaseHarmonics2d(object):
         # out coefficients:
         nb_channels = (J * j_max - (j_max * (j_max + 1)) // 2) * L * (2 * l_max + 1) + J * L * l_max
         Sout = input.data.new(input.size(0), input.size(1), nb_channels, \
-                              1, 1, 2) # no spatial phiJ
+                              1, 1, 2) # no spatial phiJ # (nb,nc,nb_channels,1,1,2)
         
         idxc = 0 # channel index
         for n1 in range(len(hatpsi)):
@@ -96,11 +96,11 @@ class PhaseHarmonics2d(object):
             k1 = 1
             hatxpsi_c = cdgmm(hatx_c, hatpsi[n1][0]) # (nb,nc,M,N,2)
             xpsi_c = ifft2_c2c(hatxpsi_c) # (nb,nc,M,N,2)
-
+            
             for n2 in range(len(hatpsi)):
                 j2 = hatpsi[n2]['j']
                 theta2 = hatpsi[n2]['theta']
-
+                
                 if (j1 < j2 <= j1 + j_max and periodic_dis(theta1, theta2, L) <= l_max) \
                    or (j1 == j2 and 0 < periodic_signed_dis(theta1, theta2, L) <= l_max):
                     k2 = 2**(j2-j1)
@@ -110,8 +110,8 @@ class PhaseHarmonics2d(object):
                     pexpsi_prime_c = conjugate(self.phase_exp(xpsi_prime_c,k2)) # (nb,nc,M,N,2)
                     
                     # We can then compute correlation coefficients
-                    pemul_c = mul(xpsi_c, pexpsi_prime_c)
-                    pecorr_c = torch.mean(torch.mean(pemul_c,2,True),3,True) #cdgmm vs. mul?
+                    pemul_c = mul(xpsi_c, pexpsi_prime_c) # (nb,nc,M,N,2)
+                    pecorr_c = torch.mean(torch.mean(pemul_c,2,True),3,True) # (nb,nc,1,1,2) #cdgmm vs. mul?
                     # compute mean along spatial domain, save to Sout
                     Sout[...,idxc,:,:,:] = pecorr_c
                     
