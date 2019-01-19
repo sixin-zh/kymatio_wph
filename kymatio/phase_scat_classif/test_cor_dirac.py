@@ -17,7 +17,7 @@ size=32
 
 im = np.zeros((size,size))
 im[15,15] = 1
-im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0)
+im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0) # (1,1,size,size)
 
 J = 3
 L = 4
