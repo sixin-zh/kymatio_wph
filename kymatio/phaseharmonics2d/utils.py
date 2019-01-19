@@ -34,3 +34,15 @@ def fft2_c2c(x):
 
 def ifft2_c2c(x):
     return fft(x,'C2C',inverse=True)/(x.size(-2)*x.size(-3))
+
+def periodic_dis(i1, i2, per):
+    if i2 > i1:
+        return min(i2-i1, i1-i2+per)
+    else:
+        return min(i1-i2, i2-i1+per)
+
+def periodic_signed_dis(i1, i2, per):
+    if i2 < i1:
+        return i2 - i1 + per
+    else:
+        return i2 - i1

@@ -298,7 +298,8 @@ def mul(z1, z2):
     z = torch.stack((zr, zi), dim=-1)
     return z
 
-class PhaseExp(nn.Module):
+# k in Linear or Log
+class PhaseExpLL(nn.Module):
     def __init__(self, K, k_type='linear', keep_k_dim=False, check_for_nan=False):
         super(PhaseExp, self).__init__()
         self.K = K
@@ -331,4 +332,43 @@ class PhaseExp(nn.Module):
 #            eiktheta.register_hook(HookDetectNan("eiktheta in PhaseExp"))
 #            z_pe.register_hook(HookDetectNan("z_pe in PhaseExp"))
 
+        return z_pe
+
+# comptue only a single phase exponent k, k >= 0 integer
+class PhaseExpSk(nn.Module):
+    def __init__(self, keep_k_dim=False, check_for_nan=False):
+        super(PhaseExp, self).__init__()
+        self.keep_k_dim = keep_k_dim
+        self.check_for_nan = check_for_nan
+        
+    def forward(self, z, k):
+        s = z.size()
+        z_mod = z.norm(p=2, dim=-1)  # modulus
+
+        eitheta = phaseexp(z, z_mod.unsqueeze(-1))  # phase
+
+        if k == 0:
+            eiktheta = [ones_like(z)]
+        elif k == 1:
+            eiktheta = eitheta
+        elif k > 1:
+            z_acc = z
+            for kb in range(2,k+1):
+                z_acc = mul(z_acc,z)
+            eiktheta = z_acc
+        else:
+            assert k>=0, 'need postive k exponent'
+        
+        z_pe = z_mod.unsqueeze(-1) * eiktheta
+
+        if not self.keep_k_dim:
+            z_pe = z_pe.view(s[0], -1, *s[2:])
+
+    #        if z.requires_grad and self.check_for_nan:
+#            z.register_hook(HookDetectNan("z in PhaseExp"))
+#            if self.K > 1:
+#                z_mod.register_hook(HookDetectNan("z_mod in PhaseExp"))
+#            eitheta.register_hook(HookDetectNan("eitheta in PhaseExp"))
+#            eiktheta.register_hook(HookDetectNan("eiktheta in PhaseExp"))
+#            z_pe.register_hook(HookDetectNan("z_pe in PhaseExp"))
         return z_pe

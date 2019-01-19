@@ -37,8 +37,8 @@ from kymatio.phaseharmonics2d.phase_harmonics_k_simple \
 
 wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max, k_max)
 
-SJx0,SJmeta = wph_op(im)
-print (SJmeta)
+Sim,Smeta = wph_op(im)
+print (Smeta)
 # ---- Reconstruct marks. At initiation, every point has the average value of the marks.----#
 '''
 
