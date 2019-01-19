@@ -110,9 +110,10 @@ class PhaseHarmonics2d(object):
                     pexpsi_prime_c = conjugate(self.phase_exp(xpsi_prime_c,k2)) # (nb,nc,M,N,2)
                     
                     # We can then compute correlation coefficients
-                    pecorr_c = np.mean(np.mean(mul(xpsi_c, pexpsi_prime_c),-2),-2) #cdgmm vs. mul?
+                    pemul_c = mul(xpsi_c, pexpsi_prime_c)
+                    pecorr_c = np.mean(np.mean(pemul_c,2,True),3,True) #cdgmm vs. mul?
                     # compute mean along spatial domain, save to Sout
-                    Sout[...,idxc,0,0,:] = pecorr_c 
+                    Sout[...,idxc,:,:,:] = pecorr_c
                     
                     if set_meta:
                         self.meta[idxc] = (j1,theta1,k1,j2,theta2,k2)
