@@ -36,7 +36,7 @@ class PhaseHarmonics2d(object):
         self.subsample_fourier = SubsampleFourier()
         #self.phaseexp = StablePhaseExp.apply
         self.subinitmean = SubInitMean(2)
-        self.phase_exp = PhaseExpSk(k_type=self.k_type,keep_k_dim=True,check_for_nan=False)
+        self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
         self.M_padded, self.N_padded = self.M, self.N
         filters = filter_bank(self.M_padded, self.N_padded, self.J, self.L, self.addhaar, self.cache)           
         self.Psi = filters['psi']
