@@ -17,6 +17,7 @@ class PhaseHarmonics2d(object):
         self.j_max = j_max # max scale interactions
         self.l_max = l_max # max angular interactions
         self.k_max = k_max # max k used in phase harmonics
+        self.k_type = k_type
         self.addhaar = addhaar # filter bank with haar filters
         self.cache = False # cache filter bank
         self.gpu = gpu # if to use gpu
