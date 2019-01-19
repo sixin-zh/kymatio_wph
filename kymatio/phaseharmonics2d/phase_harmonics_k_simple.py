@@ -62,29 +62,28 @@ class PhaseHarmonics2d(object):
         N = self.N
         hatphi = self.Phi # low pass
         hatpsi = self.Psi # high pass
-        n = 0
-
+        
         pad = self.pad
         modulus = self.modulus
-
+        
         # denote
         # nb=batch number
         # nc=number of color channels
         # input: (nb,nc,M,N)
         x_c = pad(input) # add zeros to imag part -> (nb,nc,M,N,2)
         hatx_c = fft2_c2c(x_c) # fft2 -> (nb,nc,M,N,2)
-
+        
         set_meta = False
         if self.meta is None:
             set_meta = True
             self.meta = dict()
-
+        
         # out coefficients: S
         nb_channels = (J * j_max - (j_max * (j_max + 1)) // 2) * L * (2 * l_max + 1) + J * L * l_max
         Sout = input.data.new(input.size(0), input.size(1), nb_channels, \
                               1, 1, 2) # no spatial phiJ
         
-        n = 0
+        idxc = 0 # channel index
         for n1 in range(len(hatpsi)):
             # compute x * psi_{j1,theta1}, no subsampling
             j1 = hatpsi[n1]['j']
@@ -108,11 +107,11 @@ class PhaseHarmonics2d(object):
                     # We can then compute correlation coefficients
                     pecorr_c = np.mean(np.mean(mul(xpsi_c, pexpsi_prime_c),-2,keepdim=True),-3,keepdim=True) #cdgmm vs. mul?
                     # compute mean along spatial domain, save to Sout
-                    Sout[...,n,:,:,:] = pecorr_c 
+                    Sout[...,idxc,:,:,:] = pecorr_c 
                     
                     if set_meta:
-                        self.meta[n] = (j1,theta1,k1,j2,theta2,k2)
-                    n = n + 1
+                        self.meta[idxc] = (j1,theta1,k1,j2,theta2,k2)
+                    idxc = idxc + 1
         
         return Sout, self.meta
 
