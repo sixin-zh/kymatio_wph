@@ -301,7 +301,7 @@ def mul(z1, z2):
 # k in Linear or Log
 class PhaseExpLL(nn.Module):
     def __init__(self, K, k_type='linear', keep_k_dim=False, check_for_nan=False):
-        super(PhaseExp, self).__init__()
+        super(PhaseExpLL, self).__init__()
         self.K = K
         self.keep_k_dim = keep_k_dim
         self.check_for_nan = check_for_nan
@@ -337,7 +337,7 @@ class PhaseExpLL(nn.Module):
 # comptue only a single phase exponent k, k >= 0 integer
 class PhaseExpSk(nn.Module):
     def __init__(self, keep_k_dim=False, check_for_nan=False):
-        super(PhaseExp, self).__init__()
+        super(PhaseExpSk, self).__init__()
         self.keep_k_dim = keep_k_dim
         self.check_for_nan = check_for_nan
         
