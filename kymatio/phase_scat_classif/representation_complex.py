@@ -543,8 +543,8 @@ def compute_scat(X, J, L_1, L_2, batch_size, square=False):
     return scat
 
 
-    # To align conventions with scattering, we assume L designates the sampling in angles on [0, pi]. Hence, we need a
-    # filters bank with 2 * L angles since as we take alphas on [0, pi], we need to take thetas in [0, 2pi]
+# To align conventions with scattering, we assume L designates the sampling in angles on [0, pi]. Hence, we need a
+# filters bank with 2 * L angles since as we take alphas on [0, pi], we need to take thetas in [0, 2pi]
 def compute_phase_harmonic_cor(X, J, L, delta, l_max, batch_size):
 
     M, N = X.shape[-2], X.shape[-1]
