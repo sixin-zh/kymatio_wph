@@ -26,6 +26,7 @@ class PhaseHarmonics2d(object):
         self.build()
 
     def build(self):
+        self.meta = None
         self.modulus = Modulus()
         self.pad = Pad(0, pre_pad = self.pre_pad)
         self.subsample_fourier = SubsampleFourier()
