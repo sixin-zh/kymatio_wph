@@ -1,6 +1,6 @@
 # implement basic phase harmonics based on John's code to check correctness
 
-__all__ = ['PhaseHarmonics']
+__all__ = ['PhaseHarmonics2d']
 
 import warnings
 import torch
@@ -10,7 +10,7 @@ from .backend import cdgmm, Modulus, SubsampleFourier, fft, Pad, unpad, SubInitM
 from .filter_bank import filter_bank
 from .utils import compute_padding, fft2_c2c, ifft2_c2r, ifft2_c2c
 
-class PhaseHarmonics(object):
+class PhaseHarmonics2d(object):
     def __init__(self, M, N, J, L=8, j_max, l_max, k_max, k_type='linear', addhaar=False, gpu=False):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles
         self.pre_pad = False # no padding
