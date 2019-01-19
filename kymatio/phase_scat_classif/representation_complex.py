@@ -87,8 +87,7 @@ def phase_harmonic_cor(input, phi, psi, J, L, delta, l_max):
     M_padded, N_padded = prepare_padding_size(M, N, J)
 
     nb_channels = (J * delta - (delta * (delta + 1)) // 2) * L * (2 * l_max + 1) + J * L * l_max
-    print('nb_channels',nb_channels)
-    
+
     S = Variable(input.data.new(input.size(0), input.size(1), nb_channels, M_padded//(2**J)-2, N_padded//(2**J)-2, 2))
 
     # All convolutions are performed as products in Fourier. We first pad the input and compute its FFT
@@ -544,8 +543,8 @@ def compute_scat(X, J, L_1, L_2, batch_size, square=False):
     return scat
 
 
-# To align conventions with scattering, we assume L designates the sampling in angles on [0, pi]. Hence, we need a
-# filters bank with 2 * L angles since as we take alphas on [0, pi], we need to take thetas in [0, 2pi]
+    # To align conventions with scattering, we assume L designates the sampling in angles on [0, pi]. Hence, we need a
+    # filters bank with 2 * L angles since as we take alphas on [0, pi], we need to take thetas in [0, 2pi]
 def compute_phase_harmonic_cor(X, J, L, delta, l_max, batch_size):
 
     M, N = X.shape[-2], X.shape[-1]
@@ -660,7 +659,7 @@ def compute_mixed_coeffs(X, J, L, delta, l_max, batch_size):
         # remove .cuda() to keep on CPU
         mixed_coeff = torch.cat([mixed_coeff, mixed_coeff_tmp], dim=0)
 
-        mixed_coeff = mixed_coeff.reshape(X.shape[0], -1, 2)
+    mixed_coeff = mixed_coeff.reshape(X.shape[0], -1, 2)
 
     return mixed_coeff
 
@@ -742,7 +741,7 @@ def compute_phase_harmonic_compl_2nd_order(X, J, L_1, L_2, delta, l_max, batch_s
         phase_harmonics_compl_2nd_order = np.concatenate([phase_harmonics_compl_2nd_order,
                                                           phase_harmonics_compl_2nd_order_tmp],axis=0)
 
-        phase_harmonics_compl_2nd_order = phase_harmonics_compl_2nd_order.reshape(X.shape[0], -1, 2)
+    phase_harmonics_compl_2nd_order = phase_harmonics_compl_2nd_order.reshape(X.shape[0], -1, 2)
 
     return phase_harmonics_compl_2nd_order
 
@@ -806,34 +805,7 @@ def compute_phase_harmonic_color_compl(X, J, L, delta, l_max, batch_size):
     return phase_harmonics_color_compl
 
 
-# compute spatial averaging
-def compute_phase_harmonic_cor_inv(X, J, L, delta, l_max, batch_size):
 
-    M, N = X.shape[-2], X.shape[-1]
-    M_padded, N_padded = prepare_padding_size(M, N, J)
-
-    filters = filters_bank(M_padded, N_padded, J, L)
-
-    psi = filters['psi']
-    phi = [filters['phi'][j] for j in range(J)]
-
-    psi, phi = cast(psi, phi, torch.cuda.FloatTensor)
-    # cast in torch.FloatTensor to keep on CPU
-
-    phase_harmonics = phase_harmonic_cor(X[0:batch_size].cuda(), phi, psi, J, L, delta, l_max).cpu() # (nb,nc,nch,Mj,Nj,2)
-    # remove .cuda() to keep on CPU
-
-    nb_batches = X.shape[0] // batch_size
-
-    for idx_batch in tqdm(range(1, nb_batches)):
-        phase_harmonics_tmp = phase_harmonic_cor(X[idx_batch * batch_size: (idx_batch + 1) * batch_size].cuda(), phi,
-                                                 psi, J, L, delta, l_max).cpu()
-        # remove .cuda() to keep on CPU
-        phase_harmonics = torch.cat([phase_harmonics, phase_harmonics_tmp], dim=0)
-
-    phase_harmonics_inv = torch.mean(torch.mean(phase_harmonics,-2,True),-3,True)
-
-    return phase_harmonics_inv
 
 
 

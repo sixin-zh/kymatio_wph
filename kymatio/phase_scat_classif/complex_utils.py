@@ -32,7 +32,7 @@ def ones_like(z):
 
 def phase(z):
     x, y = real(z), imag(z)
-    z_mod = modulus(z)[..., 0].unsqueeze(-1)
+    z_mod = modulus(z)[..., 0]
 
     eps = 1e-32
     mask_real_neg = (torch.abs(y) <= eps) * (x <= 0)

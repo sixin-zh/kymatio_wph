@@ -7,7 +7,7 @@ from representation_complex import compute_scat, compute_phase_harmonic_cor, com
 
 from complex_utils import complex_log
 from utils import mean_std, standardize_feature
-#from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression
 
 import numpy as np
 
@@ -31,8 +31,8 @@ labels_test = np.array(getattr(testset, 'test_labels'))
 #classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 # Subsample dataset
-train_sub_factor = 0.0002
-test_sub_factor = 0.001
+train_sub_factor = 1
+test_sub_factor = 1
 nb_samples_train = labels_train.shape[0]
 nb_samples_test = labels_test.shape[0]
 
@@ -43,22 +43,22 @@ X_test = test_data[0:int(test_sub_factor * nb_samples_test)]
 y_test = labels_test[0:int(test_sub_factor * nb_samples_test)]
 
 
-#f = open("new_rep_test", "w")
+f = open("new_rep_test", "w")
 
 J = 3
 L = 8
-batch_size = 5
-log = False
+batch_size = 10000
+log = True
 normalize = True
 C = 0.001
 epsilon = 1e-1
-delta = 2
+delta = 1
 l_max = 1
 
 
 scat_train = compute_scat(X_train, J, L, L, batch_size)
 scat_test = compute_scat(X_test, J, L, L, batch_size)
-print(scat_train.shape)
+
 
 phase_harmonics_train = compute_phase_harmonic_cor(X_train, J, L, delta, l_max, batch_size)
 phase_harmonics_test = compute_phase_harmonic_cor(X_test, J, L, delta, l_max, batch_size)
@@ -66,12 +66,13 @@ phase_harmonics_test = compute_phase_harmonic_cor(X_test, J, L, delta, l_max, ba
 phase_harmonics_compl_train = compute_phase_harmonic_compl(X_train, J, L, delta, l_max, batch_size)
 phase_harmonics_compl_test = compute_phase_harmonic_compl(X_test, J, L, delta, l_max, batch_size)
 
-modulus_train = compute_modulus_cor(X_train, J, L, delta, l_max, batch_size)
-modulus_test = compute_modulus_cor(X_test, J, L, delta, l_max, batch_size)
+#modulus_train = compute_modulus_cor(X_train, J, L, delta, l_max, batch_size)
+#modulus_test = compute_modulus_cor(X_test, J, L, delta, l_max, batch_size)
 
 mixed_coeffs_train = compute_mixed_coeffs(X_train, J, L, delta, l_max, batch_size)
 mixed_coeffs_test = compute_mixed_coeffs(X_test, J, L, delta, l_max, batch_size)
 
+"""
 phase_2nd_order_train = compute_phase_harmonic_2nd_order(X_train, J, L, L, delta, l_max, batch_size)
 phase_2nd_order_test = compute_phase_harmonic_2nd_order(X_test, J, L, L, delta, l_max, batch_size)
 
@@ -83,17 +84,30 @@ phase_color_test = compute_phase_harmonic_cor_color(X_test, J, L, delta, l_max, 
 
 phase_color_compl_train = compute_phase_harmonic_color_compl(X_train, J, L, delta, l_max, batch_size)
 phase_color_compl_test = compute_phase_harmonic_color_compl(X_test, J, L, delta, l_max, batch_size)
+"""
+
+#X_rep_train_copy = scat_train
+#X_rep_test_copy = scat_test
 
 
-
-#X_rep_train_copy = torch.cat([scat_train, phase_harmonics_train], dim=1)
-#X_rep_test_copy = torch.cat([scat_test, phase_harmonics_test], dim=1)
+X_rep_train_copy = torch.cat([scat_train, phase_harmonics_train, phase_harmonics_compl_train, mixed_coeffs_train], dim=1)
+X_rep_test_copy = torch.cat([scat_test, phase_harmonics_test, phase_harmonics_compl_test, mixed_coeffs_test], dim=1)
+"""
+print("scat_train.shape:{}".format(scat_train.shape))
+print("phase_harmonics_train.shape:{}".format(phase_harmonics_train.shape))
+print("phase_harmonics_compl_train.shape:{}".format(phase_harmonics_compl_train.shape))
+print("modulus_train.shape:{}".format(modulus_train.shape))
+print("mixed_coeffs_train.shape:{}".format(mixed_coeffs_train.shape))
+print("phase_2nd_order_train.shape:{}".format(phase_2nd_order_train.shape))
+print("phase_2nd_order_compl_train.shape:{}".format(phase_2nd_order_compl_train.shape))
+print("phase_color_train.shape:{}".format(phase_color_train.shape))
+print("phase_color_compl_train.shape:{}".format(phase_color_compl_train.shape))
 
 """
 # Log normalisation
 if log:
-    X_rep_train = complex_log(X_rep_train_copy)
-    X_rep_test = complex_log(X_rep_test_copy)
+    X_rep_train = complex_log(X_rep_train_copy, 1e-6)
+    X_rep_test = complex_log(X_rep_test_copy, 1e-6)
 
 else:
     X_rep_train = X_rep_train_copy
@@ -117,11 +131,18 @@ if normalize:
 
     size = X_rep_train.shape[1]
 
+
+    print("size: {}".format(size))
+    print("Train_accuracy: {}".format(score_train))
+    print("Test_accuracy: {}".format(score_test))
+    print("Generalization gap: {}".format(score_train - score_test))
+
+    """
     print("size: {}".format(size), file=f)
     print("Train_accuracy: {}".format(score_train), file=f)
     print("Test_accuracy: {}".format(score_test), file=f)
     print("Generalization gap: {}".format(score_train - score_test), file=f)
-"""
+    """
 
 
 
