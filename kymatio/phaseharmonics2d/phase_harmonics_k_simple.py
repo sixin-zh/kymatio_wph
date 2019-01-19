@@ -3,6 +3,7 @@
 # Case: phase_harmonic_cor in representation_complex
 # TODO need extend L toward 2L
 #      comptue cov rather than corr
+#      do not create new Sout for each forward
 
 __all__ = ['PhaseHarmonics2d']
 
@@ -62,6 +63,8 @@ class PhaseHarmonics2d(object):
         N = self.N
         L = self.L
         j_max = self.j_max
+        l_max = self.l_max
+
         hatphi = self.Phi # low pass
         hatpsi = self.Psi # high pass
         
