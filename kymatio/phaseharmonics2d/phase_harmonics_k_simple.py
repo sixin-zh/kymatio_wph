@@ -14,7 +14,7 @@ import torch.nn.functional as F
 from .backend import cdgmm, Modulus, SubsampleFourier, fft, \
     Pad, unpad, SubInitMean, StablePhaseExp, PhaseExpSk, mul, conjugate
 from .filter_bank import filter_bank
-from .utils import compute_padding, fft2_c2c, ifft2_c2r, ifft2_c2c
+from .utils import compute_padding, fft2_c2c, ifft2_c2r, ifft2_c2c, periodic_dis, periodic_signed_dis 
 
 class PhaseHarmonics2d(object):
     def __init__(self, M, N, J, L, j_max, l_max, addhaar=False, gpu=False):
