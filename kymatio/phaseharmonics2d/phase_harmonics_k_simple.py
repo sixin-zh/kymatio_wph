@@ -74,7 +74,10 @@ class PhaseHarmonics2d(object):
         if self.meta is None:
             set_meta = True
             self.meta = dict()
-            
+
+        # out coefficients: S
+        S = None
+        
         # compute x * psi_{j,theta}, no subsampling
         for n1 in range(len(psi)):
             j1 = psi[n1]['j']
@@ -83,7 +86,7 @@ class PhaseHarmonics2d(object):
             if set_meta:
                 self.meta[n1] = (psi[n1]['j'],psi[n1]['theta'])
 
-        return self.meta
+        return S, self.meta
 
     def __call__(self, input):
         return self.forward(input)
