@@ -1,4 +1,3 @@
-__all__ = ['Scattering2D']
+__all__ = ['PhaseHarmonics2d']
 
-
-from .scattering2d_pp import Scat2d
+from .phaseharmonics2d.phase_harmonics_k_simple import PhaseHarmonics2d
