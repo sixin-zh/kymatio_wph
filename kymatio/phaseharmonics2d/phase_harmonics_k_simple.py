@@ -60,6 +60,7 @@ class PhaseHarmonics2d(object):
         J = self.J
         M = self.M
         N = self.N
+        L = self.L
         j_max = self.j_max
         hatphi = self.Phi # low pass
         hatpsi = self.Psi # high pass
