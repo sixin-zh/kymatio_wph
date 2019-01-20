@@ -66,7 +66,7 @@ def phase_harmonic_cor(input, phi, psi, J, L, delta, l_max):
                 #C_f = periodize(cdgmm(W_exp_k_k_prime_f, phi[0]), k=2**J)
                 #C_c = ifft_c2c(C_f)
                 
-                S[..., n, :, :, :] = W_exp_k_k_prim # unpad(C_c, cplx=True)
+                S[..., n, :, :, :] = W_exp_k_k_prime # unpad(C_c, cplx=True)
                 n = n + 1
 
     return S
