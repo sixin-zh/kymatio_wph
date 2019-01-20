@@ -86,9 +86,10 @@ class PhaseHarmonics2d(object):
             for n_1 in range(len(hatpsi)):
                 j_1 = hatpsi[n_1]['j']
                 theta_1 = hatpsi[n_1]['theta']
-                print('max filter at j1=',j_1,',theta_1=',theta_1,' is ',hatpsi[n_1][0].max())
+                print('max hatpsi at j1=',j_1,',theta_1=',theta_1,' is ',hatpsi[n_1][0].max())
                 hatpsi[n_1][0] = hatpsi[n_1][0] / hatpsi[n_1][0].max()
-                 
+                print('l2 norm hat psi at j1=',j_1,',theta_1=',theta_1,' is ',hatpsi[n_1][0].norm('fro'))
+
         # out coefficients:
         nb_channels = (J * j_max - (j_max * (j_max + 1)) // 2) * L * (2 * l_max + 1) + J * L * l_max
         Sout = input.data.new(input.size(0), input.size(1), nb_channels, \
