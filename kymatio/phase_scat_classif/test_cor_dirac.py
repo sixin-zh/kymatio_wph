@@ -29,5 +29,5 @@ Sim = compute_phase_harmonic_cor_inv(im, J, L, delta, l_max, batch_size)
 Sim_sz = Sim.shape
 print('Sim sz:',Sim_sz)
 for idxc in range(Sim_sz[2]):
-    print('Sim:',idxc,Sim_sz[0,0,idxc,0,0,0],'+i',Sim_sz[0,0,idxc,0,0,1])
+    print('Sim:',idxc,Sim[0,0,idxc,0,0,0],'+i',Sim[0,0,idxc,0,0,1])
     
