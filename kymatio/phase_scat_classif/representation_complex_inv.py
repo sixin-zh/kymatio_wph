@@ -84,7 +84,7 @@ def compute_phase_harmonic_cor_inv(X, J, L, delta, l_max, batch_size):
     for n_1 in range(len(psi)):
         j_1 = psi[n_1]['j']
         theta_1 = psi[n_1]['theta']
-        print('max filter at j1=',j_1,'mtheta_1=',theta_1,' is ',psi[n_1][0].max())
+        print('max filter at j1=',j_1,',theta_1=',theta_1,' is ',psi[n_1][0].max())
         psi[n_1][0] = psi[n_1][0] / psi[n_1][0].max()
     
     phase_harmonics = phase_harmonic_cor(X[0:batch_size].cuda(), phi, psi, J, L, delta, l_max).cpu() # (nb,nc,nch,Mj,Nj,2)
