@@ -10,7 +10,61 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from representation_complex import phase_harmonic_cor
+#from representation_complex import phase_harmonic_cor
+# phase_harmonic_cor corresponds to phase harmonic correlation interactions. In order to reduce the number of
+# coefficients, the phase filters bank in A and A_prime can be different.
+# Note: some issues may arise for odd Q due to rounding errors
+
+#Problèmes de bord
+#Replace mul by cdgmm?
+#Rajouter avertissements sur l-max
+def phase_harmonic_cor(input, phi, psi, J, L, delta, l_max):
+
+    M, N = input.size(-2), input.size(-1)
+
+    M_padded, N_padded = prepare_padding_size(M, N, J)
+
+    nb_channels = (J * delta - (delta * (delta + 1)) // 2) * L * (2 * l_max + 1) + J * L * l_max
+
+    S = Variable(input.data.new(input.size(0), input.size(1), nb_channels, M_padded//(2**J)-2, N_padded//(2**J)-2, 2))
+
+    # All convolutions are performed as products in Fourier. We first pad the input and compute its FFT
+    padded_input = pad(input, J)
+    input_f = fft_c2c(padded_input)
+
+    n = 0
+
+    # We now compute the ReLU phase conditioned wavelet transform for each side
+    for n_1 in range(len(psi)):
+        j_1 = psi[n_1]['j']
+        theta_1 = psi[n_1]['theta']
+
+        W_f = cdgmm(input_f, psi[n_1][0])
+        W_c = ifft_c2c(W_f)
+
+        for n_2 in range(len(psi)):
+            j_2 = psi[n_2]['j']
+            theta_2 = psi[n_2]['theta']
+
+            if (j_1 < j_2 <= j_1 + delta and periodic_dis(theta_1, theta_2, L) <= l_max) \
+                    or (j_1 == j_2 and 0 <= periodic_signed_dis(theta_1, theta_2, L) <= l_max):
+
+                W_f_prime = cdgmm(input_f, psi[n_2][0])
+                W_c_prime = ifft_c2c(W_f_prime)
+                W_exp_c_k_prime = conjugate(phase_exp(W_c_prime, 2**(j_2-j_1)))
+
+                # We can then compute correlation coefficients
+                W_exp_k_k_prime = mul(W_c, W_exp_c_k_prime) #cdgmm?
+                W_exp_k_k_prime_f = fft_c2c(W_exp_k_k_prime)
+
+                C_f = periodize(cdgmm(W_exp_k_k_prime_f, phi[0]), k=2**J)
+                C_c = ifft_c2c(C_f)
+
+                S[..., n, :, :, :] = unpad(C_c, cplx=True)
+                n = n + 1
+
+    return S
+
 
 # compute spatial averaging
 def compute_phase_harmonic_cor_inv(X, J, L, delta, l_max, batch_size):
