@@ -33,7 +33,9 @@ def phase_harmonic_cor(input, phi, psi, J, L, delta, l_max):
     S = Variable(input.data.new(input.size(0), input.size(1), nb_channels, M, N, 2)) # M_padded//(2**J)-2, N_padded//(2**J)-2, 2))
     
     # All convolutions are performed as products in Fourier. We first pad the input and compute its FFT
+    print('input shape', input.shape)
     padded_input = pad0(input) # , J)
+    print('padded_input shape', padded_input.shape)
     input_f = fft_c2c(padded_input)
 
     n = 0
