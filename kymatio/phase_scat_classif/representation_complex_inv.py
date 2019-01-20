@@ -10,6 +10,10 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
+def pad0(input):
+    out_ = input # F.pad(input, (2 ** J,) * 4, mode='reflect').unsqueeze(input.dim())
+    return torch.cat([out_, Variable(input.data.new(out_.size()).zero_())], 4)
+
 #from representation_complex import phase_harmonic_cor
 # phase_harmonic_cor corresponds to phase harmonic correlation interactions. In order to reduce the number of
 # coefficients, the phase filters bank in A and A_prime can be different.
@@ -22,14 +26,14 @@ def phase_harmonic_cor(input, phi, psi, J, L, delta, l_max):
 
     M, N = input.size(-2), input.size(-1)
 
-    M_padded, N_padded = prepare_padding_size(M, N, J)
+    M_padded, N_padded = M, N # prepare_padding_size(M, N, J)
 
     nb_channels = (J * delta - (delta * (delta + 1)) // 2) * L * (2 * l_max + 1) + J * L * l_max
 
-    S = Variable(input.data.new(input.size(0), input.size(1), nb_channels, M_padded//(2**J)-2, N_padded//(2**J)-2, 2))
-
+    S = Variable(input.data.new(input.size(0), input.size(1), nb_channels, M, N, 2)) # M_padded//(2**J)-2, N_padded//(2**J)-2, 2))
+    
     # All convolutions are performed as products in Fourier. We first pad the input and compute its FFT
-    padded_input = pad(input, J)
+    padded_input = pad0(input) # , J)
     input_f = fft_c2c(padded_input)
 
     n = 0
@@ -55,12 +59,12 @@ def phase_harmonic_cor(input, phi, psi, J, L, delta, l_max):
 
                 # We can then compute correlation coefficients
                 W_exp_k_k_prime = mul(W_c, W_exp_c_k_prime) #cdgmm?
-                W_exp_k_k_prime_f = fft_c2c(W_exp_k_k_prime)
+                #W_exp_k_k_prime_f = fft_c2c(W_exp_k_k_prime)
 
-                C_f = periodize(cdgmm(W_exp_k_k_prime_f, phi[0]), k=2**J)
-                C_c = ifft_c2c(C_f)
-
-                S[..., n, :, :, :] = unpad(C_c, cplx=True)
+                #C_f = periodize(cdgmm(W_exp_k_k_prime_f, phi[0]), k=2**J)
+                #C_c = ifft_c2c(C_f)
+                
+                S[..., n, :, :, :] = W_exp_k_k_prim # unpad(C_c, cplx=True)
                 n = n + 1
 
     return S
