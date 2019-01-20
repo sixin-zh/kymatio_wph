@@ -2,7 +2,7 @@ import torch
 import torchvision
 from utils import rgb2yuv
 
-from representation_complex import compute_phase_harmonic_cor_inv
+from representation_complex_inv import compute_phase_harmonic_cor_inv
 
 from complex_utils import complex_log
 from utils import mean_std, standardize_feature
