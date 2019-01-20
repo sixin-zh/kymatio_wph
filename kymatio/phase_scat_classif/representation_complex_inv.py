@@ -11,7 +11,7 @@ import torch
 from tqdm import tqdm
 
 def pad0(input):
-    out_ = input # F.pad(input, (2 ** J,) * 4, mode='reflect').unsqueeze(input.dim())
+    out_ = input.unsqueeze(input.dim()) # F.pad(input, (2 ** J,) * 4, mode='reflect').unsqueeze(input.dim())
     return torch.cat([out_, Variable(input.data.new(out_.size()).zero_())], 4)
 
 #from representation_complex import phase_harmonic_cor
