@@ -76,7 +76,7 @@ def phase_harmonic_cor(input, phi, psi, J, L, delta, l_max):
 def compute_phase_harmonic_cor_inv(X, J, L, delta, l_max, batch_size):
 
     M, N = X.shape[-2], X.shape[-1]
-    M_padded, N_padded = prepare_padding_size(M, N, J)
+    M_padded, N_padded = M, N # prepare_padding_size(M, N, J)
 
     filters = filters_bank(M_padded, N_padded, J, L)
 
