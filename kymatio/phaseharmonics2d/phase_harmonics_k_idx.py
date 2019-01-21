@@ -112,8 +112,8 @@ class PhaseHarmonics2d(object):
         hatx_c = fft2_c2c(x_c) # fft2 -> (nb,nc,M,N,2)
 
         hatpsi_la = self.filt_tensor # (J,L,M,N,2)
-        nb = hatx_c.shape(0)
-        nc = hatx_c.shape(1)
+        nb = hatx_c.shape[0]
+        nc = hatx_c.shape[1]
         for idxb in range(nb):
             for idxc in range(nc):
                 hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
