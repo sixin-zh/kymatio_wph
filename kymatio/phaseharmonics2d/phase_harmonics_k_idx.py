@@ -40,10 +40,13 @@ class PhaseHarmonics2d(object):
         self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
         self.M_padded, self.N_padded = self.M, self.N
         filters = filter_bank(self.M_padded, self.N_padded, self.J, self.L, self.addhaar, self.cache)
+     
+        self.Psi = filters['psi']
+        self.Phi = [filters['phi'][j] for j in range(self.J)]
+
         self.filters_tensor()
         self.compute_idx()
-        #self.Psi = filters['psi']
-        #self.Phi = [filters['phi'][j] for j in range(self.J)]
+        
         #if self.addhaar:
         #    self.Psi0 = filters['psi0']
 
