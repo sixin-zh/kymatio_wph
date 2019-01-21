@@ -31,13 +31,16 @@ class PhaseHarmonics2d(object):
         self.build()
         
     def build(self):
-        self.meta = None
-        self.modulus = Modulus()
+        check_for_nan = True
+        #self.meta = None
+        #self.modulus = Modulus()
         self.pad = Pad(0, pre_pad = self.pre_pad)
-        self.subsample_fourier = SubsampleFourier()
+        #self.subsample_fourier = SubsampleFourier()
         #self.phaseexp = StablePhaseExp.apply
-        self.subinitmean = SubInitMean(2)
-        self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
+        #self.subinitmean = SubInitMean(2)
+        #self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
+        self.phase_harmonics = PhaseHarmonic(check_for_nan=check_for_nan)
+
         self.M_padded, self.N_padded = self.M, self.N
         filters = filter_bank(self.M_padded, self.N_padded, self.J, self.L, self.addhaar, self.cache)
      
@@ -46,10 +49,10 @@ class PhaseHarmonics2d(object):
 
         self.filt_tensor = self.filters_tensor()
         self.idx_wph = self.compute_idx()
-        print(self.idx_wph['la1'])
-        print(self.idx_wph['la2'])
-        print(self.idx_wph['k1'])
-        print(self.idx_wph['k2'])
+        #print(self.idx_wph['la1'])
+        #print(self.idx_wph['la2'])
+        #print(self.idx_wph['k1'])
+        #print(self.idx_wph['k2'])
         
     def filters_tensor(self):
         J = self.J
@@ -75,7 +78,6 @@ class PhaseHarmonics2d(object):
         return torch.FloatTensor(filters) # (J,L,M,N,2)
 
     def compute_idx(self):
-
         l_max=self.l_max
         L = self.L
         J = self.J
@@ -98,13 +100,13 @@ class PhaseHarmonics2d(object):
                             idx_la2.append(L*j2+theta2)
                             idx_k1.append(k1)
                             idx_k2.append(k2)
-                            
+        
         idx_wph = dict()
         idx_wph['la1'] = torch.tensor(idx_la1).type(torch.long)
         idx_wph['k1'] = torch.tensor(idx_k1).type(torch.long)
         idx_wph['la2'] = torch.tensor(idx_la2).type(torch.long)
         idx_wph['k2'] = torch.tensor(idx_k2).type(torch.long)
-                      
+        
         return idx_wph 
         
     def cuda(self):
@@ -140,6 +142,10 @@ class PhaseHarmonics2d(object):
         x_c = pad(input) # add zeros to imag part -> (nb,nc,M,N,2)
         hatx_c = fft2_c2c(x_c) # fft2 -> (nb,nc,M,N,2)
 
+        nb_channels = self.idx_wph['la1'].shape[0]
+        print('nbchannels',nb_channels)
+        Sout = input.new(nb, nc, nb_channels, \
+                         1, 1, 2) # no spatial phiJ # (nb,nc,nb_channels,1,1,2)
         hatpsi_la = self.filt_tensor # (J,L,M,N,2)
         nb = hatx_c.shape[0]
         nc = hatx_c.shape[1]
@@ -151,58 +157,21 @@ class PhaseHarmonics2d(object):
                 xpsi_bc = ifft2_c2c(hatxpsi_bc)
                 # reshape to (1,J*L,M,N,2)
                 xpsi_bc = xpsi_bc.view(1,J*L,M,N,2)
-                # select la1, et la2
-                xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph['la1'])
-                xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph['la2'])
+                # select la1, et la2, P = |la1| 
+                xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph['la1']) # (1,P,M,N,2)
+                xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph['la2']) # (1,P,M,N,2)
                 print('xpsi la1 shape', xpsi_bc_la1.shape)
                 print('xpsi la2 shape', xpsi_bc_la2.shape)
+                k1 = self.idx_wph['k1']
+                k2 = self.idx_wph['k2']
+                xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,P,M,N,2)
+                xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2, -k2) # (1,P,M,N,2)
+                # compute mean spatial
+                corr_xpsi_bc = mul(xpsi_bc_la1k1,xpsi_bc_la2k2)
+                corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P,1,1,2)
+                Sout[idxb,idxc,:,:,:,:] = corr_bc[0,:,:,:,:]
                 
-        #set_meta = False
-        #if self.meta is None:
-        #    set_meta = True
-        #    self.meta = dict()
-            # renoamlize to each psi to have max hat psi = 1, only res=0
-           
-        # out coefficients:
-        #nb_channels = (J * j_max - (j_max * (j_max + 1)) // 2) * L * (2 * l_max + 1) + J * L * l_max
-        #Sout = input.data.new(input.size(0), input.size(1), nb_channels, \
-        #                      1, 1, 2) # no spatial phiJ # (nb,nc,nb_channels,1,1,2)
-        '''
-        idxc = 0 # channel index
-        for n1 in range(len(hatpsi)):
-            # compute x * psi_{j1,theta1}, no subsampling
-            j1 = hatpsi[n1]['j']
-            theta1 = hatpsi[n1]['theta']
-            k1 = 1
-            hatxpsi_c = cdgmm(hatx_c, hatpsi[n1][0]) # (nb,nc,M,N,2)
-            xpsi_c = ifft2_c2c(hatxpsi_c) # (nb,nc,M,N,2)
-            
-            for n2 in range(len(hatpsi)):
-                j2 = hatpsi[n2]['j']
-                theta2 = hatpsi[n2]['theta']
-                
-                if (j1 < j2 <= j1 + j_max and periodic_dis(theta1, theta2, L) <= l_max) \
-                   or (j1 == j2 and 0 <= periodic_signed_dis(theta1, theta2, L) <= l_max):
-                    k2 = 2**(j2-j1)
-                    # compute [x * psi_{j2,thate2}]^{2^(j2-j1)}
-                    hatxpsi_prime_c = cdgmm(hatx_c, hatpsi[n2][0]) # (nb,nc,M,N,2)
-                    xpsi_prime_c = ifft2_c2c(hatxpsi_prime_c) # (nb,nc,M,N,2)
-                    pexpsi_prime_c = conjugate(self.phase_exp(xpsi_prime_c,k2)) # (nb,nc,M,N,2)
-                    
-                    # We can then compute correlation coefficients
-                    pemul_c = mul(xpsi_c, pexpsi_prime_c) # (nb,nc,M,N,2)
-                    pecorr_c = torch.mean(torch.mean(pemul_c,-2,True),-3,True) # (nb,nc,1,1,2) #cdgmm vs. mul?
-                    #print('idx,pecorr_c',idxc,pecorr_c.shape)
-                    # compute mean along spatial domain, save to Sout
-                    Sout[...,idxc,:,:,:] = pecorr_c
-                    
-                    #if set_meta:
-                    #    self.meta[idxc] = (j1,theta1,k1,j2,theta2,k2)
-                    idxc = idxc + 1
-        '''
-        Sout = []
-        
-        return Sout # , self.meta
+        return Sout
 
     def __call__(self, input):
         return self.forward(input)
