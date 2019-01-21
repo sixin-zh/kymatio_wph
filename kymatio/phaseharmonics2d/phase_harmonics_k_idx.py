@@ -141,14 +141,16 @@ class PhaseHarmonics2d(object):
         # input: (nb,nc,M,N)
         x_c = pad(input) # add zeros to imag part -> (nb,nc,M,N,2)
         hatx_c = fft2_c2c(x_c) # fft2 -> (nb,nc,M,N,2)
-
+        
+        nb = hatx_c.shape[0]
+        nc = hatx_c.shape[1]
         nb_channels = self.idx_wph['la1'].shape[0]
         print('nbchannels',nb_channels)
         Sout = input.new(nb, nc, nb_channels, \
                          1, 1, 2) # no spatial phiJ # (nb,nc,nb_channels,1,1,2)
+        
         hatpsi_la = self.filt_tensor # (J,L,M,N,2)
-        nb = hatx_c.shape[0]
-        nc = hatx_c.shape[1]
+     
         for idxb in range(nb):
             for idxc in range(nc):
                 hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
