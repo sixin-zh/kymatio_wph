@@ -340,7 +340,7 @@ class PhaseExpSk(nn.Module):
         super(PhaseExpSk, self).__init__()
         self.keep_k_dim = keep_k_dim
         self.check_for_nan = check_for_nan
-        
+
     def forward(self, z, k):
         s = z.size()
         z_mod = z.norm(p=2, dim=-1)  # modulus
@@ -358,7 +358,7 @@ class PhaseExpSk(nn.Module):
             eiktheta = z_acc
         else:
             assert k>=0, 'need postive k exponent'
-        
+
         z_pe = z_mod.unsqueeze(-1) * eiktheta
 
         if not self.keep_k_dim:
@@ -371,4 +371,42 @@ class PhaseExpSk(nn.Module):
 #            eitheta.register_hook(HookDetectNan("eitheta in PhaseExp"))
 #            eiktheta.register_hook(HookDetectNan("eiktheta in PhaseExp"))
 #            z_pe.register_hook(HookDetectNan("z_pe in PhaseExp"))
+        return z_pe
+
+class PhaseExp_par(nn.Module):
+    def __init__(self, K, k_type='linear', keep_k_dim=False, check_for_nan=False):
+        super(PhaseExp_par, self).__init__()
+        self.K = K
+        self.keep_k_dim = keep_k_dim
+        self.check_for_nan = check_for_nan
+        assert k_type in ['linear', 'log2']
+        self.k_type = k_type
+
+    def forward(self, z):
+        s = z.size()
+        z_mod = z.norm(p=2, dim=-1)  # modulus
+
+        eitheta = phaseexp(z, z_mod.unsqueeze(-1))  # phase
+        #print(eitheta.size())
+
+        # compute phase exponent : |z| * exp(i k theta)
+        if self.k_type == 'linear':
+            eiktheta = pows(eitheta, self.K - 1, dim=1)
+            #print(eiktheta.size())
+        elif self.k_type == 'log2':
+            eiktheta = log2_pows(eitheta, self.K - 1, dim=1)
+        #print(z_mod.unsqueeze(1).size())
+        z_pe = z_mod.unsqueeze(1).unsqueeze(-1) * eiktheta
+
+        if not self.keep_k_dim:
+            z_pe = z_pe.view(s[0], -1, *s[2:])
+
+#        if z.requires_grad and self.check_for_nan:
+#            z.register_hook(HookDetectNan("z in PhaseExp"))
+#            if self.K > 1:
+#                z_mod.register_hook(HookDetectNan("z_mod in PhaseExp"))
+#            eitheta.register_hook(HookDetectNan("eitheta in PhaseExp"))
+#            eiktheta.register_hook(HookDetectNan("eiktheta in PhaseExp"))
+#            z_pe.register_hook(HookDetectNan("z_pe in PhaseExp"))
+
         return z_pe
