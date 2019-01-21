@@ -44,17 +44,14 @@ class PhaseHarmonics2d(object):
         self.Psi = filters['psi']
         self.Phi = [filters['phi'][j] for j in range(self.J)]
 
-        self.filters_tensor()
-        self.compute_idx()
+        self.filt_tensor = self.filters_tensor()
+        self.idx_wph = self.compute_idx()
+        print(self.idx_wph['la1'])
         
-        #if self.addhaar:
-        #    self.Psi0 = filters['psi0']
-
     def filters_tensor(self):
         J = self.J
         L = self.L
         hatpsi = self.Psi
-
         filt = np.zeros((J, L, self.M, self.N), dtype=np.complex_) # TODO L->L2        
 
         for n_1 in range(len(hatpsi)):
@@ -72,11 +69,40 @@ class PhaseHarmonics2d(object):
             #TODO filt[j, L+theta, :,:] = np.fft.fft2(np.conj(np.fft.ifft2(psi_signal)))
 
         filters = np.stack((np.real(filt), np.imag(filt)), axis=-1)
-
-        self.filt_tensor = torch.FloatTensor(filters) # (J,L,M,N,2)
+        return torch.FloatTensor(filters) # (J,L,M,N,2)
 
     def compute_idx(self):
-        return
+
+        l_max=self.l_max
+        L = self.L
+        J = self.J
+        j_max = self.j_max
+      
+        idx_la1 = []
+        idx_la2 = []
+        idx_k1 = []
+        idx_k2 = []
+        
+        for j1 in range(J):
+            for theta1 in range(L):
+                k1 = 1
+                for j2 in range(J):
+                    for theta2 in range(L):
+                        if (j1 < j2 <= j1 + j_max and periodic_dis(theta1, theta2, L) <= l_max) \
+                           or (j1 == j2 and 0 <= periodic_signed_dis(theta1, theta2, L) <= l_max):
+                            k2 = 2**(j2-j1)
+                            idx_la1.append(L*j1+theta1)
+                            idx_la2.append(L*j2+theta2)
+                            idx_k1.append(k1)
+                            idx_k2.append(k2)
+                            
+        idx_wph = dict()
+        idx_wph['la1'] = torch.tensor(idx_la1).type(torch.long)
+        idx_wph['k1'] = torch.tensor(idx_k1).type(torch.long)
+        idx_wph['la2'] = torch.tensor(idx_la2).type(torch.long)
+        idx_wph['k2'] = torch.tensor(idx_k2).type(torch.long)
+                      
+        return idx_wph 
         
     def cuda(self):
         """
@@ -118,7 +144,9 @@ class PhaseHarmonics2d(object):
             for idxc in range(nc):
                 hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
                 hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L,M,N,2)
-                print( 'hatxpsi_bc shape', hatxpsi_bc.shape )
+                #print( 'hatxpsi_bc shape', hatxpsi_bc.shape )
+                xpsi_bc = ifft2_c2c(hatxpsi_bc)
+                
         
         #set_meta = False
         #if self.meta is None:
