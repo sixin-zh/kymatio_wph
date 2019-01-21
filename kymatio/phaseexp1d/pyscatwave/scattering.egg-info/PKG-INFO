@@ -1,0 +1,14 @@
+Metadata-Version: 1.0
+Name: scattering
+Version: 0.0.1
+Summary: Fast CPU/CUDA Scattering Transform implementation
+Home-page: https://github.com/edouardoyallon/pyscatwave
+Author: Edouard Oyallon, Eugene Belilovsky, Sergey Zagoruyko, Michael Eickenberg, Mathieu Andreux, Georgios Exarchakis, Louis Thiry, Vincent Lostanlen
+Author-email: edouard.oyallon@ens.fr, eugene.belilovsky@inria.fr, sergey.zagoruyko@enpc.fr, michael.eickenberg@berkeley.edu, mathieu.andreux@ens.fr, georgios.exarchakis@ens.fr, louis.thiry@ens.fr, vincent.lostanlen@ens.fr
+License: BSD
+Description: 
+        Fast CPU/CUDA Scattering Transform implementation for 1D, 2D, and 3D signals
+        
+        CuPy/PyTorch CUDA and NumPy/PyTorch CUDA implementation
+        
+Platform: UNKNOWN
