@@ -61,8 +61,10 @@ BACKEND = os.environ.get("SCATTERING_BACKEND_2D", BACKEND)
 
 
 if BACKEND == 'torch':
+    print('use torch backend')
     from .backend_torch import *
 elif BACKEND == 'skcuda':
+    print('use skcuda backend')
     from .backend_skcuda import *
 else:
     # For now, raise and error
