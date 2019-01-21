@@ -12,7 +12,7 @@ import torch
 import numpy as np
 import torch.nn.functional as F
 from .backend import cdgmm, Modulus, SubsampleFourier, fft, \
-    Pad, unpad, SubInitMean, StablePhaseExp, PhaseExpSk, mul, conjugate
+    Pad, unpad, SubInitMean, StablePhaseExp, PhaseExpSk, PhaseHarmonic, mul, conjugate
 from .filter_bank import filter_bank
 from .utils import compute_padding, fft2_c2c, ifft2_c2r, ifft2_c2c, periodic_dis, periodic_signed_dis 
 
@@ -40,7 +40,7 @@ class PhaseHarmonics2d(object):
         #self.subinitmean = SubInitMean(2)
         #self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
         self.phase_harmonics = PhaseHarmonic(check_for_nan=check_for_nan)
-
+        
         self.M_padded, self.N_padded = self.M, self.N
         filters = filter_bank(self.M_padded, self.N_padded, self.J, self.L, self.addhaar, self.cache)
      
