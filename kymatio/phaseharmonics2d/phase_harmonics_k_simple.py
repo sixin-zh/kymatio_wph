@@ -88,6 +88,7 @@ class PhaseHarmonics2d(object):
                 theta_1 = hatpsi[n_1]['theta']
                 print('max hatpsi at j1=',j_1,',theta_1=',theta_1,' is ',hatpsi[n_1][0].max())
                 hatpsi[n_1][0] = hatpsi[n_1][0] / hatpsi[n_1][0].max()
+                print('hatpsi shape at res=0',hatpsi[n_1][0].shape)
                 print('l2 norm hat psi at j1=',j_1,',theta_1=',theta_1,' is ',hatpsi[n_1][0].norm('fro'))
         
         # out coefficients:
