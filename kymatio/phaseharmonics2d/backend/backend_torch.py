@@ -474,8 +474,8 @@ class PhaseHarmonic(nn.Module):
 
     def forward(self, z, k):
         # check type ok k, move to float
-        if not is_long_tensor(k):
-            raise TypeError("Expected torch(.cuda).LongTensor but got {}".format(k.type()))
+        #if not is_long_tensor(k):
+        #    raise TypeError("Expected torch(.cuda).LongTensor but got {}".format(k.type()))
         #if is_double_tensor(z):
         #    k = k.double()
         #else:
