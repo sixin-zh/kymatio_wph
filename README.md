@@ -29,21 +29,12 @@ Kymatio requires:
 We also strongly recommend running Kymatio in a Conda environment since this
 simplifies installation of PyTorch.
 
-### Linux
+### Linux/macOS
 
 ```
 conda install pytorch torchvision -c pytorch
-pip install -i https://test.pypi.org/simple/ kymatio==0.0.1
+python install setup.py
 ```
-
-
-### macOS
-
-```
-conda install pytorch torchvision -c pytorch
-pip install -i https://test.pypi.org/simple/ kymatio==0.0.1
-```
-
 
 
 The software was tested on Linux with Anaconda Python 3 and
