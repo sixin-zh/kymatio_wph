@@ -24,8 +24,8 @@ im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 
 # Parameters for transforms
 
-J = 5
-L = 6
+J = 3
+L = 4
 M, N = im.shape[-2], im.shape[-1]
 j_max = 1
 l_max = L
