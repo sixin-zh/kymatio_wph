@@ -136,6 +136,16 @@ class Modulus(object):
         return torch.cat([norm, torch.zeros_like(norm)], -1)
 
 
+def modulus(z):
+    z_mod = z.norm(p=2, dim=-1)
+
+    # if z.requires_grad:
+    #     # z_mod_mask.register_hook(HookDetectNan("z_mod_mask in modulus"))
+    #     z_mod.register_hook(HookDetectNan("z_mod in modulus"))
+    #     z.register_hook(HookDetectNan("z in modulus"))
+
+    return z_mod
+
 
 
 def fft(input, direction='C2C', inverse=False):
