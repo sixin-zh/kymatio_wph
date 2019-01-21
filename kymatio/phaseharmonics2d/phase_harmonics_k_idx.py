@@ -47,6 +47,7 @@ class PhaseHarmonics2d(object):
         self.filt_tensor = self.filters_tensor()
         self.idx_wph = self.compute_idx()
         print(self.idx_wph['la1'].shape)
+        print(self.idx_wph['la2'].shape)
         
     def filters_tensor(self):
         J = self.J
@@ -146,8 +147,14 @@ class PhaseHarmonics2d(object):
                 hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L,M,N,2)
                 #print( 'hatxpsi_bc shape', hatxpsi_bc.shape )
                 xpsi_bc = ifft2_c2c(hatxpsi_bc)
+                # reshape to (1,J*L,M,N,2)
+                xpsi_bc = xpsi_bc.view(1,J*L,M,N,2)
+                # select la1, et la2
+                xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph['la1'])
+                xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph['la2'])
+                print('xpsi la1 shape', xpsi_bc_la1.shape)
+                print('xpsi la2 shape', xpsi_bc_la2.shape)
                 
-        
         #set_meta = False
         #if self.meta is None:
         #    set_meta = True
