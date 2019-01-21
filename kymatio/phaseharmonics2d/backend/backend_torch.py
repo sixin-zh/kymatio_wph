@@ -492,15 +492,23 @@ class PhaseHarmonic(nn.Module):
         #else:
         #    k = k.float()
 
-        s = z.size()
+        #s = z.size()
+    
+        print('z shape',z.shape,z.size())
         z_mod = modulus(z)  # modulus
-
+        print('z_mod shape',z_mod.shape)
+        
         # compute phase
+        
         theta = phase(z)  # phase
+        print('theta shape',theta.shape)
         k = k.unsqueeze(0).unsqueeze(1)
+        print('k shape',k.shape)
         for spatial_dim in theta.size()[2:-1]:
             k = k.unsqueeze(-1)
+        print('k shape',k.shape)
         ktheta = k * theta
+        
         eiktheta = torch.stack((torch.cos(ktheta), torch.sin(ktheta)), dim=-1)
 
         # compute phase exponent : |z| * exp(i k theta)
