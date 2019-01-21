@@ -1191,6 +1191,9 @@ class PhaseHarmonicPrunedSeparated(PhaseHarmonicPrunedBase):
         scd_order = []
         # TODO: implement blocks
         for xi_idx, ks in zip(self.xi_idx, self.ks):
+            print('x_filt shape',x_filt.shape)
+            print('xi_idx shape',xi_idx.shape)
+            print('ks shape',ks.shape)
             x_filt0 = torch.index_select(x_filt, 2, xi_idx[:, 0])
             x_filt1 = torch.index_select(x_filt, 2, xi_idx[:, 1])
             k0, k1 = ks[:, 0], ks[:, 1]
