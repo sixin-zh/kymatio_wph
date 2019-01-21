@@ -502,10 +502,9 @@ class PhaseHarmonic(nn.Module):
         
         theta = phase(z)  # phase
         print('theta shape',theta.shape)
-        k = k.unsqueeze(0).unsqueeze(1)
-        print('k shape',k.shape)
-        for spatial_dim in theta.size()[2:-1]:
-            k = k.unsqueeze(-1)
+        #k = k.unsqueeze(0) #.unsqueeze(1)
+        #print('k shape',k.shape)
+        #k = k.unsqueeze(-1).unsqueeze(-1)
         print('k shape',k.shape)
         ktheta = k * theta
         
