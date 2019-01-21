@@ -1190,15 +1190,18 @@ class PhaseHarmonicPrunedSeparated(PhaseHarmonicPrunedBase):
         # second order
         scd_order = []
         # TODO: implement blocks
+        # x_filt: (1,1,filters,T,2), T is size of signal
         for xi_idx, ks in zip(self.xi_idx, self.ks):
             print('x_filt shape',x_filt.shape)
             print('xi_idx shape',xi_idx.shape)
             print('ks shape',ks.shape)
             x_filt0 = torch.index_select(x_filt, 2, xi_idx[:, 0])
+            print('x_filt0 shape',x_filt0.shape)
             x_filt1 = torch.index_select(x_filt, 2, xi_idx[:, 1])
             k0, k1 = ks[:, 0], ks[:, 1]
 
-            scd_0 = self.phase_harmonics(x_filt0, k0) # (1,1,max_chunk,P,2)
+            scd_0 = self.phase_harmonics(x_filt0, k0) # (1,1,max_chunk,T,2)
+            print('scd_0 shape',scd_0.shape)
             scd_1 = self.phase_harmonics(x_filt1, -k1)
             scd = torch.mean(cplx.mul(scd_0, scd_1), dim=-2)
             scd_order.append(scd)
