@@ -367,10 +367,10 @@ class PhaseExpSk(nn.Module):
         elif k == 1:
             eiktheta = eitheta
         elif k > 1:
-            z_acc = z
+            eitheta_acc = eitheta
             for kb in range(2,k+1):
-                z_acc = mul(z_acc,z)
-            eiktheta = z_acc
+                eitheta_acc = mul(eitheta_acc,eitheta)
+            eiktheta = eitheta_acc
         else:
             assert k>=0, 'need postive k exponent'
 
