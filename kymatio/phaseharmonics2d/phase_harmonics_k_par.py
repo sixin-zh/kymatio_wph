@@ -12,7 +12,7 @@ from .utils import compute_padding, fft2_c2c, ifft2_c2r, ifft2_c2c, periodic_dis
 
 class PhaseHarmonics(object):
 
-    def __init__(self, M, N, J, K, delta, l_max, L=8, gpu=False,
+    def __init__(self, M, N, J, K, L, delta, l_max, gpu=False,
                  k_type='linear', addhaar=False, order2=False):
         self.M, self.N, self.J, self.L = M, N, J, L
         self.pre_pad = False # no padding
@@ -22,7 +22,6 @@ class PhaseHarmonics(object):
         self.K = K
         self.delta = delta
         self.l_max = l_max
-        self.L = L
         self.gpu = gpu
         if self.l_max > self.L:
             raise (
@@ -59,35 +58,27 @@ class PhaseHarmonics(object):
         psi = self.Psi
 
 
-        filt = np.zeros((J, 2*L, self.M, self.N), dtype=np.complex_)
-        #filt_prime = np.zeros((J, 2*L, self.M, self.N),dtype=np.complex_)
+        #filt = np.zeros((J, 2*L, self.M, self.N), dtype=np.complex_)
+        filt = np.zeros((J, L, self.M, self.N), dtype=np.complex_)
+        
 
         for n in range(len(psi)):
             j = psi[n]['j']
             theta = psi[n]['theta']
             psi_signal = psi[n][0][...,0].numpy() + 1j*psi[n][0][...,1].numpy()
             filt[j, theta, :,:] = psi_signal
-            filt[j, L+theta, :,:] = np.fft.fft2(np.conj(np.fft.ifft2(psi_signal)))
-
-#        for n in range(len(psi)):
-#            j = psi[n]['j']
-#            theta = psi[n]['theta']
-#            psi_signal = psi[n][0][...,0].numpy() + 1j*psi[n][0][...,1].numpy()
-#            filt_prime[j, theta,:,:] = psi_signal
-#            filt_prime[j, L+theta, :,:] = np.fft.fft2(np.conj(np.fft.ifft2(psi_signal)))
+            #filt[j, L+theta, :,:] = np.fft.fft2(np.conj(np.fft.ifft2(psi_signal)))
 
 
         filters = np.stack((np.real(filt), np.imag(filt)), axis=-1)
-        #filters_prime = np.stack((np.real(filt_prime), np.imag(filt_prime)), axis=-1)
 
-        #self.filt_tensor = torch.FloatTensor(np.stack((filters, filters_prime),axis=0))
         self.filt_tensor = torch.FloatTensor(filters)
 
 
     def phase_harm_cor_idx(self):
 
         l_max=self.l_max
-        L = 2*self.L
+        L = self.L
         J = self.J
         delta = self.delta
         K = self.K
@@ -99,12 +90,15 @@ class PhaseHarmonics(object):
             for theta1 in range(L):
                 for j2 in range(J):
                     for theta2 in range(L):
-                        if (j1 < j2 <= j1 + delta and periodic_dis(theta1, theta2, L) <= l_max) \
-                                or (j1 == j2 and 0 < periodic_signed_dis(theta1, theta2, L) <= l_max):
-                                idx1.append(K*L*j1+theta1)
-                                idx2.append(K*L*j2+L*(j2-j1)+theta2)
+                        print(j1,j2)
+                        print(j1 < j2 <= j1 + delta)
+                        if (j1 < j2 <= j1 + delta and periodic_dis(theta1, theta2, L) <= l_max):# \
+                                #or (j1 == j2 and 0 <= periodic_signed_dis(theta1, theta2, L) <= l_max):
+                            idx1.append(K*L*j1+theta1)
+                            idx2.append(K*L*j2+L*(j2-j1)+theta2)
         self.idx_phase_harm = (torch.tensor(idx1).type(torch.long),
                                torch.tensor(idx2).type(torch.long))
+        
 
 
 
