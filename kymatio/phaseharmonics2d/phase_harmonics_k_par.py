@@ -13,7 +13,7 @@ from .utils import compute_padding, fft2_c2c, ifft2_c2r, ifft2_c2c, periodic_dis
 class PhaseHarmonics(object):
 
     def __init__(self, M, N, J, K, L, delta, l_max, gpu=False,
-                 k_type='linear', addhaar=False, order2=False):
+                 k_type='log2', addhaar=False, order2=False):
         self.M, self.N, self.J, self.L = M, N, J, L
         self.pre_pad = False # no padding
         self.order2 = order2
@@ -26,12 +26,12 @@ class PhaseHarmonics(object):
         if self.l_max > self.L:
             raise (
                 ValueError('l_max must be <= L'))
-        self.build()
+        self.build(k_type = k_type)
         self.filters_tensor()
         self.phase_harm_cor_idx()
 
 
-    def build(self, k_type='linear'):
+    def build(self, k_type='log2'):
         self.modulus = Modulus()
         #self.pad = Pad(2**self.J, pre_pad = self.pre_pad)
         self.pad = Pad(0, pre_pad = self.pre_pad)
@@ -85,19 +85,19 @@ class PhaseHarmonics(object):
 
         idx1 = []
         idx2 = []
+        
 
         for j1 in range(J):
             for theta1 in range(L):
                 for j2 in range(J):
                     for theta2 in range(L):
-                        print(j1,j2)
-                        print(j1 < j2 <= j1 + delta)
-                        if (j1 < j2 <= j1 + delta and periodic_dis(theta1, theta2, L) <= l_max):# \
-                                #or (j1 == j2 and 0 <= periodic_signed_dis(theta1, theta2, L) <= l_max):
-                            idx1.append(K*L*j1+theta1)
-                            idx2.append(K*L*j2+L*(j2-j1)+theta2)
+                        if (j1 < j2 <= j1 + delta and periodic_dis(theta1, theta2, L) <= l_max) \
+                                or (j1 == j2 and 0 <= periodic_signed_dis(theta1, theta2, L) <= l_max):
+                                    idx1.append(K*L*j1+theta1)
+                                    idx2.append(K*L*j2+L*(j2-j1)+theta2)
         self.idx_phase_harm = (torch.tensor(idx1).type(torch.long),
                                torch.tensor(idx2).type(torch.long))
+
         
 
 

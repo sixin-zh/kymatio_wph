@@ -374,7 +374,7 @@ class PhaseExpSk(nn.Module):
         return z_pe
 
 class PhaseExp_par(nn.Module):
-    def __init__(self, K, k_type='linear', keep_k_dim=False, check_for_nan=False):
+    def __init__(self, K, k_type='log2', keep_k_dim=False, check_for_nan=False):
         super(PhaseExp_par, self).__init__()
         self.K = K
         self.keep_k_dim = keep_k_dim
