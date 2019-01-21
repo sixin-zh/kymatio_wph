@@ -649,6 +649,8 @@ class PhaseHarmonicPrunedBase(nn.Module):
         x_hat = fft1d_c2c(x)
 
         # apply wavelet filters
+        print('x_hat shape',x_hat.shape)
+        print('filt_hat shape',self.filt_hat.shape)
         x_filt_hat = cplx.mul(x_hat.unsqueeze(2), self.filt_hat.unsqueeze(0).unsqueeze(1))
 
         x_filt = ifft1d_c2c_normed(x_filt_hat)
