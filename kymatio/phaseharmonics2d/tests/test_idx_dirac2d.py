@@ -37,6 +37,7 @@ from kymatio.phaseharmonics2d.phase_harmonics_k_idx \
 wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max)
 
 Sim = wph_op(im)
+print(Sim)
 #for key,val in Smeta.items():
 #    print (key, "=>", val, ":", Sim[0,0,key,0,0,0], "+i ", Sim[0,0,key,0,0,1])
 #print (Sim.shape)
