@@ -7,6 +7,10 @@ from torch.autograd import Function
 
 NAME = 'torch'
 
+from ..utils import is_long_tensor
+from ..utils import HookDetectNan, masked_fill_zero
+
+
 
 def iscomplex(input):
     return input.size(-1) == 2
