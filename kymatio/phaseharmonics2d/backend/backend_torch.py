@@ -476,10 +476,10 @@ class PhaseHarmonic(nn.Module):
         # check type ok k, move to float
         if not is_long_tensor(k):
             raise TypeError("Expected torch(.cuda).LongTensor but got {}".format(k.type()))
-        if is_double_tensor(z):
-            k = k.double()
-        else:
-            k = k.float()
+        #if is_double_tensor(z):
+        #    k = k.double()
+        #else:
+        #    k = k.float()
 
         s = z.size()
         z_mod = modulus(z)  # modulus

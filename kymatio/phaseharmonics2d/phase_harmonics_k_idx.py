@@ -103,9 +103,9 @@ class PhaseHarmonics2d(object):
         
         idx_wph = dict()
         idx_wph['la1'] = torch.tensor(idx_la1).type(torch.long)
-        idx_wph['k1'] = torch.tensor(idx_k1).type(torch.long)
+        idx_wph['k1'] = torch.tensor(idx_k1).type(torch.long).float()
         idx_wph['la2'] = torch.tensor(idx_la2).type(torch.long)
-        idx_wph['k2'] = torch.tensor(idx_k2).type(torch.long)
+        idx_wph['k2'] = torch.tensor(idx_k2).type(torch.long).float()
         
         return idx_wph 
         
