@@ -46,8 +46,10 @@ class PhaseHarmonics2d(object):
 
         self.filt_tensor = self.filters_tensor()
         self.idx_wph = self.compute_idx()
-        print(self.idx_wph['la1'].shape)
-        print(self.idx_wph['la2'].shape)
+        print(self.idx_wph['la1'])
+        print(self.idx_wph['la2'])
+        print(self.idx_wph['k1'])
+        print(self.idx_wph['k2'])
         
     def filters_tensor(self):
         J = self.J
