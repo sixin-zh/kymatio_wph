@@ -7,8 +7,8 @@ from torch.autograd import Function
 
 NAME = 'torch'
 
-from ..utils import is_long_tensor
-from ..utils import HookDetectNan, masked_fill_zero
+from .backend_utils import is_long_tensor
+from .backend_utils import HookDetectNan, masked_fill_zero
 
 
 
