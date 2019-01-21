@@ -46,5 +46,5 @@ for idxbc in range(nbc):
     theta2 = wph_op.idx_wph['la2']%L
     k2 = wph_op.idx_wph['k2'][0,idxbc,0,0]
     val = (j1,theta1,k1,j2,theta2,k2)
-    print(idxbc, "=>" , val,  Sim[0,0,idxbc,0,0,0] + "+i ",Sim[0,0,idxbc,0,0,1] )
+    print(idxbc, "=>" , val,  Sim[0,0,idxbc,0,0,0],  "+i ",Sim[0,0,idxbc,0,0,1] )
     
