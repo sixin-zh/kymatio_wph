@@ -2,7 +2,7 @@
 
 #import pandas as pd
 import numpy as np
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 import scipy.optimize as opt
 
@@ -24,8 +24,8 @@ im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 
 # Parameters for transforms
 
-J = 3
-L = 4
+J = 5
+L = 6
 M, N = im.shape[-2], im.shape[-1]
 j_max = 1
 l_max = L
