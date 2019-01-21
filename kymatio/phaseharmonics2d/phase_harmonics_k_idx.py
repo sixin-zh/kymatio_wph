@@ -133,7 +133,7 @@ class PhaseHarmonics2d(object):
 #        hatpsi = self.Psi # high pass
         
         pad = self.pad
-        modulus = self.modulus
+        #modulus = self.modulus
         
         # denote
         # nb=batch number
