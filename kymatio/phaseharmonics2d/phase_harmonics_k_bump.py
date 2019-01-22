@@ -91,7 +91,7 @@ class PhaseHarmonics2d(object):
         idx_la2 = []
         idx_k1 = []
         idx_k2 = []
-
+        
         # TODO add dl
         # j1=j2, k1=1, k2=0 or 1
         for j1 in range(J):
@@ -109,7 +109,7 @@ class PhaseHarmonics2d(object):
                     idx_la2.append(L2*j2+ell2)
                     idx_k1.append(k1)
                     idx_k2.append(k2)
-
+        
         # k1 = 0
         # k2 = 0,1,2
         # j1+1 <= j2 <= min(j1+dj,J-1)
@@ -161,7 +161,7 @@ class PhaseHarmonics2d(object):
         J = self.J
         M = self.M
         N = self.N
-        L = self.L
+        L2 = self.L*2
         dj = self.dj
         dl = self.dl
 
@@ -187,15 +187,15 @@ class PhaseHarmonics2d(object):
         Sout = input.new(nb, nc, nb_channels, \
                          1, 1, 2) # (nb,nc,nb_channels,1,1,2)
         
-        hatpsi_la = self.filt_tensor # (J,L,M,N,2)
+        hatpsi_la = self.filt_tensor # (J,L2,M,N,2)
         for idxb in range(nb):
             for idxc in range(nc):
                 hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
-                hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L,M,N,2)
+                hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L2,M,N,2)
                 #print( 'hatxpsi_bc shape', hatxpsi_bc.shape )
                 xpsi_bc = ifft2_c2c(hatxpsi_bc)
                 # reshape to (1,J*L,M,N,2)
-                xpsi_bc = xpsi_bc.view(1,J*L,M,N,2)
+                xpsi_bc = xpsi_bc.view(1,J*L2,M,N,2)
                 # select la1, et la2, P = |la1| 
                 xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph['la1']) # (1,P,M,N,2)
                 xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph['la2']) # (1,P,M,N,2)
