@@ -72,7 +72,8 @@ class PhaseHarmonics2d(object):
         for n in range(len(hatpsi)):
             j = hatpsi[n]['j']
             theta = hatpsi[n]['theta']
-            filt[j, theta, :,:] = hatpsi[n][0][...,0].numpy() + 1j*hatpsi[n][0][...,1].numpy() # psi_signal
+            psi_signal = hatpsi[n][0][...,0].numpy() + 1j*hatpsi[n][0][...,1].numpy() 
+            filt[j, theta, :,:] = psi_signal
             filt[j, L+theta, :,:] = np.fft.fft2(np.conj(np.fft.ifft2(psi_signal)))
 
         filters = np.stack((np.real(filt), np.imag(filt)), axis=-1)
