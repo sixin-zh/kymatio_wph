@@ -163,12 +163,14 @@ class PhaseHarmonics2d(object):
         """
             Moves tensors to the GPU
         """
+        print('call cuda')
         return self._type(torch.cuda.FloatTensor)
 
     def cpu(self):
         """
             Moves tensors to the CPU
         """
+        print('call cpu')
         return self._type(torch.FloatTensor)
 
     def forward(self, input):
