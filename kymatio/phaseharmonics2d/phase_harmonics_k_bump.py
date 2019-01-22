@@ -148,6 +148,16 @@ class PhaseHarmonics2d(object):
 
         return idx_wph
 
+    def _type(self, _type):
+
+        self.hatpsi.type(_type)
+        self.hatphi.type(_type)
+        
+        #self.pad.padding_module.type(_type)
+        
+
+        return self
+    
     def cuda(self):
         """
             Moves tensors to the GPU
