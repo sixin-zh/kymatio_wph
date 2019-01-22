@@ -1,4 +1,4 @@
-# TEST ON CPU
+# TEST ON GPU
 
 #import pandas as pd
 import numpy as np
@@ -19,7 +19,7 @@ size=32
 
 im = np.zeros((size,size))
 im[15,15] = 1
-im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0)
+im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
 
 
 # Parameters for transforms
@@ -35,7 +35,7 @@ delta_k = 1
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump \
     import PhaseHarmonics2d
 
-wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max, delta_k)
+wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max, delta_k).cuda()
 
 Sim = wph_op(im)
 #for key,val in Smeta.items():
@@ -49,7 +49,7 @@ Sim = wph_op(im)
 # recontruct x by matching || Sx - Sx0 ||^2
 x = torch.zeros(1,1,N,N)
 x[0,0,0,0]=2
-x = Variable(x, requires_grad=True)
+x = Variable(x, requires_grad=True).cuda()
 criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam([x], lr=0.1)
 nb_steps = 10
