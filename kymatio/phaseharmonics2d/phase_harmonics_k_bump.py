@@ -166,8 +166,8 @@ class PhaseHarmonics2d(object):
             Moves tensors to the GPU
         """
         print('call cuda')
-        idx_wph['la1'] = idx_wph['la1'].type(torch.cuda.LongTensor)
-        idx_wph['la2'] = idx_wph['la1'].type(torch.cuda.LongTensor)
+        self.idx_wph['la1'] = self.idx_wph['la1'].type(torch.cuda.LongTensor)
+        self.idx_wph['la2'] = self.idx_wph['la1'].type(torch.cuda.LongTensor)
         return self._type(torch.cuda.FloatTensor)
 
     def cpu(self):
