@@ -38,9 +38,10 @@ class PhaseHarmonics2d(object):
         self.pad = Pad(0, pre_pad = self.pre_pad)
         #self.subsample_fourier = SubsampleFourier()
         #self.phaseexp = StablePhaseExp.apply
-        self.subinitmeanJ = SubInitSpatialMeanC()
+        
         self.subinitmean1 = SubInitSpatialMeanC()
         self.subinitmean2 = SubInitSpatialMeanC()
+        self.subinitmeanJ = SubInitSpatialMeanC()
         
         #self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
         self.phase_harmonics = PhaseHarmonic(check_for_nan=check_for_nan)
@@ -230,7 +231,7 @@ class PhaseHarmonics2d(object):
                 xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2, -k2) # (1,P,M,N,2)
                 # sub spatial mean along M and N
                 xpsi0_bc_la1k1 = self.subinitmean1(xpsi_bc_la1k1)
-                xpsi0_bc_la2k2 = self.subinitmean1(xpsi_bc_la2k2)
+                xpsi0_bc_la2k2 = self.subinitmean2(xpsi_bc_la2k2)
                 # compute mean spatial
                 corr_xpsi_bc = mul(xpsi0_bc_la1k1,xpsi0_bc_la2k2)
                 corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P,1,1,2)
