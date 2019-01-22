@@ -167,7 +167,7 @@ class PhaseHarmonics2d(object):
         """
         print('call cuda')
         self.idx_wph['la1'] = self.idx_wph['la1'].type(torch.cuda.LongTensor)
-        self.idx_wph['la2'] = self.idx_wph['la1'].type(torch.cuda.LongTensor)
+        self.idx_wph['la2'] = self.idx_wph['la2'].type(torch.cuda.LongTensor)
         self.idx_wph['k1'] = self.idx_wph['k1'].type(torch.cuda.FloatTensor)
         self.idx_wph['k2'] = self.idx_wph['k2'].type(torch.cuda.FloatTensor)
         
