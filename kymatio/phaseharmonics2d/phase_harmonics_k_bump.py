@@ -66,16 +66,20 @@ class PhaseHarmonics2d(object):
         assert(self.M == self.N)
         matfilters = sio.loadmat('./filters/bumpsteerableg1_fft2d_N' + str(self.N) + '_J' + str(self.J) + '_L' + str(self.L) + '.mat')
 
-        print(matfilters['filt_fftphi'].dtype)
+        fftphi = matfilters['filt_fftphi'].astype(np.complex_)
+        hatphi = np.stack((np.real(fftphi), np.imag(fftphi)), axis=-1)
         
-        self.hatpsi = matfilters['filt_fftpsi'].astype(np.complex_)
-        print(self.hatpsi.dtype)
+        fftpsi = matfilters['filt_fftpsi'].astype(np.complex_)
+        #print(self.hatpsi.dtype)
+        hatpsi = np.stack((np.real(fftpsi), np.imag(fftpsi)), axis=-1)
         
-        #hatpsi = self.Psi
-        filt = np.zeros((J, L2, self.M, self.N), dtype=np.complex_)
-        filters = np.stack((np.real(filt), np.imag(filt)), axis=-1)
-        return torch.FloatTensor(filters) # (J,L2,M,N,2)
+        self.hatpsi = torch.FloatTensor(hatpsi) # (J,L2,M,N,2)
+        self.hatphi = torch.FloatTensor(hatphi) # (M,N,2)
 
+        print('filter shapes')
+        print(self.hatpsi.shape)
+        print(self.hatphi.shape)
+        
     def compute_idx(self):
         L = self.L
         L2 = L*2
