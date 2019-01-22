@@ -48,24 +48,26 @@ Sim = wph_op(im)
 
 #---- Optimisation with torch----#
 # recontruct x by matching || Sx - Sx0 ||^2
-x = torch.zeros(1,1,N,N).cuda()
-x[0,0,0,0]=2
+
+x = torch.Tensor(1,1,N,N).normal_(std=0.1).cuda()
+#x = torch.zeros(1,1,N,N).cuda()
+#x[0,0,0,0]=2
 x = Variable(x, requires_grad=True)
 criterion = torch.nn.MSELoss()
-optimizer = torch.optim.Adam([x], lr=0.1)
-nb_steps = 10
+optimizer = torch.optim.Adam([x], lr=.1)
+nb_steps = 2000
 for step in range(0, nb_steps + 1):
     optimizer.zero_grad()
     P = wph_op(x)
     loss = criterion(P, Sim)
     loss.backward()
     optimizer.step()
-    if step % 10 == 0:
+    if step % 100 == 0:
         print('step',step,'loss',loss)
 
 # plot x
 print(x.norm())
 
-#plt.imshow(x.detach().cpu().numpy().reshape((M,N)))
-#plt.show()
+plt.imshow(x.detach().cpu().numpy().reshape((M,N)))
+plt.show()
 
