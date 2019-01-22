@@ -10,6 +10,7 @@ __all__ = ['PhaseHarmonics2d']
 import warnings
 import torch
 import numpy as np
+import scipy.io as sio
 import torch.nn.functional as F
 from .backend import cdgmm, Modulus, SubsampleFourier, fft, \
     Pad, unpad, SubInitMean, StablePhaseExp, PhaseExpSk, PhaseHarmonic, mul, conjugate
@@ -42,6 +43,14 @@ class PhaseHarmonics2d(object):
         self.phase_harmonics = PhaseHarmonic(check_for_nan=check_for_nan)
         
         self.M_padded, self.N_padded = self.M, self.N
+
+        assert(self.M == self.N)
+        matfilters = sio.loadmat('./filters/bumpsteerableg1_fft2d_N' + str(self.N) + '_J' + str(self.J) + '_L' + str(self.L) + '.mat')
+
+        print(matfilters['filt_fftpsi'].shape)
+        print(matfilters['filt_fftphi'].shape)
+        
+        
         filters = filter_bank(self.M_padded, self.N_padded, self.J, self.L, False, self.cache) # no Haar
         
         self.Psi = filters['psi']
@@ -99,12 +108,12 @@ class PhaseHarmonics2d(object):
                 k1 = 1
                 j2 = j1
                 for ell2 in range(L2):
-                    k2 = 1
+                    k2 = 0
                     idx_la1.append(L2*j1+ell1)
                     idx_la2.append(L2*j2+ell2)
                     idx_k1.append(k1)
                     idx_k2.append(k2)
-                    k2 = 0
+                    k2 = 1
                     idx_la1.append(L2*j1+ell1)
                     idx_la2.append(L2*j2+ell2)
                     idx_k1.append(k1)
