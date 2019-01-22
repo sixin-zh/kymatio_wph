@@ -31,12 +31,12 @@ class PhaseHarmonics(object):
         self.phase_harm_cor_idx()
 
 
-    def build(self, k_type='log2'):
+    def build(self, k_type='log'):
         self.modulus = Modulus()
         #self.pad = Pad(2**self.J, pre_pad = self.pre_pad)
         self.pad = Pad(0, pre_pad = self.pre_pad)
         self.subsample_fourier = SubsampleFourier()
-        self.phaseexp = StablePhaseExp.apply
+        #self.phaseexp = StablePhaseExp.apply
         self.subinitmean = SubInitMean(2)
         self.phase_exp = PhaseExp_par(self.K, k_type=k_type, keep_k_dim=True,
                                   check_for_nan=False)
@@ -92,9 +92,9 @@ class PhaseHarmonics(object):
                 for j2 in range(J):
                     for theta2 in range(L):
                         if (j1 < j2 <= j1 + delta and periodic_dis(theta1, theta2, L) <= l_max) \
-                                or (j1 == j2 and 0 <= periodic_signed_dis(theta1, theta2, L) <= l_max):
-                                    idx1.append(K*L*j1+theta1)
-                                    idx2.append(K*L*j2+L*(j2-j1)+theta2)
+                                or (j1 == j2 and 0 <= periodic_signed_dis(theta1, theta2, L) <= l_max) :
+                                    idx1.append(K*L*j1+L+theta1)
+                                    idx2.append(K*L*j2+L*(j2-j1+1)+theta2)
         self.idx_phase_harm = (torch.tensor(idx1).type(torch.long),
                                torch.tensor(idx2).type(torch.long))
 
@@ -147,7 +147,7 @@ class PhaseHarmonics(object):
         U_0_c = fft2_c2c(U_r)
         U_1_c = U_0_c.unsqueeze(0).unsqueeze(0).expand_as(filt_tensor)
 
-        U_1_c = U_1_c.expand_as(filt_tensor)
+        #U_1_c = U_1_c.expand_as(filt_tensor)
 
         conv = U_1_c.new(U_1_c.size())
         conv[..., 0] = U_1_c[..., 0]*filt_tensor[..., 0] - U_1_c[..., 1]*filt_tensor[..., 1]
@@ -156,10 +156,11 @@ class PhaseHarmonics(object):
         conv = ifft2_c2c(conv)
 
         harm = self.phase_exp(conv)
+        #print(harm.size())
         harm = harm.view(-1, 1, 1, M, N, 2)
 
-        corr_1 = torch.index_select(harm, 0, idx1)
-        corr_2 = torch.index_select(harm, 0, idx2)
+        corr_1 = torch.index_select(harm, 0, idx2)
+        corr_2 = torch.index_select(harm, 0, idx1)
 
         corr = mul(corr_1, conjugate(corr_2))
 

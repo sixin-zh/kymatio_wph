@@ -389,7 +389,7 @@ class PhaseExpSk(nn.Module):
         return z_pe
 
 class PhaseExp_par(nn.Module):
-    def __init__(self, K, k_type='linear', keep_k_dim=False, check_for_nan=False):
+    def __init__(self, K, k_type='log2', keep_k_dim=False, check_for_nan=False):
         super(PhaseExp_par, self).__init__()
         self.K = K
         self.keep_k_dim = keep_k_dim
@@ -493,21 +493,21 @@ class PhaseHarmonic(nn.Module):
         #    k = k.float()
 
         #s = z.size()
-    
-        print('z shape',z.shape,z.size())
+
+        #print('z shape',z.shape,z.size())
         z_mod = modulus(z)  # modulus
-        print('z_mod shape',z_mod.shape)
-        
+        #print('z_mod shape',z_mod.shape)
+
         # compute phase
-        
+
         theta = phase(z)  # phase
-        print('theta shape',theta.shape)
+        #print('theta shape',theta.shape)
         #k = k.unsqueeze(0) #.unsqueeze(1)
         #print('k shape',k.shape)
         #k = k.unsqueeze(-1).unsqueeze(-1)
-        print('k shape',k.shape)
+        #print('k shape',k.shape)
         ktheta = k * theta
-        
+
         eiktheta = torch.stack((torch.cos(ktheta), torch.sin(ktheta)), dim=-1)
 
         # compute phase exponent : |z| * exp(i k theta)
