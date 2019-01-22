@@ -163,7 +163,7 @@ class PhaseHarmonics2d(object):
         N = self.N
         L = self.L
         dj = self.dj
-        dq = self.dq
+        dl = self.dl
 
 #        hatphi = self.Phi # low pass
 #        hatpsi = self.Psi # high pass
