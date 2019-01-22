@@ -37,15 +37,19 @@ from kymatio.phaseharmonics2d.phase_harmonics_k_bump \
 
 wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k)
 
+L2 = L*2
 Sim = wph_op(im) # (nb,nc,nb_channels,1,1,2)
 nbc = Sim.shape[2]
-for idxbc in range(nbc):
-    j1 = wph_op.idx_wph['la1'][idxbc]//L
-    theta1 = wph_op.idx_wph['la1'][idxbc]%L
+for idxbc in range(nbc-1):
+    j1 = wph_op.idx_wph['la1'][idxbc]//L2
+    theta1 = wph_op.idx_wph['la1'][idxbc]%L2
     k1 = wph_op.idx_wph['k1'][0,idxbc,0,0]
-    j2 = wph_op.idx_wph['la2'][idxbc]//L
-    theta2 = wph_op.idx_wph['la2'][idxbc]%L
+    j2 = wph_op.idx_wph['la2'][idxbc]//L2
+    theta2 = wph_op.idx_wph['la2'][idxbc]%L2
     k2 = wph_op.idx_wph['k2'][0,idxbc,0,0]
     val = (j1,theta1,k1,j2,theta2,k2)
     print(idxbc, "=>" , val,  Sim[0,0,idxbc,0,0,0],  "+i ",Sim[0,0,idxbc,0,0,1] )
+
+# last channel is l2
+print(nbc-1, "=>" , val,  Sim[0,0,nbc-1,0,0,0],  "+i ",Sim[0,0,nbc-1,0,0,1] )
 
