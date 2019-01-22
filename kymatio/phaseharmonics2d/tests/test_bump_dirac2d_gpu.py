@@ -2,7 +2,7 @@
 
 #import pandas as pd
 import numpy as np
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 import scipy.optimize as opt
 
@@ -50,8 +50,10 @@ for idxbc in range(nbc-1):
     theta2 = wph_op.idx_wph['la2'][idxbc]%L2
     k2 = wph_op.idx_wph['k2'][0,idxbc,0,0]
     val = (int(j1),int(theta1),int(k1),int(j2),int(theta2),int(k2))
-    print(idxbc, "=>" , val,  float(Sim[0,0,idxbc,0,0,0]),  "+i ",float(Sim[0,0,idxbc,0,0,1]) )
+#    print(idxbc, "=>" , val,  float(Sim[0,0,idxbc,0,0,0]),  "+i ",float(Sim[0,0,idxbc,0,0,1]) )
 
 # last channel is l2
-print(nbc-1, "=> phiJ " ,  float(Sim[0,0,nbc-1,0,0,0]),  "+i ",float(Sim[0,0,nbc-1,0,0,1]) )
+#print(nbc-1, "=> phiJ " ,  float(Sim[0,0,nbc-1,0,0,0]),  "+i ",float(Sim[0,0,nbc-1,0,0,1]) )
 '''
+plt.plot(Sim.squeeze().cpu().numpy()[...,0])
+plt.show()
