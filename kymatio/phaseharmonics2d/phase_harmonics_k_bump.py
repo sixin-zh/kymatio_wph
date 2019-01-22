@@ -215,7 +215,7 @@ class PhaseHarmonics2d(object):
         xpsi_c = ifft2_c2c(hatxphi_c)
         xpsi_mod = self.modulus(xpsi_c) # (nb,nc,M,N,2)
         xpsi_mod2 = mul(xpsi_mod,xpsi_mod) # (nb,nc,M,N,2)
-        Sout[:,:,nb_channels,:,:,:] = torch.mean(torch.mean(xpsi_mod2,-2,True),-3,True)
+        Sout[:,:,nb_channels-1,:,:,:] = torch.mean(torch.mean(xpsi_mod2,-2,True),-3,True)
         
         return Sout
 
