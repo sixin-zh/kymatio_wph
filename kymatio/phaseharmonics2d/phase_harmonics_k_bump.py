@@ -66,10 +66,10 @@ class PhaseHarmonics2d(object):
         assert(self.M == self.N)
         matfilters = sio.loadmat('./filters/bumpsteerableg1_fft2d_N' + str(self.N) + '_J' + str(self.J) + '_L' + str(self.L) + '.mat')
 
-        print(matfilters['filt_fftphi'].type)
+        print(matfilters['filt_fftphi'].dtype)
         
-        self.hatpsi = matfilters['filt_fftpsi'] 
-        print(self.hatpsi.type)
+        self.hatpsi = matfilters['filt_fftpsi'].astype(np.complex_)
+        print(self.hatpsi.dtype)
         
         #hatpsi = self.Psi
         filt = np.zeros((J, L2, self.M, self.N), dtype=np.complex_)
