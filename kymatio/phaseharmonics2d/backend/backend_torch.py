@@ -37,6 +37,21 @@ class SubInitMean(object):
         output = input - self.minput
         return output
 
+class SubInitSpatialMeanC(object):
+    def __init__(self):
+        self.minput = None
+
+    def __call__(self, input):
+        if self.minput is None:
+            minput = input.clone().detach()
+            minput = torch.mean(minput, -2, True)
+            minput = torch.mean(minput, -3, True)
+            self.minput = minput
+            print('sum of minput',self.minput.sum())
+            
+        output = input - self.minput
+        return output
+    
 class Pad(object):
     def __init__(self, pad_size, pre_pad=False):
         """

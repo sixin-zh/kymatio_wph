@@ -13,7 +13,7 @@ import numpy as np
 import scipy.io as sio
 import torch.nn.functional as F
 from .backend import cdgmm, Modulus, SubsampleFourier, fft, \
-    Pad, unpad, SubInitMean, StablePhaseExp, PhaseExpSk, PhaseHarmonic, mul, conjugate
+    Pad, unpad, SubInitSpatialMeanC, StablePhaseExp, PhaseExpSk, PhaseHarmonic, mul, conjugate
 from .filter_bank import filter_bank
 from .utils import compute_padding, fft2_c2c, ifft2_c2r, ifft2_c2c, periodic_dis, periodic_signed_dis
 
@@ -38,7 +38,10 @@ class PhaseHarmonics2d(object):
         self.pad = Pad(0, pre_pad = self.pre_pad)
         #self.subsample_fourier = SubsampleFourier()
         #self.phaseexp = StablePhaseExp.apply
-        #self.subinitmean = SubInitMean(2)
+        self.subinitmeanJ = SubInitSpatialMeanC()
+        self.subinitmean1 = SubInitSpatialMeanC()
+        self.subinitmean2 = SubInitSpatialMeanC()
+        
         #self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
         self.phase_harmonics = PhaseHarmonic(check_for_nan=check_for_nan)
 
@@ -149,16 +152,10 @@ class PhaseHarmonics2d(object):
         return idx_wph
 
     def _type(self, _type):
-
         self.hatpsi = self.hatpsi.type(_type)
         self.hatphi = self.hatphi.type(_type)
         #print('in _type',type(self.hatpsi))
-    
-        
-        
         self.pad.padding_module.type(_type)
-        
-
         return self
     
     def cuda(self):
@@ -211,6 +208,7 @@ class PhaseHarmonics2d(object):
                          1, 1, 2) # (nb,nc,nb_channels,1,1,2)
 
         hatpsi_la = self.hatpsi # (J,L2,M,N,2)
+        assert(nb==1 and nc==1) # for submeanC
         for idxb in range(nb):
             for idxc in range(nc):
                 hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
@@ -230,17 +228,22 @@ class PhaseHarmonics2d(object):
                 k2 = self.idx_wph['k2']
                 xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,P,M,N,2)
                 xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2, -k2) # (1,P,M,N,2)
+                # sub spatial mean along M and N
+                xpsi0_bc_la1k1 = self.subinitmean1(xpsi_bc_la1k1)
+                xpsi0_bc_la2k2 = self.subinitmean1(xpsi_bc_la2k2)
                 # compute mean spatial
-                corr_xpsi_bc = mul(xpsi_bc_la1k1,xpsi_bc_la2k2)
+                corr_xpsi_bc = mul(xpsi0_bc_la1k1,xpsi0_bc_la2k2)
                 corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P,1,1,2)
                 Sout[idxb,idxc,0:nb_channels-1,:,:,:] = corr_bc[0,:,:,:,:]
 
         # add l2 phiJ to last channel
         hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
         xpsi_c = ifft2_c2c(hatxphi_c)
-        xpsi_mod = self.modulus(xpsi_c) # (nb,nc,M,N,2)
-        xpsi_mod2 = mul(xpsi_mod,xpsi_mod) # (nb,nc,M,N,2)
-        Sout[:,:,nb_channels-1,:,:,:] = torch.mean(torch.mean(xpsi_mod2,-2,True),-3,True)
+        # submean from spatial M N
+        xpsi0_c = self.subinitmeanJ(xpsi_c)
+        xpsi0_mod = self.modulus(xpsi0_c) # (nb,nc,M,N,2)
+        xpsi0_mod2 = mul(xpsi0_mod,xpsi0_mod) # (nb,nc,M,N,2)
+        Sout[:,:,nb_channels-1,:,:,:] = torch.mean(torch.mean(xpsi0_mod2,-2,True),-3,True)
 
         return Sout
 
