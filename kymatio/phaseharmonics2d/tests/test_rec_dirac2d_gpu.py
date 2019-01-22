@@ -35,7 +35,8 @@ delta_k = 1
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump \
     import PhaseHarmonics2d
 
-wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max, delta_k).cuda()
+wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max, delta_k)
+wph_op = wph_op.cuda()
 
 Sim = wph_op(im)
 #for key,val in Smeta.items():
