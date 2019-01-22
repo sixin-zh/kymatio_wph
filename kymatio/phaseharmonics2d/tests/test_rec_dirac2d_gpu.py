@@ -48,9 +48,9 @@ Sim = wph_op(im)
 
 #---- Optimisation with torch----#
 # recontruct x by matching || Sx - Sx0 ||^2
-x = torch.zeros(1,1,N,N)
+x = torch.zeros(1,1,N,N).cuda()
 x[0,0,0,0]=2
-x = Variable(x, requires_grad=True).cuda()
+x = Variable(x, requires_grad=True) # .cuda()
 criterion = torch.nn.MSELoss()
 optimizer = torch.optim.Adam([x], lr=0.1)
 nb_steps = 10
