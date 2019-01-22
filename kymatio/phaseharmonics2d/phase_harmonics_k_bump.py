@@ -100,13 +100,13 @@ class PhaseHarmonics2d(object):
                 j2 = j1
                 for ell2 in range(L2):
                     k2 = 0
-                    idx_la1.append(L2*j1+theta1)
-                    idx_la2.append(L2*j2+theta2)
+                    idx_la1.append(L2*j1+ell1)
+                    idx_la2.append(L2*j2+ell2)
                     idx_k1.append(k1)
                     idx_k2.append(k2)
                     k2 = 1
-                    idx_la1.append(L2*j1+theta1)
-                    idx_la2.append(L2*j2+theta2)
+                    idx_la1.append(L2*j1+ell1)
+                    idx_la2.append(L2*j2+ell2)
                     idx_k1.append(k1)
                     idx_k2.append(k2)
 
@@ -119,8 +119,8 @@ class PhaseHarmonics2d(object):
                 for j2 in range(j1+1,min(j1+dj+1,J)):
                     for ell2 in range(L2):
                         for k2 in range(3):
-                            idx_la1.append(L2*j1+theta1)
-                            idx_la2.append(L2*j2+theta2)
+                            idx_la1.append(L2*j1+ell1)
+                            idx_la2.append(L2*j2+ell2)
                             idx_k1.append(k1)
                             idx_k2.append(k2)
 
@@ -132,11 +132,11 @@ class PhaseHarmonics2d(object):
                 k1 = 1
                 for j2 in range(j1+1,min(j1+dj+1,J)):
                     for k2 in range(max(0,2**(j2-j1)-dk,2**(j2-j1)+dk+1)):
-                        idx_la1.append(L2*j1+theta1)
-                        idx_la2.append(L2*j2+theta2)
+                        idx_la1.append(L2*j1+ell1)
+                        idx_la2.append(L2*j2+ell2)
                         idx_k1.append(k1)
                         idx_k2.append(k2)
-                
+        
         idx_wph = dict()
         idx_wph['la1'] = torch.tensor(idx_la1).type(torch.long)
         idx_wph['k1'] = torch.tensor(idx_k1).type(torch.long).float().unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
