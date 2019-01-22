@@ -44,18 +44,13 @@ class PhaseHarmonics2d(object):
         
         self.M_padded, self.N_padded = self.M, self.N
 
-        assert(self.M == self.N)
-        matfilters = sio.loadmat('./filters/bumpsteerableg1_fft2d_N' + str(self.N) + '_J' + str(self.J) + '_L' + str(self.L) + '.mat')
+        #filters = filter_bank(self.M_padded, self.N_padded, self.J, self.L, False, self.cache) # no Haar
+        
+        #self.Psi = filters['psi']
+        #self.Phi = [filters['phi'][j] for j in range(self.J)]
+        self.filters_tensor()
 
-        print(matfilters['filt_fftpsi'].shape)
-        print(matfilters['filt_fftphi'].shape)
         
-        
-        filters = filter_bank(self.M_padded, self.N_padded, self.J, self.L, False, self.cache) # no Haar
-        
-        self.Psi = filters['psi']
-        self.Phi = [filters['phi'][j] for j in range(self.J)]
-        self.filt_tensor = self.filters_tensor()
         self.idx_wph = self.compute_idx()
         #print(self.idx_wph['la1'])
         #print(self.idx_wph['la2'])
@@ -67,9 +62,19 @@ class PhaseHarmonics2d(object):
         J = self.J
         L = self.L
         L2 = L*2
-        hatpsi = self.Psi
-        filt = np.zeros((J, L2, self.M, self.N), dtype=np.complex_)
+        
+        assert(self.M == self.N)
+        matfilters = sio.loadmat('./filters/bumpsteerableg1_fft2d_N' + str(self.N) + '_J' + str(self.J) + '_L' + str(self.L) + '.mat')
 
+        
+        print(matfilters['filt_fftphi'].type)
+        
+        self.hatpsi = matfilters['filt_fftpsi'] 
+        print(self.hatpsi.type)
+        
+        #hatpsi = self.Psi
+        filt = np.zeros((J, L2, self.M, self.N), dtype=np.complex_)
+'''
         for n_1 in range(len(hatpsi)):
             j_1 = hatpsi[n_1]['j']
             theta_1 = hatpsi[n_1]['theta']
@@ -84,7 +89,7 @@ class PhaseHarmonics2d(object):
             psi_signal = hatpsi[n][0][...,0].numpy() + 1j*hatpsi[n][0][...,1].numpy() 
             filt[j, theta, :,:] = psi_signal
             filt[j, L+theta, :,:] = np.fft.fft2(np.conj(np.fft.ifft2(psi_signal)))
-
+'''
         filters = np.stack((np.real(filt), np.imag(filt)), axis=-1)
         return torch.FloatTensor(filters) # (J,L2,M,N,2)
 
