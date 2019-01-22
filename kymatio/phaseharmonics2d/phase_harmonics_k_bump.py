@@ -153,6 +153,8 @@ class PhaseHarmonics2d(object):
         self.hatpsi = self.hatpsi.type(_type)
         self.hatphi = self.hatphi.type(_type)
         #print('in _type',type(self.hatpsi))
+    
+        
         
         self.pad.padding_module.type(_type)
         
@@ -164,6 +166,8 @@ class PhaseHarmonics2d(object):
             Moves tensors to the GPU
         """
         print('call cuda')
+        idx_wph['la1'] = idx_wph['la1'].type(torch.cuda.LongTensor)
+        idx_wph['la2'] = idx_wph['la1'].type(torch.cuda.LongTensor)
         return self._type(torch.cuda.FloatTensor)
 
     def cpu(self):
@@ -207,7 +211,7 @@ class PhaseHarmonics2d(object):
         for idxb in range(nb):
             for idxc in range(nc):
                 hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
-                print('hatpsi_la is cuda',hatpsi_la.is_cuda)
+                print('hatpsi_la is cuda?',hatpsi_la.is_cuda)
                 print('hatx_bc is cuda?',hatx_bc.is_cuda)
                 hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L2,M,N,2)
                 #print( 'hatxpsi_bc shape', hatxpsi_bc.shape )
