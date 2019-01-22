@@ -99,12 +99,12 @@ class PhaseHarmonics2d(object):
                 k1 = 1
                 j2 = j1
                 for ell2 in range(L2):
-                    k2 = 0
+                    k2 = 1
                     idx_la1.append(L2*j1+ell1)
                     idx_la2.append(L2*j2+ell2)
                     idx_k1.append(k1)
                     idx_k2.append(k2)
-                    k2 = 1
+                    k2 = 0
                     idx_la1.append(L2*j1+ell1)
                     idx_la2.append(L2*j2+ell2)
                     idx_k1.append(k1)
