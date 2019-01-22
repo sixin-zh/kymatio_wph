@@ -152,8 +152,9 @@ class PhaseHarmonics2d(object):
 
         self.hatpsi.type(_type)
         self.hatphi.type(_type)
+        print('in _type',type(self.hatpsi))
         
-        #self.pad.padding_module.type(_type)
+        self.pad.padding_module.type(_type)
         
 
         return self
