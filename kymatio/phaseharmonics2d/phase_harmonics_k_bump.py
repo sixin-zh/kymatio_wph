@@ -33,7 +33,7 @@ class PhaseHarmonics2d(object):
     def build(self):
         check_for_nan = True
         #self.meta = None
-        #self.modulus = Modulus()
+        self.modulus = Modulus()
         self.pad = Pad(0, pre_pad = self.pre_pad)
         #self.subsample_fourier = SubsampleFourier()
         #self.phaseexp = StablePhaseExp.apply
@@ -168,6 +168,7 @@ class PhaseHarmonics2d(object):
 #        hatpsi = self.Psi # high pass
         
         pad = self.pad
+        phi = self.Phi
         #modulus = self.modulus
         
         # denote
@@ -206,9 +207,14 @@ class PhaseHarmonics2d(object):
                 # compute mean spatial
                 corr_xpsi_bc = mul(xpsi_bc_la1k1,xpsi_bc_la2k2)
                 corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P,1,1,2)
-                Sout[idxb,idxc,:,:,:,:] = corr_bc[0,:,:,:,:]
-
-        # add l2 phiJ
+                Sout[idxb,idxc,0:nb_channels-1,:,:,:] = corr_bc[0,:,:,:,:]
+        
+        # add l2 phiJ to last channel
+        hatxphi_c = cdgmm(hatx_c, phi[0]) # (nb,nc,M,N,2)
+        xpsi_c = ifft2_c2c(hatxphi_c)
+        xpsi_mod = self.modulus(xpsi_c) # (nb,nc,M,N,2)
+        xpsi_mod2 = mul(xpsi_mod,xpsi_mod) # (nb,nc,M,N,2)
+        Sout[:,:,nb_channels,:,:,:] = torch.mean(torch.mean(xpsi_mod2,-2,True),-3,True)
         
         return Sout
 
