@@ -48,8 +48,8 @@ for idxbc in range(nbc-1):
     theta2 = wph_op.idx_wph['la2'][idxbc]%L2
     k2 = wph_op.idx_wph['k2'][0,idxbc,0,0]
     val = (j1,theta1,k1,j2,theta2,k2)
-    print(idxbc, "=>" , val,  Sim[0,0,idxbc,0,0,0],  "+i ",Sim[0,0,idxbc,0,0,1] )
+    print(idxbc, "=>" , val,  float(Sim[0,0,idxbc,0,0,0]),  "+i ",Sim[0,0,idxbc,0,0,1] )
 
 # last channel is l2
-print(nbc-1, "=>" , val,  Sim[0,0,nbc-1,0,0,0],  "+i ",Sim[0,0,nbc-1,0,0,1] )
+print(nbc-1, "=> phiJ " ,  Sim[0,0,nbc-1,0,0,0],  "+i ",Sim[0,0,nbc-1,0,0,1] )
 
