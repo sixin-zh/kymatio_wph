@@ -19,7 +19,7 @@ size=64
 # --- Dirac example---#
 
 data = sio.loadmat('./example/cartoond/demo_toy7d_N64.mat')
-print(data.imgs.shape)
+print(data['imgs'].shape)
 im = np.zeros((size,size))
 im[15,15] = 1
 im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
