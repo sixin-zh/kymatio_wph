@@ -49,8 +49,6 @@ class PhaseHarmonics2d(object):
         #self.Psi = filters['psi']
         #self.Phi = [filters['phi'][j] for j in range(self.J)]
         self.filters_tensor()
-
-        
         self.idx_wph = self.compute_idx()
         #print(self.idx_wph['la1'])
         #print(self.idx_wph['la2'])
@@ -76,9 +74,9 @@ class PhaseHarmonics2d(object):
         self.hatpsi = torch.FloatTensor(hatpsi) # (J,L2,M,N,2)
         self.hatphi = torch.FloatTensor(hatphi) # (M,N,2)
 
-        print('filter shapes')
-        print(self.hatpsi.shape)
-        print(self.hatphi.shape)
+        #print('filter shapes')
+        #print(self.hatpsi.shape)
+        #print(self.hatphi.shape)
         
     def compute_idx(self):
         L = self.L
@@ -170,7 +168,7 @@ class PhaseHarmonics2d(object):
 #        hatpsi = self.Psi # high pass
         
         pad = self.pad
-        phi = self.Phi
+        #phi = self.Phi
         #modulus = self.modulus
         
         # denote
@@ -188,7 +186,7 @@ class PhaseHarmonics2d(object):
         Sout = input.new(nb, nc, nb_channels, \
                          1, 1, 2) # (nb,nc,nb_channels,1,1,2)
         
-        hatpsi_la = self.filt_tensor # (J,L2,M,N,2)
+        hatpsi_la = self.hatpsi # (J,L2,M,N,2)
         for idxb in range(nb):
             for idxc in range(nc):
                 hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
@@ -212,7 +210,7 @@ class PhaseHarmonics2d(object):
                 Sout[idxb,idxc,0:nb_channels-1,:,:,:] = corr_bc[0,:,:,:,:]
         
         # add l2 phiJ to last channel
-        hatxphi_c = cdgmm(hatx_c, phi[0]) # (nb,nc,M,N,2)
+        hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
         xpsi_c = ifft2_c2c(hatxphi_c)
         xpsi_mod = self.modulus(xpsi_c) # (nb,nc,M,N,2)
         xpsi_mod2 = mul(xpsi_mod,xpsi_mod) # (nb,nc,M,N,2)
