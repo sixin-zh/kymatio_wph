@@ -207,6 +207,8 @@ class PhaseHarmonics2d(object):
         for idxb in range(nb):
             for idxc in range(nc):
                 hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
+                print('hatpsi_la dtype',hatpsi_la.dtype)
+                print('hatx_bc dtype',hatx_bc.dtype)
                 hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L2,M,N,2)
                 #print( 'hatxpsi_bc shape', hatxpsi_bc.shape )
                 xpsi_bc = ifft2_c2c(hatxpsi_bc)
