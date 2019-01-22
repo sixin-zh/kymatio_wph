@@ -42,7 +42,7 @@ class PhaseHarmonics2d(object):
         self.phase_harmonics = PhaseHarmonic(check_for_nan=check_for_nan)
         
         self.M_padded, self.N_padded = self.M, self.N
-        filters = filter_bank(self.M_padded, self.N_padded, self.J, self.L, self.addhaar, self.cache)
+        filters = filter_bank(self.M_padded, self.N_padded, self.J, self.L, False, self.cache) # no Haar
         
         self.Psi = filters['psi']
         self.Phi = [filters['phi'][j] for j in range(self.J)]
