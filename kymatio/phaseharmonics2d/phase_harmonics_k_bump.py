@@ -66,7 +66,6 @@ class PhaseHarmonics2d(object):
         assert(self.M == self.N)
         matfilters = sio.loadmat('./filters/bumpsteerableg1_fft2d_N' + str(self.N) + '_J' + str(self.J) + '_L' + str(self.L) + '.mat')
 
-        
         print(matfilters['filt_fftphi'].type)
         
         self.hatpsi = matfilters['filt_fftpsi'] 
@@ -74,22 +73,6 @@ class PhaseHarmonics2d(object):
         
         #hatpsi = self.Psi
         filt = np.zeros((J, L2, self.M, self.N), dtype=np.complex_)
-'''
-        for n_1 in range(len(hatpsi)):
-            j_1 = hatpsi[n_1]['j']
-            theta_1 = hatpsi[n_1]['theta']
-            print('max hatpsi at j1=',j_1,',theta_1=',theta_1,' is ',hatpsi[n_1][0].max())
-            hatpsi[n_1][0] = hatpsi[n_1][0] / hatpsi[n_1][0].max()
-            print('hatpsi shape at res=0',hatpsi[n_1][0].shape)
-            print('l2 norm hat psi at j1=',j_1,',theta_1=',theta_1,' is ',hatpsi[n_1][0].norm('fro'))
-        
-        for n in range(len(hatpsi)):
-            j = hatpsi[n]['j']
-            theta = hatpsi[n]['theta']
-            psi_signal = hatpsi[n][0][...,0].numpy() + 1j*hatpsi[n][0][...,1].numpy() 
-            filt[j, theta, :,:] = psi_signal
-            filt[j, L+theta, :,:] = np.fft.fft2(np.conj(np.fft.ifft2(psi_signal)))
-'''
         filters = np.stack((np.real(filt), np.imag(filt)), axis=-1)
         return torch.FloatTensor(filters) # (J,L2,M,N,2)
 
