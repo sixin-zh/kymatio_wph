@@ -27,7 +27,10 @@ filtopts.gamma1=1;
 L2=L*2;
 im = imgs(:,:,1);
 fftimg = fft2(im);
-j1=0; ell1=0;k1=1;
-j2=0; ell2=0; k2=0;
+j1=1; ell1=7;k1=1; j2=2; ell2=7; k2=3;
 corr = compute_corr(fftimg,filnew,J,L2,j1,ell1,k1,j2,ell2,k2)
-    
+
+
+%% || x * phi_J ||_2^2 / N^2
+
+corrJ = mean(mean(abs(ifft2(fftimg .* filnew.phi.filter.coefft{1})).^2))

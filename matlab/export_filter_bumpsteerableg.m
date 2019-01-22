@@ -5,8 +5,8 @@ addpath ../scatnet-0.2a
 addpath_scatnet;
 
 %% get data and estimate spectral
-N=64;
-J=6;
+N=32;
+J=3;
 L=4;
 filtopts = struct();
 filtopts.J=J;
@@ -26,56 +26,34 @@ colorbar
 %% compute maps
 filid=1;
 % figure;
-savelist = [];
+L2  = L*2;
+
+filt_fftpsi = zeros(J,L2,N,N);
+
+
 for j=1:J
     for q = 1:2*L
+        
         fil=filnew.psi.filter{filid};
+        
+        filt_fftpsi(j,q,:,:) = fil.coefft{1};
+        
         filid=filid+1;
         
-%         if N==256 && j==5 && q==1
-%             psi_la = ifft2(fil.coefft{1});
-%             subplot(131)
-%             %plot(ifftshift(imag(psi_la(30,:))));
-%             imagesc(real(fftshift(psi_la)))
-%             colorbar
-%             axis square
-%             title('real \psi','FontSize',20)
-%             subplot(132)
-%             %imagesc(angle(fftshift(ifft2(fil.coefft{1}))))
-%             imagesc(imag(fftshift(psi_la)))
-%             title('imag \psi','FontSize',20)
-%             colorbar
-%             axis square
-%             subplot(133)
-%             imagesc(real(fftshift(fil.coefft{1})))
-%             title('hat \psi','FontSize',20) % ,'Interpreter','latex')
-%             colorbar
-%             axis square
-%             colormap gray
-%         end
         
-        varname1 = sprintf('bumpg_fftpsi_j%d_q%d_re',j,q);
-        eval(sprintf('%s = real(fil.coefft{1});',varname1));
-        varname2 = sprintf('bumpg_fftpsi_j%d_q%d_im',j,q);
-        eval(sprintf('%s = imag(fil.coefft{1});',varname2));
-        savelist = [savelist, {varname1}];
-        savelist = [savelist, {varname2}];
     end
 end
 assert(length(filnew.psi.filter)==filid-1);
 
-bumpg_fftphi_re = real(filnew.phi.filter.coefft{1});
-savelist = [savelist, {'bumpg_fftphi_re'}];
+filt_fftphi = filnew.phi.filter.coefft{1};
 
-bumpg_fftphi_im = imag(filnew.phi.filter.coefft{1});
-savelist = [savelist, {'bumpg_fftphi_im'}];
 
 %path = './filters_local/';
 path = './filters/';
 filename = sprintf('bumpsteerableg%d_fft2d_N%d_J%d_L%d.mat',filter_id,N,J,L);
-disp(savelist)
+
 if exist(sprintf('%s/%s',path,filename)) > 0
     error(sprintf('file %s existed, can not export',filename))
 end
-save(sprintf('%s/%s',path,filename),savelist{:})
+save(sprintf('%s/%s',path,filename),  'filt_fftpsi', 'filt_fftphi' )
 disp(filename)
