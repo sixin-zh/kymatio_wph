@@ -18,7 +18,7 @@ size=64
 
 # --- Dirac example---#
 
-data = sio.loadmat('./demo_toy7d_N64.mat')
+data = sio.loadmat('./example/cartoond/demo_toy7d_N64.mat')
 print(data)
 im = np.zeros((size,size))
 im[15,15] = 1
