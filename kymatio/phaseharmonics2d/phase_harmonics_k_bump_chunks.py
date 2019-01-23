@@ -107,7 +107,7 @@ class PhaseHarmonics2d(object):
         offset = int(0)
         for idxc in range(n_chunks):
             self.idx_wph_chunks[('la1',idxc)] = self.idx_wph['la1'][offset:offset+nb_cov_chunk[idxc]]
-            offest = offset + nb_cov_chunk[idxc]
+            offset = offset + nb_cov_chunk[idxc]
             print(self.idx_wph_chunks[('la1',idxc)])
         assert(False)
         
