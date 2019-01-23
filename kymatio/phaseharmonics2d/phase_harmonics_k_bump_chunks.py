@@ -107,8 +107,11 @@ class PhaseHarmonics2d(object):
         offset = int(0)
         for idxc in range(n_chunks):
             self.idx_wph_chunks[('la1',idxc)] = self.idx_wph['la1'][offset:offset+nb_cov_chunk[idxc]]
+            self.idx_wph_chunks[('la2',idxc)] = self.idx_wph['la2'][offset:offset+nb_cov_chunk[idxc]]
+            self.idx_wph_chunks[('k1',idxc)] = self.idx_wph['k1'][:,offset:offset+nb_cov_chunk[idxc],:,:]
+            self.idx_wph_chunks[('k2',idxc)] = self.idx_wph['k2'][:,offset:offset+nb_cov_chunk[idxc],:,:]
             offset = offset + nb_cov_chunk[idxc]
-            print(self.idx_wph_chunks[('la1',idxc)])
+            print(self.idx_wph_chunks[('k1',idxc)])
         assert(False)
         
     def compute_idx(self):
