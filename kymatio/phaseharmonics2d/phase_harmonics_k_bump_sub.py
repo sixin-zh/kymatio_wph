@@ -185,7 +185,7 @@ class PhaseHarmonics2d(object):
         self.nGPU = 4
         self.cudev = []
         for dev in range(self.nGPU):
-            cudev.append( torch.device("cuda:" + str(dev)) )
+            self.cudev.append( torch.device("cuda:" + str(dev)) )
 
         self.idx_wph['la1'] = self.idx_wph['la1'].type(torch.cuda.LongTensor)
         self.idx_wph['la2'] = self.idx_wph['la2'].type(torch.cuda.LongTensor)
