@@ -38,13 +38,6 @@ class PhaseHarmonics2d(object):
         #self.subsample_fourier = SubsampleFourier()
         #self.phaseexp = StablePhaseExp.apply
 
-        # TODO
-        self.subinitmean1 = SubInitSpatialMeanC()
-        self.subinitmean2 = SubInitSpatialMeanC()
-
-        
-        self.subinitmeanJ = SubInitSpatialMeanC()
-        
         #self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
         self.phase_harmonics = PhaseHarmonic(check_for_nan=check_for_nan)
 
@@ -56,7 +49,16 @@ class PhaseHarmonics2d(object):
         #self.Phi = [filters['phi'][j] for j in range(self.J)]
         self.filters_tensor()
         self.idx_wph = self.compute_idx()
-        self.idx_wph_chunks = self.balanced_chunks()
+        self.idx_wph_chunks, self.n_chunks, self.chunk_size = self.balanced_chunks()
+        
+        self.subinitmean1 = []
+        self.subinitmean2 = []
+        for idxc in range(self.n_chunks):
+            self.subinitmean1.append(SubInitSpatialMeanC())
+            self.subinitmean2.append(SubInitSpatialMeanC())
+        
+        self.subinitmeanJ = SubInitSpatialMeanC()
+        
         #print(self.idx_wph['la1'])
         #print(self.idx_wph['la2'])
         #print(self.idx_wph['k1'])
@@ -103,17 +105,18 @@ class PhaseHarmonics2d(object):
 
         print('nb cov chunk is', nb_cov_chunk)
 
-        self.idx_wph_chunks = dict()
+        idx_wph_chunks = dict()
         offset = int(0)
         for idxc in range(n_chunks):
-            self.idx_wph_chunks[('la1',idxc)] = self.idx_wph['la1'][offset:offset+nb_cov_chunk[idxc]]
-            self.idx_wph_chunks[('la2',idxc)] = self.idx_wph['la2'][offset:offset+nb_cov_chunk[idxc]]
-            self.idx_wph_chunks[('k1',idxc)] = self.idx_wph['k1'][:,offset:offset+nb_cov_chunk[idxc],:,:]
-            self.idx_wph_chunks[('k2',idxc)] = self.idx_wph['k2'][:,offset:offset+nb_cov_chunk[idxc],:,:]
+            idx_wph_chunks[('la1',idxc)] = self.idx_wph['la1'][offset:offset+nb_cov_chunk[idxc]]
+            idx_wph_chunks[('la2',idxc)] = self.idx_wph['la2'][offset:offset+nb_cov_chunk[idxc]]
+            idx_wph_chunks[('k1',idxc)] = self.idx_wph['k1'][:,offset:offset+nb_cov_chunk[idxc],:,:]
+            idx_wph_chunks[('k2',idxc)] = self.idx_wph['k2'][:,offset:offset+nb_cov_chunk[idxc],:,:]
             offset = offset + nb_cov_chunk[idxc]
-            print(self.idx_wph_chunks[('k1',idxc)])
-        assert(False)
-        
+            #print(self.idx_wph_chunks[('k1',idxc)])
+        #assert(False)
+        return idx_wph_chunks, n_chunks, nb_cov_chunk
+    
     def compute_idx(self):
         L = self.L
         L2 = L*2
@@ -200,6 +203,11 @@ class PhaseHarmonics2d(object):
         self.idx_wph['la2'] = self.idx_wph['la2'].type(torch.cuda.LongTensor)
         self.idx_wph['k1'] = self.idx_wph['k1'].type(torch.cuda.FloatTensor)
         self.idx_wph['k2'] = self.idx_wph['k2'].type(torch.cuda.FloatTensor)
+        for idxc in range(self.n_chunks):
+            self.idx_wph_chunks[('la1',idxc)] = self.idx_wph_chunks[('la1',idxc)].type(torch.cuda.LongTensor)
+            self.idx_wph_chunks[('la2',idxc)] = self.idx_wph_chunks[('la2',idxc)].type(torch.cuda.LongTensor)
+            self.idx_wph_chunks[('k1',idxc)] = self.idx_wph_chunks[('k1',idxc)].type(torch.cuda.FloatTensor)
+            self.idx_wph_chunks[('k2',idxc)] = self.idx_wph_chunks[('k2',idxc)].type(torch.cuda.FloatTensor)            
         
         return self._type(torch.cuda.FloatTensor)
 
@@ -252,23 +260,26 @@ class PhaseHarmonics2d(object):
                 xpsi_bc = ifft2_c2c(hatxpsi_bc)
                 # reshape to (1,J*L,M,N,2)
                 xpsi_bc = xpsi_bc.view(1,J*L2,M,N,2)
-                # select la1, et la2, P = |la1|
-                xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph['la1']) # (1,P,M,N,2)
-                xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph['la2']) # (1,P,M,N,2)
-                #print('xpsi la1 shape', xpsi_bc_la1.shape)
-                #print('xpsi la2 shape', xpsi_bc_la2.shape)
-                k1 = self.idx_wph['k1']
-                k2 = self.idx_wph['k2']
-                xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,P,M,N,2)
-                xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2, -k2) # (1,P,M,N,2)
-                # sub spatial mean along M and N
-                xpsi0_bc_la1k1 = self.subinitmean1(xpsi_bc_la1k1)
-                xpsi0_bc_la2k2 = self.subinitmean2(xpsi_bc_la2k2)
-                # compute mean spatial
-                corr_xpsi_bc = mul(xpsi0_bc_la1k1,xpsi0_bc_la2k2)
-                corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P,1,1,2)
-                Sout[idxb,idxc,0:nb_channels-1,:,:,:] = corr_bc[0,:,:,:,:]
-
+                offset = 0
+                for idx_chunk in range(self.n_chunk):
+                    # select la1, et la2, P = |la1|
+                    xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph_chunks[('la1',idx_chunk)]) # (1,P_c,M,N,2)
+                    xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph_chunks[('la2',idx_chunk)]) # (1,P_c,M,N,2)
+                    print('xpsi la1 shape', xpsi_bc_la1.shape)
+                    print('xpsi la2 shape', xpsi_bc_la2.shape)
+                    k1 = self.idx_wph_chunks[('k1',idx_chunk)]
+                    k2 = self.idx_wph_chunks[('k2',idx_chunk)]
+                    xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,P,M,N,2)
+                    xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2, -k2) # (1,P,M,N,2)
+                    # sub spatial mean along M and N
+                    xpsi0_bc_la1k1 = self.subinitmean1[idx_chunk](xpsi_bc_la1k1)
+                    xpsi0_bc_la2k2 = self.subinitmean2[idx_chunk](xpsi_bc_la2k2)
+                    # compute mean spatial
+                    corr_xpsi_bc = mul(xpsi0_bc_la1k1,xpsi0_bc_la2k2)
+                    corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P,1,1,2)
+                    Sout[idxb,idxc,offset:offset+self.chunk_size[idx_chunk],:,:,:] = corr_bc[0,:,:,:,:]
+                    offset = offset + self.chunk_size[idx_chunk]
+                    
         # add l2 phiJ to last channel
         hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
         xpsi_c = ifft2_c2c(hatxphi_c)

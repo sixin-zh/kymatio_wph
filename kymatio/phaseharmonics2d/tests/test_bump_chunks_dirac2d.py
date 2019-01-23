@@ -42,7 +42,7 @@ L2 = L*2
 Sim = wph_op(im) # (nb,nc,nb_channels,1,1,2)
 
 #print(Sim.sum())
-'''
+
 nbc = Sim.shape[2]
 for idxbc in range(nbc-1):
     j1 = wph_op.idx_wph['la1'][idxbc]//L2
@@ -60,4 +60,4 @@ for idxbc in range(nbc-1):
 
 plt.plot(Sim.squeeze().numpy()[...,0])
 plt.show()
-'''
+
