@@ -182,7 +182,7 @@ class PhaseHarmonics2d(object):
             Moves tensors to the GPU
         """
         print('call cuda')
-        self.nGPU = 4
+        self.nGPU = 3
         self.cudev = []
         for dev in range(self.nGPU):
             self.cudev.append( torch.device("cuda:" + str(dev)) )
