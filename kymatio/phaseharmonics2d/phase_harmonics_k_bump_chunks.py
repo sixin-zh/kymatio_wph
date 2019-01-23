@@ -6,6 +6,7 @@
 __all__ = ['PhaseHarmonics2d']
 
 import warnings
+import math
 import torch
 import numpy as np
 import scipy.io as sio
@@ -16,11 +17,12 @@ from .filter_bank import filter_bank
 from .utils import compute_padding, fft2_c2c, ifft2_c2r, ifft2_c2c, periodic_dis, periodic_signed_dis
 
 class PhaseHarmonics2d(object):
-    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, gpu=False):
+    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, max_chunk, gpu=False):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         self.dj = delta_j # max scale interactions
         self.dl = delta_l # max angular interactions
         self.dk = delta_k #
+        self.max_chunk = max_chunk # max size of each chunk 
         self.gpu = gpu # if to use gpu
         if self.dl > self.L:
             raise (ValueError('delta_l must be <= L'))
@@ -39,6 +41,8 @@ class PhaseHarmonics2d(object):
         
         self.subinitmean1 = SubInitSpatialMeanC()
         self.subinitmean2 = SubInitSpatialMeanC()
+
+        
         self.subinitmeanJ = SubInitSpatialMeanC()
         
         #self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
@@ -52,6 +56,7 @@ class PhaseHarmonics2d(object):
         #self.Phi = [filters['phi'][j] for j in range(self.J)]
         self.filters_tensor()
         self.idx_wph = self.compute_idx()
+        self.idx_wph_chunks = self.balanced_chunks()
         #print(self.idx_wph['la1'])
         #print(self.idx_wph['la2'])
         #print(self.idx_wph['k1'])
@@ -80,6 +85,28 @@ class PhaseHarmonics2d(object):
         #print(self.hatpsi.shape)
         #print(self.hatphi.shape)
 
+    def balanced_chunks(self):
+        # cut self.idx_wph into smaller pieces
+        print('la1 shape',self.idx_wph['la1'].shape)
+        
+        nb_cov = len(self.idx_wph['la1'])
+        print('nb cov is', nb_cov)
+        
+        n_chunks = math.ceil(nb_cov/self.max_chunk)
+        nb_cov_chunk = np.zeros(n_chunks)
+        for idxc in range(n_chunks):
+            if idxc < n_chunks-1:
+                nb_cov_chunk[idxc] = self.max_chunk
+            else:
+                nb_cov_chunk[idxc] = nb_cov - self.max_chunk*(n_chunks-1)
+                assert(nb_cov_chunk[idxc] > 0)
+
+        print('nb cov chunk is', nb_cov_chunk)
+
+        self.idx_wph_chunks = dict()
+        assert(false)
+        
+        
     def compute_idx(self):
         L = self.L
         L2 = L*2
