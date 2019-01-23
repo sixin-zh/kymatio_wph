@@ -11,7 +11,7 @@ import numpy as np
 import scipy.io as sio
 import torch.nn.functional as F
 from .backend import cdgmm, Modulus, SubsampleFourier, fft, \
-    Pad, unpad, SubInitSpatialMeanC, StablePhaseExp, PhaseExpSk, PhaseHarmonic, mul, conjugate
+    Pad, unpad, SubInitSpatialMeanC, PhaseHarmonic, mul
 from .filter_bank import filter_bank
 from .utils import compute_padding, fft2_c2c, ifft2_c2r, ifft2_c2c, periodic_dis, periodic_signed_dis
 
