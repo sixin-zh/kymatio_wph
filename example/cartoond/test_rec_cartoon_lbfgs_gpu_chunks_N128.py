@@ -20,7 +20,7 @@ size=128
 
 data = sio.loadmat('./example/cartoond/demo_toy7d_N128.mat')
 im = data['imgs']
-im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
+im = torch.tensor(im, dtype=torch.float, requires_grad=True).unsqueeze(0).unsqueeze(0).cuda()
 
 # Parameters for transforms
 
@@ -93,7 +93,7 @@ def callback_print(x):
         p = wph_op(x_t)*factr
         diff = p-Sim
         loss = torch.mul(diff,diff).mean()
-        print(loss)
+        print('count loss',count,loss)
         return loss
 
 x = torch.Tensor(1, 1, N, N).normal_(std=0.1)
