@@ -154,18 +154,20 @@ class PhaseHarmonics2d(object):
         # group idx_wph by j1
         J = self.J
         L2 = self.L * 2
-        self.idx_wph_j = dict()
+        idx_wph_j = dict()
         for j1 in range(J):
             # select from idx_la1 the j1
             selj1 = (self.idx_wph['la1']//L2 == j1)
             print('sum of sel j1 is',selj1.sum())
-            self.idx_wph_j[('la1',j1)] = self.idx_wph['la1'][selj1]
-            print('j1',self.idx_wph_j[('la1',j1)])
-            self.idx_wph_j[('la2',j1)] = self.idx_wph['la2'][selj1]
+            idx_wph_j[('la1',j1)] = self.idx_wph['la1'][selj1]
+            print('j1',idx_wph_j[('la1',j1)])
+            idx_wph_j[('la2',j1)] = self.idx_wph['la2'][selj1]
             #print('j2',self.idx_wph_j[('la2',j1)])
-            self.idx_wph_j[('k1',j1)] = self.idx_wph['k1'][:,selj1,:,:]
-            self.idx_wph_j[('k2',j1)] = self.idx_wph['k2'][:,selj1,:,:]
-            
+            idx_wph_j[('k1',j1)] = self.idx_wph['k1'][:,selj1,:,:]
+            idx_wph_j[('k2',j1)] = self.idx_wph['k2'][:,selj1,:,:]
+
+        return idx_wph_j
+    
     def _type(self, _type):
         self.hatpsi = self.hatpsi.type(_type)
         self.hatphi = self.hatphi.type(_type)
