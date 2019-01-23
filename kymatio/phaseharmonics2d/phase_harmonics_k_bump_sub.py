@@ -36,8 +36,8 @@ class PhaseHarmonics2d(object):
         self.subsample_fourier = SubsampleFourier()
         #self.phaseexp = StablePhaseExp.apply
         
-        self.subinitmean1 = [SubInitSpatialMeanC() for j1 in range(J)]
-        self.subinitmean2 = [SubInitSpatialMeanC() for j1 in range(J)]
+        self.subinitmean1 = [SubInitSpatialMeanC() for j1 in range(self.J)]
+        self.subinitmean2 = [SubInitSpatialMeanC() for j1 in range(self.J)]
         self.subinitmeanJ = SubInitSpatialMeanC()
         
         #self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
