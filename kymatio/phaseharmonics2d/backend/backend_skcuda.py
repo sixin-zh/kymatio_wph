@@ -192,9 +192,6 @@ def fft(input, direction='C2C', inverse=False):
 
     return output
 
-
-
-
 def cdgmm(A, B, inplace=False):
     """
         Complex pointwise multiplication between (batched) tensor A and tensor B.
@@ -227,19 +224,19 @@ def cdgmm(A, B, inplace=False):
     if type(A) is not type(B):
         raise RuntimeError('A and B should be same type!')
 
-    if not A.is_cuda:
-        raise RuntimeError('Use the torch backend for cpu tensors!')
 
-    C = A.new(A.size()) if not inplace else A
-    m, n = B.nelement() // 2, A.nelement() // B.nelement()
-    lda = m
-    ldc = m
-    incx = 1
-    handle = torch.cuda.current_blas_handle()
-    stream = torch.cuda.current_stream()._as_parameter_
-    cublas.cublasSetStream(handle, stream)
-    cublas.cublasCdgmm(handle, 'l', m, n, A.data_ptr(), lda, B.data_ptr(), incx, C.data_ptr(), ldc)
-    return C
+    C = A.new(A.size())
+
+    A_r = A[..., 0].contiguous().view(-1, A.size(-2)*A.size(-3))
+    A_i = A[..., 1].contiguous().view(-1, A.size(-2)*A.size(-3))
+
+    B_r = B[...,0].contiguous().view(B.size(-2)*B.size(-3)).unsqueeze(0).expand_as(A_i)
+    B_i = B[..., 1].contiguous().view(B.size(-2)*B.size(-3)).unsqueeze(0).expand_as(A_r)
+
+    C[..., 0].view(-1, C.size(-2)*C.size(-3))[:] = A_r * B_r - A_i * B_i
+    C[..., 1].view(-1, C.size(-2)*C.size(-3))[:] = A_r * B_i + A_i * B_r
+
+    return C if not inplace else A.copy_(C)
 
 
 
@@ -332,7 +329,6 @@ class PhaseHarmonic(nn.Module):
         #print('z_mod shape',z_mod.shape)
 
         # compute phase
-
         theta = phase(z)  # phase
         #print('theta shape',theta.shape)
         #k = k.unsqueeze(0) #.unsqueeze(1)
