@@ -262,14 +262,14 @@ class PhaseHarmonics2d(object):
                 offset = 0
                 for j1 in range(J):
                     xpsi_bc = xpsi_bc_res[j1] #(1,J*L2,Mres,Nres,2)
-                    print('xpsi bc shape',xpsi_bc.shape)
-                    print('len1',len(self.idx_wph_j[('la1',j1)]))
-                    print('len2',len(self.idx_wph_j[('la2',j1)]))
+                    #print('xpsi bc shape',xpsi_bc.shape)
+                    #print('len1',len(self.idx_wph_j[('la1',j1)]))
+                    #print('len2',len(self.idx_wph_j[('la2',j1)]))
                     
                     xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph_j[('la1',j1)]) # (1,Pj,Mres,Nres,2)
                     xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph_j[('la2',j1)]) # (1,Pj,Mres,Nres,2)
-                    print('xpsi la1 shape', xpsi_bc_la1.shape)
-                    print('xpsi la2 shape', xpsi_bc_la2.shape)
+                    #print('xpsi la1 shape', xpsi_bc_la1.shape)
+                    #print('xpsi la2 shape', xpsi_bc_la2.shape)
                     k1 = self.idx_wph_j[('k1',j1)]
                     k2 = self.idx_wph_j[('k2',j1)]
                     xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,Pj,Mres,Nres,2)
@@ -281,7 +281,7 @@ class PhaseHarmonics2d(object):
                     corr_xpsi_bc = mul(xpsi0_bc_la1k1,xpsi0_bc_la2k2)
                     corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,Pj,1,1,2)
                     Pj = len(self.idx_wph_j[('la1',j1)])
-                    print('Pj', Pj)
+                    #print('Pj', Pj)
                     Sout[idxb,idxc,offset:offset+Pj,:,:,:] = corr_bc[0,:,:,:,:]
                     offset = offset + Pj
                     
