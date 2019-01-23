@@ -205,6 +205,13 @@ class Modulus(object):
         return out
 
 
+def real(z):
+    return z[..., 0]
+
+
+def imag(z):
+    return z[..., 1]
+
 
 def modulus(z):
     z_mod = z.norm(p=2, dim=-1)
