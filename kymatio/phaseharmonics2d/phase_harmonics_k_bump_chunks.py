@@ -37,7 +37,8 @@ class PhaseHarmonics2d(object):
         self.pad = Pad(0, pre_pad = self.pre_pad)
         #self.subsample_fourier = SubsampleFourier()
         #self.phaseexp = StablePhaseExp.apply
-        
+
+        # TODO
         self.subinitmean1 = SubInitSpatialMeanC()
         self.subinitmean2 = SubInitSpatialMeanC()
 
@@ -86,7 +87,7 @@ class PhaseHarmonics2d(object):
 
     def balanced_chunks(self):
         # cut self.idx_wph into smaller pieces
-        print('la1 shape',self.idx_wph['la1'].shape)
+        #print('la1 shape',self.idx_wph['la1'].shape)
         
         nb_cov = len(self.idx_wph['la1'])
         print('nb cov is', nb_cov)
@@ -103,8 +104,12 @@ class PhaseHarmonics2d(object):
         print('nb cov chunk is', nb_cov_chunk)
 
         self.idx_wph_chunks = dict()
-        assert(false)
-        
+        offset = 0
+        for idxc in range(n_chunks):
+            self.idx_wph_chunks[('la1',idxc)] = self.idx_wph['la1'][offset:offset+nb_cov_chunk[idxc]]
+            offest = offset + nb_cov_chunk[idxc]
+            print(self.idx_wph_chunks[('la1',idxc)]
+        assert False
         
     def compute_idx(self):
         L = self.L
