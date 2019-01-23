@@ -192,10 +192,11 @@ class PhaseHarmonics2d(object):
         self.idx_wph['k1'] = self.idx_wph['k1'].type(torch.cuda.FloatTensor)
         self.idx_wph['k2'] = self.idx_wph['k2'].type(torch.cuda.FloatTensor)
         for j1 in range(self.J):
-            self.idx_wph_j[('la1',j1)] = self.idx_wph_j[('la1',j1)].type(torch.cuda.LongTensor)
-            self.idx_wph_j[('la2',j1)] = self.idx_wph_j[('la2',j1)].type(torch.cuda.LongTensor)
-            self.idx_wph_j[('k1',j1)] = self.idx_wph_j[('k1',j1)].type(torch.cuda.FloatTensor)
-            self.idx_wph_j[('k2',j1)] = self.idx_wph_j[('k2',j1)].type(torch.cuda.FloatTensor)
+            devid = j1 % self.nGPU
+            self.idx_wph_j[('la1',j1,devid)] = self.idx_wph_j[('la1',j1)].type(torch.cuda.LongTensor).to(devid)
+            self.idx_wph_j[('la2',j1,devid)] = self.idx_wph_j[('la2',j1)].type(torch.cuda.LongTensor).to(devid)
+            self.idx_wph_j[('k1',j1,devid)] = self.idx_wph_j[('k1',j1)].type(torch.cuda.FloatTensor).to(devid)
+            self.idx_wph_j[('k2',j1,devid)] = self.idx_wph_j[('k2',j1)].type(torch.cuda.FloatTensor).to(devid)
 
         return self._type(torch.cuda.FloatTensor)
 
@@ -274,13 +275,14 @@ class PhaseHarmonics2d(object):
                     #print('xpsi bc shape',xpsi_bc.shape)
                     #print('len1',len(self.idx_wph_j[('la1',j1)]))
                     #print('len2',len(self.idx_wph_j[('la2',j1)]))
+                    devid = j1 % self.nGPU
                     
-                    xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph_j[('la1',j1)]) # (1,Pj,Mres,Nres,2)
-                    xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph_j[('la2',j1)]) # (1,Pj,Mres,Nres,2)
+                    xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph_j[('la1',j1,devid)]) # (1,Pj,Mres,Nres,2)
+                    xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph_j[('la2',j1,devid)]) # (1,Pj,Mres,Nres,2)
                     #print('xpsi la1 shape', xpsi_bc_la1.shape)
                     #print('xpsi la2 shape', xpsi_bc_la2.shape)
-                    k1 = self.idx_wph_j[('k1',j1)]
-                    k2 = self.idx_wph_j[('k2',j1)]
+                    k1 = self.idx_wph_j[('k1',j1,devid)]
+                    k2 = self.idx_wph_j[('k2',j1,devid)]
                     xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,Pj,Mres,Nres,2)
                     xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2, -k2) # (1,Pj,Mres,Nres,2)
                     # sub spatial mean 
