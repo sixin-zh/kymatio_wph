@@ -75,6 +75,7 @@ def unpad(in_):
     """
     return in_[..., 1:-1, 1:-1]
 
+'''
 class SubsampleFourier(object):
     """
         Subsampling of a 2D image performed in the Fourier domain
@@ -203,6 +204,67 @@ class Modulus(object):
              args=[input.data_ptr(), out.data_ptr(), out.numel() // 2],
              stream=Stream(ptr=torch.cuda.current_stream().cuda_stream))
         return out
+
+'''
+
+
+class SubsampleFourier(object):
+    """
+        Subsampling of a 2D image performed in the Fourier domain
+        Subsampling in the spatial domain amounts to periodization
+        in the Fourier domain, hence the formula.
+
+        Parameters
+        ----------
+        x : tensor_like
+            input tensor with at least 5 dimensions, the last being the real
+             and imaginary parts.
+            Ideally, the last dimension should be a power of 2 to avoid errors.
+        k : int
+            integer such that x is subsampled by 2**k along the spatial variables.
+
+        Returns
+        -------
+        res : tensor_like
+            tensor such that its fourier transform is the Fourier
+            transform of a subsampled version of x, i.e. in
+            FFT^{-1}(res)[u1, u2] = FFT^{-1}(x)[u1 * (2**k), u2 * (2**k)]
+    """
+    def __call__(self, input, k):
+        out = input.new(input.size(0), input.size(1), input.size(2) // k, input.size(3) // k, 2)
+
+
+        y = input.view(input.size(0), input.size(1),
+                       input.size(2)//out.size(2), out.size(2),
+                       input.size(3)//out.size(3), out.size(3),
+                       2)
+
+        out = y.mean(4, keepdim=False).mean(2, keepdim=False)
+        return out
+
+
+class Modulus(object):
+    """
+        This class implements a modulus transform for complex numbers.
+
+        Usage
+        -----
+        modulus = Modulus()
+        x_mod = modulus(x)
+
+        Parameters
+        ---------
+        x: input tensor, with last dimension = 2 for complex numbers
+
+        Returns
+        -------
+        output: a tensor with imaginary part set to 0, real part set equal to
+        the modulus of x.
+    """
+    def __call__(self, input):
+
+        norm = input.norm(p=2, dim=-1, keepdim=True)
+        return torch.cat([norm, torch.zeros_like(norm)], -1)
 
 
 def real(z):
