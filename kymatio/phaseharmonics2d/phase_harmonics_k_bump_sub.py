@@ -36,8 +36,8 @@ class PhaseHarmonics2d(object):
         self.subsample_fourier = SubsampleFourier()
         #self.phaseexp = StablePhaseExp.apply
         
-        self.subinitmean1 = SubInitSpatialMeanC()
-        self.subinitmean2 = SubInitSpatialMeanC()
+        self.subinitmean1 = [SubInitSpatialMeanC() for j1 in range(J)]
+        self.subinitmean2 = [SubInitSpatialMeanC() for j1 in range(J)]
         self.subinitmeanJ = SubInitSpatialMeanC()
         
         #self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
@@ -79,8 +79,6 @@ class PhaseHarmonics2d(object):
         #print('filter shapes')
         #print(self.hatpsi.shape)
         #print(self.hatphi.shape)
-
-        
         
     def compute_idx(self):
         L = self.L
@@ -89,7 +87,7 @@ class PhaseHarmonics2d(object):
         dj = self.dj
         dl = self.dl
         dk = self.dk
-
+        
         idx_la1 = []
         idx_la2 = []
         idx_k1 = []
@@ -158,13 +156,15 @@ class PhaseHarmonics2d(object):
         L2 = self.L * 2
         self.idx_wph_j = dict()
         for j1 in range(J):
-            # select from idx_la1 the j1 
+            # select from idx_la1 the j1
             selj1 = (self.idx_wph['la1']//L2 == j1)
             #print(selj1)
             self.idx_wph_j[('la1',j1)] = self.idx_wph['la1'][selj1]
-            print('j1',self.idx_wph_j[('la1',j1)])
+            #print('j1',self.idx_wph_j[('la1',j1)])
             self.idx_wph_j[('la2',j1)] = self.idx_wph['la2'][selj1]
-            print('j2',self.idx_wph_j[('la2',j1)])
+            #print('j2',self.idx_wph_j[('la2',j1)])
+            self.idx_wph_j[('k1',j1)] = self.idx_wph['k1'][selj1]
+            self.idx_wph_j[('k2',j1)] = self.idx_wph['k2'][selj1]
             
     def _type(self, _type):
         self.hatpsi = self.hatpsi.type(_type)
@@ -182,7 +182,13 @@ class PhaseHarmonics2d(object):
         self.idx_wph['la2'] = self.idx_wph['la2'].type(torch.cuda.LongTensor)
         self.idx_wph['k1'] = self.idx_wph['k1'].type(torch.cuda.FloatTensor)
         self.idx_wph['k2'] = self.idx_wph['k2'].type(torch.cuda.FloatTensor)
-        
+        J = self.J
+        for j1 in range(J):
+            self.idx_wph_j[('la1',j1)] = self.idx_wph_j[('la1',j1)].type(torch.cuda.LongTensor)
+            self.idx_wph_j[('la2',j1)] = self.idx_wph_j[('la2',j1)].type(torch.cuda.LongTensor)
+            self.idx_wph_j[('k1',j1)] = self.idx_wph_j[('k1',j1)].type(torch.cuda.FloatTensor)
+            self.idx_wph_j[('k2',j1)] = self.idx_wph_j[('k2',j1)].type(torch.cuda.FloatTensor)
+
         return self._type(torch.cuda.FloatTensor)
 
     def cpu(self):
@@ -229,33 +235,45 @@ class PhaseHarmonics2d(object):
                 hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
  #               print('hatpsi_la is cuda?',hatpsi_la.is_cuda)
 #                print('hatx_bc is cuda?',hatx_bc.is_cuda)
+
                 hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L2,M,N,2)
                 hatxpsi_bc_res = []
                 hatxpsi_bc_res.append(hatxpsi_bc)
                 for res in range(1,J): # resolution of psi(j1,theta1)
                     hatxpsi_bc_res_ = self.subsample_fourier(hatxpsi_bc, k=2 ** res)
                     hatxpsi_bc_res.append(hatxpsi_res_)
-                
+
                 #print( 'hatxpsi_bc shape', hatxpsi_bc.shape )
-                xpsi_bc = ifft2_c2c(hatxpsi_bc)
-                # reshape to (1,J*L,M,N,2)
-                xpsi_bc = xpsi_bc.view(1,J*L2,M,N,2)
-                # select la1, et la2, P = |la1|
-                xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph['la1']) # (1,P,M,N,2)
-                xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph['la2']) # (1,P,M,N,2)
-                #print('xpsi la1 shape', xpsi_bc_la1.shape)
-                #print('xpsi la2 shape', xpsi_bc_la2.shape)
-                k1 = self.idx_wph['k1']
-                k2 = self.idx_wph['k2']
-                xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,P,M,N,2)
-                xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2, -k2) # (1,P,M,N,2)
-                # sub spatial mean along M and N
-                xpsi0_bc_la1k1 = self.subinitmean1(xpsi_bc_la1k1)
-                xpsi0_bc_la2k2 = self.subinitmean2(xpsi_bc_la2k2)
-                # compute mean spatial
-                corr_xpsi_bc = mul(xpsi0_bc_la1k1,xpsi0_bc_la2k2)
-                corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P,1,1,2)
-                Sout[idxb,idxc,0:nb_channels-1,:,:,:] = corr_bc[0,:,:,:,:]
+                #xpsi_bc = ifft2_c2c(hatxpsi_bc) 
+                xpsi_bc_res = []
+                for res in range(0,J):
+                    xpsi_bc_res_ = ifft2_c2c(hatspsi_bc_res[res]) # (J,L2,M,N,2)
+                    Mres = M//(2**res)
+                    Nres = N//(2**res)
+                    xpsi_bc_res_ = xpsi_bc_res_.view(1,J*L2,Mres,Nres,2) # reshape to (1,J*L,Mres,Nres,2)
+                    xpsi_bc_res.append(xpsi_bc_res_)
+                
+                # select la1, et la2, Pj = |la1| for j=j1
+                offset = 0
+                for j1 in range(J):
+                    xpsi_bc = xpsi_bc_res[j1]
+                    xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph_j[('la1',j1)]) # (1,Pj,M,N,2)
+                    xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph_j[('la2',j1)]) # (1,Pj,M,N,2)
+                    print('xpsi la1 shape', xpsi_bc_la1.shape)
+                    print('xpsi la2 shape', xpsi_bc_la2.shape)
+                    k1 = self.idx_wph_j[('k1',j1)]
+                    k2 = self.idx_wph_j[('k2',j1)]
+                    xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,P,M,N,2)
+                    xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2, -k2) # (1,P,M,N,2)
+                    # sub spatial mean along M and N
+                    xpsi0_bc_la1k1 = self.subinitmean1[j1](xpsi_bc_la1k1)
+                    xpsi0_bc_la2k2 = self.subinitmean2[j1](xpsi_bc_la2k2)
+                    # compute mean spatial
+                    corr_xpsi_bc = mul(xpsi0_bc_la1k1,xpsi0_bc_la2k2)
+                    corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P,1,1,2)
+                    Pj = len(self.idx_wph_j[('la1',j1)])
+                    print('Pj', Pj)
+                    Sout[idxb,idxc,offset:offset+Pj,:,:,:] = corr_bc[0,:,:,:,:]
 
         # add l2 phiJ to last channel
         hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
