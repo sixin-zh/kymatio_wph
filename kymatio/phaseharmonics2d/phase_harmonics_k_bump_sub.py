@@ -247,7 +247,7 @@ class PhaseHarmonics2d(object):
                 #xpsi_bc = ifft2_c2c(hatxpsi_bc) 
                 xpsi_bc_res = []
                 for res in range(0,J):
-                    xpsi_bc_res_ = ifft2_c2c(hatspsi_bc_res[res]) # (J,L2,M,N,2)
+                    xpsi_bc_res_ = ifft2_c2c(hatxpsi_bc_res[res]) # (J,L2,M,N,2)
                     Mres = M//(2**res)
                     Nres = N//(2**res)
                     xpsi_bc_res_ = xpsi_bc_res_.view(1,J*L2,Mres,Nres,2) # reshape to (1,J*L,Mres,Nres,2)
