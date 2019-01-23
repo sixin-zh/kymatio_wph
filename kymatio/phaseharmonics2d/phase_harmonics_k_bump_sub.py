@@ -243,7 +243,8 @@ class PhaseHarmonics2d(object):
                 hatxpsi_bc_res = []
                 hatxpsi_bc_res.append(hatxpsi_bc)
                 for res in range(1,J): # resolution of psi(j1,theta1)
-                    hatxpsi_bc_res_ = self.subsample_fourier(hatxpsi_bc, k=2 ** max(res-self.alpha,0))
+                    resa = max(res-self.alpha,0)
+                    hatxpsi_bc_res_ = self.subsample_fourier(hatxpsi_bc, k=2 ** resa)
                     hatxpsi_bc_res.append(hatxpsi_bc_res_)
 
                 #print( 'hatxpsi_bc shape', hatxpsi_bc.shape )
@@ -251,8 +252,9 @@ class PhaseHarmonics2d(object):
                 xpsi_bc_res = []
                 for res in range(0,J):
                     xpsi_bc_res_ = ifft2_c2c(hatxpsi_bc_res[res]) # (J,L2,Mres,Nres,2)
-                    Mres = M//(2**res)
-                    Nres = N//(2**res)
+                    resa = max(res-self.alpha,0)
+                    Mres = M//(2**resa)
+                    Nres = N//(2**resa)
                     xpsi_bc_res_ = xpsi_bc_res_.view(1,J*L2,Mres,Nres,2) # reshape to (1,J*L2,Mres,Nres,2)
                     xpsi_bc_res.append(xpsi_bc_res_)
                 
