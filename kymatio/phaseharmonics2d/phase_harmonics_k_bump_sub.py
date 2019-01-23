@@ -279,7 +279,8 @@ class PhaseHarmonics2d(object):
                     Pj = len(self.idx_wph_j[('la1',j1)])
                     print('Pj', Pj)
                     Sout[idxb,idxc,offset:offset+Pj,:,:,:] = corr_bc[0,:,:,:,:]
-
+                    offset = offset + Pj
+                    
         # add l2 phiJ to last channel
         hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
         xpsi_c = ifft2_c2c(hatxphi_c)
