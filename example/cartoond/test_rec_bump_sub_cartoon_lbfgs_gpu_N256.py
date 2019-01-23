@@ -29,7 +29,7 @@ J = 8
 L = 8
 M, N = im.shape[-2], im.shape[-1]
 j_max = 1
-l_max = 1 # L/2
+l_max = L/2
 delta_k = 1
 oversampling = 1
 
