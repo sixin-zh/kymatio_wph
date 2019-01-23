@@ -30,27 +30,6 @@ def iscomplex(input):
     return input.size(-1) == 2
 
 
-class SubInitMean(object):
-    def __init__(self, dim):
-        self.dim = dim # use the last "dim" dimensions to compute the mean
-        self.minput = None
-    
-    def __call__(self, input):
-        if self.minput is None:
-            minput = input.clone().detach()
-            #print('subinitmean:input',input.shape)
-            for d in range(self.dim):
-                minput = torch.mean(minput, -1)
-            for d in range(self.dim):
-                minput = minput.unsqueeze(-1)
-            #print('subinitmean:minput',minput.shape)
-            minput.expand_as(input)
-            self.minput = minput
-        
-        #print('subinitmean:minput sum',self.minput.sum())
-        output = input - self.minput
-        return output
-
 class Pad(object):
     def __init__(self, pad_size, pre_pad=False):
         """

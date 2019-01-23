@@ -231,7 +231,7 @@ class PhaseHarmonics2d(object):
                 xpsi0_bc_la1k1 = self.subinitmean1(xpsi_bc_la1k1)
                 xpsi0_bc_la2k2 = self.subinitmean2(xpsi_bc_la2k2)
                 # compute mean spatial
-                corr_xpsi_bc = mul(xpsi0_bc_la1k1,xpsi0_bc_la2k2)
+                corr_xpsi_bc = mul(xpsi0_bc_la1k1,xpsi0_bc_la2k2) # # (1,P,M,N,2)
                 corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P,1,1,2)
                 Sout[idxb,idxc,0:nb_channels-1,:,:,:] = corr_bc[0,:,:,:,:]
 
