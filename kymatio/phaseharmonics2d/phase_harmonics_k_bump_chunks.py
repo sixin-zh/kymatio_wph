@@ -265,8 +265,8 @@ class PhaseHarmonics2d(object):
                     # select la1, et la2, P = |la1|
                     xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph_chunks[('la1',idx_chunk)]) # (1,P_c,M,N,2)
                     xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph_chunks[('la2',idx_chunk)]) # (1,P_c,M,N,2)
-                    print('xpsi la1 shape', xpsi_bc_la1.shape)
-                    print('xpsi la2 shape', xpsi_bc_la2.shape)
+                    #print('xpsi la1 shape', xpsi_bc_la1.shape)
+                    #print('xpsi la2 shape', xpsi_bc_la2.shape)
                     k1 = self.idx_wph_chunks[('k1',idx_chunk)]
                     k2 = self.idx_wph_chunks[('k2',idx_chunk)]
                     xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,P,M,N,2)
