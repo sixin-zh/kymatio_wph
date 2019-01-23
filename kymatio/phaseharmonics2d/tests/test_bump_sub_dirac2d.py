@@ -30,12 +30,14 @@ M, N = im.shape[-2], im.shape[-1]
 delta_j = 1
 delta_l = L
 delta_k = 1
+oversampling = 1
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_sub \
     import PhaseHarmonics2d
 
-wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k)
+
+wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, oversampling)
 
 L2 = L*2
 Sim = wph_op(im) # (nb,nc,nb_channels,1,1,2)

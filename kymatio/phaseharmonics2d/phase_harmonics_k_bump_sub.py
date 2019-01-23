@@ -16,11 +16,13 @@ from .filter_bank import filter_bank
 from .utils import compute_padding, fft2_c2c, ifft2_c2r, ifft2_c2c, periodic_dis, periodic_signed_dis
 
 class PhaseHarmonics2d(object):
-    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k):
+    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, oversampling):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         self.dj = delta_j # max scale interactions
         self.dl = delta_l # max angular interactions
         self.dk = delta_k #
+        self.alpha = oversampling #
+        
         if self.dl > self.L:
             raise (ValueError('delta_l must be <= L'))
 
@@ -241,14 +243,14 @@ class PhaseHarmonics2d(object):
                 hatxpsi_bc_res = []
                 hatxpsi_bc_res.append(hatxpsi_bc)
                 for res in range(1,J): # resolution of psi(j1,theta1)
-                    hatxpsi_bc_res_ = self.subsample_fourier(hatxpsi_bc, k=2 ** res)
+                    hatxpsi_bc_res_ = self.subsample_fourier(hatxpsi_bc, k=2 ** max(res-self.alpha,0))
                     hatxpsi_bc_res.append(hatxpsi_bc_res_)
 
                 #print( 'hatxpsi_bc shape', hatxpsi_bc.shape )
                 #xpsi_bc = ifft2_c2c(hatxpsi_bc) 
                 xpsi_bc_res = []
                 for res in range(0,J):
-                    xpsi_bc_res_ = ifft2_c2c(hatxpsi_bc_res[res]) # (J,L2,M,N,2)
+                    xpsi_bc_res_ = ifft2_c2c(hatxpsi_bc_res[res]) # (J,L2,Mres,Nres,2)
                     Mres = M//(2**res)
                     Nres = N//(2**res)
                     xpsi_bc_res_ = xpsi_bc_res_.view(1,J*L2,Mres,Nres,2) # reshape to (1,J*L2,Mres,Nres,2)
