@@ -2,7 +2,7 @@
 
 #import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 import scipy.optimize as opt
 import scipy.io as sio
@@ -20,6 +20,7 @@ size=256
 
 data = sio.loadmat('./example/cartoond/demo_toy7d_N256.mat')
 im = data['imgs']
+#im = torch.tensor(im, dtype=torch.float, requires_grad=True).unsqueeze(0).unsqueeze(0).cuda()
 im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
 
 # Parameters for transforms
@@ -28,7 +29,7 @@ J = 8
 L = 8
 M, N = im.shape[-2], im.shape[-1]
 j_max = 1
-l_max = L/2
+l_max = 1 # L/2
 delta_k = 1
 oversampling = 1
 
@@ -41,6 +42,7 @@ wph_op = wph_op.cuda()
 
 factr = 1e3
 Sim = wph_op(im)*factr
+print ( Sim.size() )
 #for key,val in Smeta.items():
 #    print (key, "=>", val, ":", Sim[0,0,key,0,0,0], "+i ", Sim[0,0,key,0,0,1])
 #print (Sim.shape)
@@ -96,7 +98,9 @@ def callback_print(x):
 
 x = torch.Tensor(1, 1, N, N).normal_(std=0.1)
 #x[0,0,0,0] = 2
-x = torch.tensor(x, requires_grad=True)
+#x = torch.tensor(x, requires_grad=True)
+#sourceTensor.clone().detach().requires_grad_(True)
+
 x0 = x.reshape(size**2).detach().numpy()
 x0 = np.asarray(x0, dtype=np.float64)
 
