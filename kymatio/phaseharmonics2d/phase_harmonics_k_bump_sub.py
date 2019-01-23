@@ -267,7 +267,7 @@ class PhaseHarmonics2d(object):
                     if self.cudev[devid]:
                         xpsi_bc_res_ = xpsi_bc_res_.to(devid)
                     xpsi_bc_res.append(xpsi_bc_res_)
-
+                
                 # select la1, et la2, Pj = |la1| for j=j1
                 offset = 0
                 for j1 in range(J):
@@ -276,7 +276,6 @@ class PhaseHarmonics2d(object):
                     #print('len1',len(self.idx_wph_j[('la1',j1)]))
                     #print('len2',len(self.idx_wph_j[('la2',j1)]))
                     devid = j1 % self.nGPU
-                    
                     xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph_j[('la1',j1,devid)]) # (1,Pj,Mres,Nres,2)
                     xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph_j[('la2',j1,devid)]) # (1,Pj,Mres,Nres,2)
                     #print('xpsi la1 shape', xpsi_bc_la1.shape)

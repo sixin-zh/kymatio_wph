@@ -112,7 +112,10 @@ final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
 
 im_opt = np.reshape(x_opt, (size,size))
 tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
-plt.figure()
+
+torch.save(tensor_opt, 'test_rec_bump_sub_cartoon_lbfgs_gpu_N256.pt')
+
+#plt.figure()
 #im_opt = np.reshape(x_opt, (size,size))
-plt.imshow(im_opt)
-plt.show()
+#plt.imshow(im_opt)
+#plt.show()
