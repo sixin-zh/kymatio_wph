@@ -162,8 +162,10 @@ class PhaseHarmonics2d(object):
             selj1 = (self.idx_wph['la1']//L2 == j1)
             #print(selj1)
             self.idx_wph_j[('la1',j1)] = self.idx_wph['la1'][selj1]
-            print(self.idx_wph_j[('la1',j1)])
-                  
+            print('j1',self.idx_wph_j[('la1',j1)])
+            self.idx_wph_j[('la2',j1)] = self.idx_wph['la2'][selj1]
+            print('j2',self.idx_wph_j[('la2',j1)])
+            
     def _type(self, _type):
         self.hatpsi = self.hatpsi.type(_type)
         self.hatphi = self.hatphi.type(_type)
