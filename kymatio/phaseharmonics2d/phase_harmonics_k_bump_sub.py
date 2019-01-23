@@ -182,6 +182,11 @@ class PhaseHarmonics2d(object):
             Moves tensors to the GPU
         """
         print('call cuda')
+        self.nGPU = 4
+        self.cudev = []
+        for dev in range(self.nGPU):
+            cudev.append( torch.device("cuda:" + str(dev)) )
+
         self.idx_wph['la1'] = self.idx_wph['la1'].type(torch.cuda.LongTensor)
         self.idx_wph['la2'] = self.idx_wph['la2'].type(torch.cuda.LongTensor)
         self.idx_wph['k1'] = self.idx_wph['k1'].type(torch.cuda.FloatTensor)
@@ -256,8 +261,12 @@ class PhaseHarmonics2d(object):
                     Mres = M//(2**resa)
                     Nres = N//(2**resa)
                     xpsi_bc_res_ = xpsi_bc_res_.view(1,J*L2,Mres,Nres,2) # reshape to (1,J*L2,Mres,Nres,2)
+                    # copy to gpu
+                    devid = res % self.nGPU
+                    if self.cudev[devid]:
+                        xpsi_bc_res_ = xpsi_bc_res_.to(devid)
                     xpsi_bc_res.append(xpsi_bc_res_)
-                
+
                 # select la1, et la2, Pj = |la1| for j=j1
                 offset = 0
                 for j1 in range(J):

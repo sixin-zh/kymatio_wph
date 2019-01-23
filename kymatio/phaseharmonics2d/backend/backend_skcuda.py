@@ -192,8 +192,11 @@ def fft(input, direction='C2C', inverse=False):
 
     return output
 
-def cdgmm(A, B, inplace=False):
-    """
+
+class cdgmmMul(Function):
+    @staticmethod
+    def forward(ctx, A, B):
+        """
         Complex pointwise multiplication between (batched) tensor A and tensor B.
 
         Parameters
@@ -210,36 +213,37 @@ def cdgmm(A, B, inplace=False):
         C : tensor
             output tensor of size (B, C, M, N, 2) such that:
             C[b, c, m, n, :] = A[b, c, m, n, :] * B[m, n, :]
-    """
-    A, B = A.contiguous(), B.contiguous()
-    if A.size()[-3:] != B.size():
-        raise RuntimeError('The filters are not compatible for multiplication!')
+        """
+        A, B = A.contiguous(), B.contiguous()
+        if A.size()[-3:] != B.size():
+            raise RuntimeError('The filters are not compatible for multiplication!')
+        
+        if not iscomplex(A) or not iscomplex(B):
+            raise TypeError('The input, filter and output should be complex')
 
-    if not iscomplex(A) or not iscomplex(B):
-        raise TypeError('The input, filter and output should be complex')
+        if B.ndimension() != 3:
+            raise RuntimeError('The filters must be simply a complex array!')
 
-    if B.ndimension() != 3:
-        raise RuntimeError('The filters must be simply a complex array!')
+        if type(A) is not type(B):
+            raise RuntimeError('A and B should be same type!')
 
-    if type(A) is not type(B):
-        raise RuntimeError('A and B should be same type!')
+        if not A.is_cuda:
+            raise RuntimeError('Use the torch backend for cpu tensors!')
 
-
-    C = A.new(A.size())
-
-    A_r = A[..., 0].contiguous().view(-1, A.size(-2)*A.size(-3))
-    A_i = A[..., 1].contiguous().view(-1, A.size(-2)*A.size(-3))
-
-    B_r = B[...,0].contiguous().view(B.size(-2)*B.size(-3)).unsqueeze(0).expand_as(A_i)
-    B_i = B[..., 1].contiguous().view(B.size(-2)*B.size(-3)).unsqueeze(0).expand_as(A_r)
-
-    C[..., 0].view(-1, C.size(-2)*C.size(-3))[:] = A_r * B_r - A_i * B_i
-    C[..., 1].view(-1, C.size(-2)*C.size(-3))[:] = A_r * B_i + A_i * B_r
-
-    return C if not inplace else A.copy_(C)
+        C = A.new(A.size()) if not inplace else A
+        m, n = B.nelement() // 2, A.nelement() // B.nelement()
+        lda = m
+        ldc = m
+        incx = 1
+        handle = torch.cuda.current_blas_handle()
+        stream = torch.cuda.current_stream()._as_parameter_
+        cublas.cublasSetStream(handle, stream)
+        cublas.cublasCdgmm(handle, 'l', m, n, A.data_ptr(), lda, B.data_ptr(), incx, C.data_ptr(), ldc)
+        return C
 
 
 
+cdgmm = cdgmmMul.apply
 
 class SubInitSpatialMeanC(object):
     def __init__(self):
