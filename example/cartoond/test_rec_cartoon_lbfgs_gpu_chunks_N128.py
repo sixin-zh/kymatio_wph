@@ -41,6 +41,8 @@ wph_op = wph_op.cuda()
 
 factr = 1e3
 Sim = wph_op(im)*factr
+
+print('compute forward') 
 #for key,val in Smeta.items():
 #    print (key, "=>", val, ":", Sim[0,0,key,0,0,0], "+i ", Sim[0,0,key,0,0,1])
 #print (Sim.shape)
