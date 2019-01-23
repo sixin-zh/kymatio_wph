@@ -14,29 +14,28 @@ from time import time
 
 #---- create image without/with marks----#
 
-size=64
+size=128
 
 # --- Dirac example---#
 
-data = sio.loadmat('./example/cartoond/demo_toy7d_N64.mat')
+data = sio.loadmat('./example/cartoond/demo_toy7d_N128.mat')
 im = data['imgs']
 im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
 
 # Parameters for transforms
 
-J = 6
+J = 7
 L = 8
 M, N = im.shape[-2], im.shape[-1]
 j_max = 1
 l_max = L
 delta_k = 1
-max_chunk = 2000
 
 # kymatio scattering
-from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunks \
+from kymatio.phaseharmonics2d.phase_harmonics_k_bump \
     import PhaseHarmonics2d
 
-wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max, delta_k, max_chunk)
+wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max, delta_k)
 wph_op = wph_op.cuda()
 
 factr = 1e3
@@ -96,8 +95,7 @@ def callback_print(x):
 
 x = torch.Tensor(1, 1, N, N).normal_(std=0.1)
 #x[0,0,0,0] = 2
-x = x.clone().detach().requires_grad_(True) 
-
+x = torch.tensor(x, requires_grad=True)
 x0 = x.reshape(size**2).detach().numpy()
 x0 = np.asarray(x0, dtype=np.float64)
 
