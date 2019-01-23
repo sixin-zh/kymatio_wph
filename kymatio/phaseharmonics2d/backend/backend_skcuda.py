@@ -294,3 +294,120 @@ def cdgmm(A, B, inplace=False):
 
 
 
+class SubInitSpatialMeanC(object):
+    def __init__(self):
+        self.minput = None
+
+    def __call__(self, input):
+        if self.minput is None:
+            minput = input.clone().detach()
+            minput = torch.mean(minput, -2, True)
+            minput = torch.mean(minput, -3, True)
+            self.minput = minput
+            print('sum of minput',self.minput.sum())
+            
+        output = input - self.minput
+        return output
+
+
+
+class StablePhase(Function):
+    @staticmethod
+    def forward(ctx, z):
+        z = z.detach()
+        x, y = real(z), imag(z)
+        r = z.norm(p=2, dim=-1)
+
+        # NaN positions
+        eps = 1e-32
+        mask_real_neg = (torch.abs(y) <= eps) * (x <= 0)
+        mask_zero = r <= eps
+
+        x_tilde = r + x
+        # theta = torch.atan(y / x_tilde) * 2
+        theta = torch.atan2(y, x)
+
+        # relace NaNs
+        theta.masked_fill_(mask_real_neg, np.pi)
+        theta.masked_fill_(mask_zero, 0.)
+
+        # ctx.save_for_backward(x.detach(), y.detach(), r.detach())
+        ctx.save_for_backward(x, y, r, mask_real_neg, mask_zero)
+        return theta
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        x, y, r, mask_real_neg, mask_zero = ctx.saved_tensors
+
+        # some intermediate variables
+        x_tilde = r + x
+        e = x_tilde ** 2 + y ** 2
+
+        # derivative with respect to the real part
+        dtdx = - y * x_tilde * 2 / (r * e)
+        mask_real_neg_bis = (torch.abs(y) == 0) * (x <= 0)
+        dtdx.masked_fill_(mask_real_neg, 0)
+        dtdx.masked_fill_(mask_zero, 0)
+
+        # derivative with respect to the imaginary part
+        dtdy = x * x_tilde * 2 / (r * e)
+        dtdy[mask_real_neg] = -1 / r[mask_real_neg]
+        # dtdy.masked_fill_(mask, 0)
+        dtdy.masked_fill_(mask_zero, 0)
+
+        dtdz = grad_output.unsqueeze(-1) * torch.stack((dtdx, dtdy), dim=-1)
+        return dtdz
+
+phase = StablePhase.apply
+
+
+class PhaseHarmonic(nn.Module):
+    def __init__(self, check_for_nan=False):
+        super(PhaseHarmonic, self).__init__()
+        self.check_for_nan = check_for_nan
+
+    def forward(self, z, k):
+        # check type ok k, move to float
+        #if not is_long_tensor(k):
+        #    raise TypeError("Expected torch(.cuda).LongTensor but got {}".format(k.type()))
+        #if is_double_tensor(z):
+        #    k = k.double()
+        #else:
+        #    k = k.float()
+
+        #s = z.size()
+
+        #print('z shape',z.shape,z.size())
+        z_mod = modulus(z)  # modulus
+        #print('z_mod shape',z_mod.shape)
+
+        # compute phase
+
+        theta = phase(z)  # phase
+        #print('theta shape',theta.shape)
+        #k = k.unsqueeze(0) #.unsqueeze(1)
+        #print('k shape',k.shape)
+        #k = k.unsqueeze(-1).unsqueeze(-1)
+        #print('k shape',k.shape)
+        ktheta = k * theta
+
+        eiktheta = torch.stack((torch.cos(ktheta), torch.sin(ktheta)), dim=-1)
+
+        # compute phase exponent : |z| * exp(i k theta)
+        z_pe = z_mod.unsqueeze(-1) * eiktheta
+
+        if z.requires_grad and self.check_for_nan:
+            z.register_hook(HookDetectNan("z in PhaseExp"))
+                # , torch.stack((z_mod, z_mod), dim=-1), torch.stack((theta, theta), dim=-1)))
+            z_mod.register_hook(HookDetectNan("z_mod in PhaseExp"))
+            eiktheta.register_hook(HookDetectNan("eiktheta in PhaseExp"))
+            z_pe.register_hook(HookDetectNan("z_pe in PhaseExp"))
+
+        return z_pe
+
+
+def mul(z1, z2):
+    zr = real(z1) * real(z2) - imag(z1) * imag(z2)
+    zi = real(z1) * imag(z2) + imag(z1) * real(z2)
+    z = torch.stack((zr, zi), dim=-1)
+    return z
