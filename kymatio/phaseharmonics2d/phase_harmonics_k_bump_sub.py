@@ -158,9 +158,9 @@ class PhaseHarmonics2d(object):
         for j1 in range(J):
             # select from idx_la1 the j1
             selj1 = (self.idx_wph['la1']//L2 == j1)
-            #print(selj1)
+            print('sum of sel j1 is',selj1.sum())
             self.idx_wph_j[('la1',j1)] = self.idx_wph['la1'][selj1]
-            #print('j1',self.idx_wph_j[('la1',j1)])
+            print('j1',self.idx_wph_j[('la1',j1)])
             self.idx_wph_j[('la2',j1)] = self.idx_wph['la2'][selj1]
             #print('j2',self.idx_wph_j[('la2',j1)])
             self.idx_wph_j[('k1',j1)] = self.idx_wph['k1'][:,selj1,:,:]
@@ -249,13 +249,13 @@ class PhaseHarmonics2d(object):
                     xpsi_bc_res_ = ifft2_c2c(hatxpsi_bc_res[res]) # (J,L2,M,N,2)
                     Mres = M//(2**res)
                     Nres = N//(2**res)
-                    xpsi_bc_res_ = xpsi_bc_res_.view(1,J*L2,Mres,Nres,2) # reshape to (1,J*L,Mres,Nres,2)
+                    xpsi_bc_res_ = xpsi_bc_res_.view(1,J*L2,Mres,Nres,2) # reshape to (1,J*L2,Mres,Nres,2)
                     xpsi_bc_res.append(xpsi_bc_res_)
                 
                 # select la1, et la2, Pj = |la1| for j=j1
                 offset = 0
                 for j1 in range(J):
-                    xpsi_bc = xpsi_bc_res[j1] #(1,J*L,Mres,Nres,2)
+                    xpsi_bc = xpsi_bc_res[j1] #(1,J*L2,Mres,Nres,2)
                     print('xpsi bc shape',xpsi_bc.shape)
                     print('len1',len(self.idx_wph_j[('la1',j1)]))
                     print('len2',len(self.idx_wph_j[('la2',j1)]))
