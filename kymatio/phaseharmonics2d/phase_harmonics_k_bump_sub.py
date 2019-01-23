@@ -155,6 +155,7 @@ class PhaseHarmonics2d(object):
     def compute_idx_j(self):
         # group idx_wph by j1
         J = self.J
+        L2 = self.L * 2
         self.idx_wph_j = dict()
         for j1 in range(J):
             # select from idx_la1 the j1 
