@@ -182,8 +182,7 @@ class PhaseHarmonics2d(object):
         self.idx_wph['la2'] = self.idx_wph['la2'].type(torch.cuda.LongTensor)
         self.idx_wph['k1'] = self.idx_wph['k1'].type(torch.cuda.FloatTensor)
         self.idx_wph['k2'] = self.idx_wph['k2'].type(torch.cuda.FloatTensor)
-        J = self.J
-        for j1 in range(J):
+        for j1 in range(self.J):
             self.idx_wph_j[('la1',j1)] = self.idx_wph_j[('la1',j1)].type(torch.cuda.LongTensor)
             self.idx_wph_j[('la2',j1)] = self.idx_wph_j[('la2',j1)].type(torch.cuda.LongTensor)
             self.idx_wph_j[('k1',j1)] = self.idx_wph_j[('k1',j1)].type(torch.cuda.FloatTensor)
@@ -256,7 +255,11 @@ class PhaseHarmonics2d(object):
                 # select la1, et la2, Pj = |la1| for j=j1
                 offset = 0
                 for j1 in range(J):
-                    xpsi_bc = xpsi_bc_res[j1]
+                    xpsi_bc = xpsi_bc_res[j1] #(1,J*L,Mres,Nres,2)
+                    print('xpsi bc shape',xpsi_bc.shape)
+                    print('len1',len(self.idx_wph_j[('la1',j1)]))
+                    print('len2',len(self.idx_wph_j[('la2',j1)]))
+                    
                     xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph_j[('la1',j1)]) # (1,Pj,Mres,Nres,2)
                     xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph_j[('la2',j1)]) # (1,Pj,Mres,Nres,2)
                     print('xpsi la1 shape', xpsi_bc_la1.shape)
