@@ -73,6 +73,8 @@ def fun_and_grad_conv(x):
     loss, grad_err = grad_obj_fun(x_t)
     return  loss.cpu().item(), np.asarray(grad_err.reshape(size**2).cpu().numpy(), dtype=np.float64)
 
+#float(loss)
+
 count = 0
 
 def callback_print(x):
