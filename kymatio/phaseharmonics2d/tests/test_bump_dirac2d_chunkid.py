@@ -53,5 +53,5 @@ print(Sim.shape)
 
 print('sum', Sim.sum())
 
-plt.plot(Sim.squeeze().cpu().numpy()[...,0])
+plt.plot(Sim.squeeze()[...,0])
 plt.show()
