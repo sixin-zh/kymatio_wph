@@ -211,10 +211,10 @@ class PhaseHarmonics2d(object):
         self.idx_wph['k2'] = self.idx_wph['k2'].type(torch.cuda.FloatTensor)
         for idxc in range(self.n_chunks):
             devid = idxc % self.nGPU
-            self.idx_wph_chunks[('la1',idxc,devid)] = self.idx_wph_chunks[('la1',idxc)].type(torch.cuda.LongTensor)
-            self.idx_wph_chunks[('la2',idxc,devid)] = self.idx_wph_chunks[('la2',idxc)].type(torch.cuda.LongTensor)
-            self.idx_wph_chunks[('k1',idxc,devid)] = self.idx_wph_chunks[('k1',idxc)].type(torch.cuda.FloatTensor)
-            self.idx_wph_chunks[('k2',idxc,devid)] = self.idx_wph_chunks[('k2',idxc)].type(torch.cuda.FloatTensor)            
+            self.idx_wph_chunks[('la1',idxc,devid)] = self.idx_wph_chunks[('la1',idxc)].type(torch.cuda.LongTensor).to(devid)
+            self.idx_wph_chunks[('la2',idxc,devid)] = self.idx_wph_chunks[('la2',idxc)].type(torch.cuda.LongTensor).to(devid)
+            self.idx_wph_chunks[('k1',idxc,devid)] = self.idx_wph_chunks[('k1',idxc)].type(torch.cuda.FloatTensor).to(devid)
+            self.idx_wph_chunks[('k2',idxc,devid)] = self.idx_wph_chunks[('k2',idxc)].type(torch.cuda.FloatTensor).to(devid)  
         
         return self._type(torch.cuda.FloatTensor)
 
