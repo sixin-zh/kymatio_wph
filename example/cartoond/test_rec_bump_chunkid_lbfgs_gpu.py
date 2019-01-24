@@ -41,11 +41,11 @@ from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
 nb_chunks = 10
 Sims = []
 factr = 1e3
-wph_ops = []
+wph_ops = dict()
 for chunk_id in range(nb_chunks+1):
     wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
     wph_op = wph_op.cuda()
-    wph_ops.append(wph_op)
+    wph_ops[chunk_id] = wph_op
     Sim_ = wph_op(im)*factr # (nb,nc,nb_channels,1,1,2)
     Sims.append(Sim_)
     
@@ -54,6 +54,7 @@ for chunk_id in range(nb_chunks+1):
 def obj_fun(x,chunk_id):
     if x.grad is not None:
         x.grad.data.zero_()
+    global wph_ops
     wph_op = wph_ops[chunk_id]
     p = wph_op(x)*factr
     diff = p-Sims[chunk_id]
@@ -68,14 +69,15 @@ def grad_obj_fun(x):
     grad_err[:] = 0
     global wph_ops
     for chunk_id in range(nb_chunks+1):
-        if wph_ops[chunk_id] is None:
+        print('chunk_id in grad', chunk_id)
+        if chunk_id not in wph_ops.keys():
             wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
             wph_op = wph_op.cuda()
             wph_ops[chunk_id] = wph_op
         loss = loss + obj_fun(x,chunk_id)
         grad_err_, = grad([loss],[x], retain_graph=True)
         grad_err = grad_err + grad_err_
-        wph_ops[chunk_id] = None
+        del wph_ops[chunk_id]
         gc.collect()
         
     return loss, grad_err
