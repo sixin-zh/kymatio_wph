@@ -270,7 +270,11 @@ class PhaseHarmonics2d(object):
             xpsi0_c = self.subinitmeanJ(xpsi_c)
             xpsi0_mod = self.modulus(xpsi0_c) # (nb,nc,M,N,2)
             xpsi0_mod2 = mul(xpsi0_mod,xpsi0_mod) # (nb,nc,M,N,2)
-            Sout = torch.mean(torch.mean(xpsi0_mod2,-2,True),-3,True)
+            nb = hatx_c.shape[0]
+            nc = hatx_c.shape[1]
+            Sout = input.new(nb, nc, 1, \
+                             1, 1, 2)
+            Sout[:,:,0,:,:,:] = torch.mean(torch.mean(xpsi0_mod2,-2,True),-3,True)
 
         return Sout
 
