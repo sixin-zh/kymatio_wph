@@ -31,8 +31,8 @@ M, N = im.shape[-2], im.shape[-1]
 delta_j = 4
 delta_l = L/2
 delta_k = 1
-nb_chunks = 80
-nGPU = 2
+nb_chunks = 40
+nGPU = 3
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
@@ -74,6 +74,7 @@ def grad_obj_fun(x_gpu):
     for chunk_id in range(nb_chunks+1):
         devid = chunk_id % nGPU
         x_t = x_gpu.to(devid).requires_grad_(True)
+        print('chunk_id in compute obj', chunk_id)
         #if chunk_id not in wph_ops.keys():
         #    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
         #    wph_op = wph_op.cuda()
