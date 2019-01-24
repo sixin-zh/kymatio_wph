@@ -3,6 +3,7 @@
 #import pandas as pd
 import numpy as np
 #import matplotlib.pyplot as plt
+import gc
 
 import scipy.optimize as opt
 import scipy.io as sio
@@ -92,6 +93,11 @@ def callback_print(x):
         diff = p-Sim
         loss = torch.mul(diff,diff).mean()
         print(loss)
+
+        for obj in gc.get_objects():
+            if torch.is_tensor(obj) or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
+                print(type(obj), obj.size())
+    
         return loss
 
 x = torch.Tensor(1, 1, N, N).normal_(std=0.1)

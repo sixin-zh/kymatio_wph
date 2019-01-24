@@ -17,6 +17,7 @@ from .backend import cdgmm, Modulus, SubsampleFourier, fft, \
 from .filter_bank import filter_bank
 from .utils import compute_padding, fft2_c2c, ifft2_c2r, ifft2_c2c, periodic_dis, periodic_signed_dis
 
+
 class PhaseHarmonics2d(object):
     def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nGPU):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
