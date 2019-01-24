@@ -94,7 +94,7 @@ class PhaseHarmonics2d(object):
         max_chunk = nb_cov // nb_chunks
         nb_cov_chunk = np.zeros(nb_chunks,dtype=np.int32)
         for idxc in range(nb_chunks):
-            if idxc < n_chunks-1:
+            if idxc < nb_chunks-1:
                 nb_cov_chunk[idxc] = int(max_chunk)
             else:
                 nb_cov_chunk[idxc] = int(nb_cov - max_chunk*(nb_chunks-1))
@@ -102,7 +102,7 @@ class PhaseHarmonics2d(object):
         
         this_wph = dict()
         offset = int(0)
-        for idxc in range(n_chunks):
+        for idxc in range(nb_chunks):
             if idxc == chunk_id:
                 this_wph['la1'] = self.idx_wph['la1'][offset:offset+nb_cov_chunk[idxc]]
                 this_wph['la2'] = self.idx_wph['la2'][offset:offset+nb_cov_chunk[idxc]]
