@@ -58,9 +58,11 @@ def obj_fun(x,chunk_id):
     loss = torch.mul(diff,diff).mean()
     return loss
 
+grad_err = im.clone()
+
 def grad_obj_fun(x):
     loss = 0
-    grad_err = torch.zeros(x.size())
+    grad_err[:] = 0
     for chunk_id in range(nb_chunks+1):
         loss = loss + obj_fun(x,chunk_id)
         grad_err_, = grad([loss],[x], retain_graph=True)
