@@ -27,10 +27,9 @@ im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
 J = 3
 L = 4
 M, N = im.shape[-2], im.shape[-1]
-j_max = 1
-l_max = L
+delta_j = 1
+delta_l = L
 delta_k = 1
-max_chunk = 100
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
