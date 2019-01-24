@@ -31,7 +31,7 @@ M, N = im.shape[-2], im.shape[-1]
 delta_j = 4
 delta_l = L/2
 delta_k = 1
-nb_chunks = 20 # 40
+nb_chunks = 40 
 nGPU = 3
 
 # kymatio scattering
