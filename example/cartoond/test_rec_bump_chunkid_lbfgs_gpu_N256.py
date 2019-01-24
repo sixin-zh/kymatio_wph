@@ -15,8 +15,7 @@ import gc
 
 #---- create image without/with marks----#
 
-
-size=128
+size=256
 
 # --- Dirac example---#
 
@@ -26,19 +25,18 @@ im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
 
 # Parameters for transforms
 
-J = 7
+J = 8
 L = 8
 M, N = im.shape[-2], im.shape[-1]
 delta_j = 1
-delta_l = L
+delta_l = L/2
 delta_k = 1
-
+nb_chunks = 10
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
     import PhaseHarmonics2d
 
-nb_chunks = 10
 Sims = []
 factr = 1e3
 wph_ops = dict()
@@ -70,7 +68,7 @@ def grad_obj_fun(x_gpu):
     #global wph_ops
     for chunk_id in range(nb_chunks+1):
         x_t = x_gpu.clone().requires_grad_(True)
-        print('chunk_id in grad', chunk_id)
+        #print('chunk_id in grad', chunk_id)
         #if chunk_id not in wph_ops.keys():
         #    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
         #    wph_op = wph_op.cuda()
@@ -115,8 +113,12 @@ res = opt.minimize(fun_and_grad_conv, x0, method='L-BFGS-B', jac=True, tol=None,
 final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
 
 im_opt = np.reshape(x_opt, (size,size))
+tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
+
+torch.save(tensor_opt, 'test_rec_bump_chunkid_lbfgs_gpu_N256.pt')
+
 #tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
-plt.figure()
+#plt.figure()
 #im_opt = np.reshape(x_opt, (size,size))
-plt.imshow(im_opt)
-plt.show()
+#plt.imshow(im_opt)
+#plt.show()
