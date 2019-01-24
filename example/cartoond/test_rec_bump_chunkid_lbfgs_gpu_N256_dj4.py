@@ -44,8 +44,10 @@ for chunk_id in range(nb_chunks+1):
     wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
     wph_op = wph_op.cuda()
     wph_ops[chunk_id] = wph_op
+    print('chunk_id in compute Sim', chunk_id)
     Sim_ = wph_op(im)*factr # (nb,nc,nb_channels,1,1,2)
     Sims.append(Sim_.clone())
+    del Sim_
     gc.collect()
     
 # ---- Reconstruct marks. At initiation, every point has the average value of the marks.----#
@@ -69,7 +71,6 @@ def grad_obj_fun(x_gpu):
     #global wph_ops
     for chunk_id in range(nb_chunks+1):
         x_t = x_gpu.clone().requires_grad_(True)
-        #print('chunk_id in grad', chunk_id)
         #if chunk_id not in wph_ops.keys():
         #    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
         #    wph_op = wph_op.cuda()
