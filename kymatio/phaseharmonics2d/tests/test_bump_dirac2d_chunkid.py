@@ -43,13 +43,13 @@ for chunk_id in range(nb_chunks+1):
     Sim_ = wph_op(im) # (nb,nc,nb_channels,1,1,2)
     print('Sim_',Sim_.shape)
     #n_coeff += Sim_.shape[2]
-    Sims.append(Sim_)
+    Sims.append(Sim_.numpy())# .squeeze())
 
-Sim = torch.tensor(Sims)
+Sim = np.concatenate(Sims,axis=2)
 print(Sim.shape)
-Sim = Sim.view(1,1,-1,1,1,2)
+#Sim = Sim.view(1,1,-1,1,1,2)
 
-print(Sim.shape)
+#print(Sim.shape)
 
 print('sum', Sim.sum())
 
