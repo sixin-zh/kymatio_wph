@@ -19,12 +19,13 @@ from .utils import compute_padding, fft2_c2c, ifft2_c2r, ifft2_c2c, periodic_dis
 
 
 class PhaseHarmonics2d(object):
-    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nGPU):
+    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nGPU, nChunksPerGPU):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         self.dj = delta_j # max scale interactions
         self.dl = delta_l # max angular interactions
         self.dk = delta_k #
-        self.nGPU = nGPU # max size of each chunk 
+        self.nGPU = nGPU # max size of each chunk
+        self.nChunksPerGPU = nChunksPerGPU
         if self.dl > self.L:
             raise (ValueError('delta_l must be <= L'))
 
@@ -96,7 +97,7 @@ class PhaseHarmonics2d(object):
         nb_cov = len(self.idx_wph['la1'])
         print('nb cov is', nb_cov)
         
-        n_chunks = self.nGPU * 16
+        n_chunks = self.nGPU * self.nChunksPerGPU
         max_chunk = nb_cov // n_chunks
         nb_cov_chunk = np.zeros(n_chunks,dtype=np.int32)
         for idxc in range(n_chunks):
@@ -106,7 +107,7 @@ class PhaseHarmonics2d(object):
                 nb_cov_chunk[idxc] = int(nb_cov - max_chunk*(n_chunks-1))
                 assert(nb_cov_chunk[idxc] > 0)
 
-        print('nb cov chunk is', nb_cov_chunk)
+        print('nb cov chunk is', nb_cov_chunk, ' sum is', nb_cov_chunk.sum())
 
         idx_wph_chunks = dict()
         offset = int(0)
