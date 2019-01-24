@@ -63,7 +63,7 @@ def obj_fun(x,chunk_id):
 
 grad_err = im.clone()
 
-def grad_obj_fun(x):
+def grad_obj_fun(x_gpu):
     loss = 0
     global grad_err
     grad_err[:] = 0
