@@ -75,8 +75,8 @@ def grad_obj_fun(x_gpu):
         #    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
         #    wph_op = wph_op.cuda()
         #    wph_ops[chunk_id] = wph_op
-        loss = loss + obj_fun(x_t,chunk_id)
-        grad_err_, = grad([loss],[x_t], retain_graph=False)
+        loss = loss + obj_fun(x_gpu,chunk_id)
+        grad_err_, = grad([loss],[x_gpu], retain_graph=False)
         grad_err = grad_err + grad_err_
         #x_t.detach()
         #del x_t
