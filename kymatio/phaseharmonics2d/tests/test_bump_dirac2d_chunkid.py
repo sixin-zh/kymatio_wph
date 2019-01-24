@@ -38,11 +38,11 @@ from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
 nb_chunks = 10
 chunk_id = 10
 Sims = []
-n_coeff = 0
+#n_coeff = 0
 for chunk_in in range(nb_chunks):
     wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
     Sim_ = wph_op(im) # (nb,nc,nb_channels,1,1,2)
-    n_coeff += Sim_.shape(2)
+    #n_coeff += Sim_.shape[2]
     Sims.append(Sim_)
 
 Sim = torch.tensor(Sims).view(1,1,-1,1,1,2)
