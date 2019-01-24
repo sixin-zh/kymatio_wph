@@ -76,7 +76,7 @@ def grad_obj_fun(x_gpu):
             wph_op = wph_op.cuda()
             wph_ops[chunk_id] = wph_op
         loss = loss + obj_fun(x_t,chunk_id)
-        grad_err_, = grad([loss],[x_t], retain_graph=True)
+        grad_err_, = grad([loss],[x_t], retain_graph=False)
         grad_err = grad_err + grad_err_
         x_t.detach()
         del x_t
