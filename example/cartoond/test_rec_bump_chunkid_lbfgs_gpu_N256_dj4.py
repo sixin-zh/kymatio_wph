@@ -32,6 +32,7 @@ delta_j = 4
 delta_l = L/2
 delta_k = 1
 nb_chunks = 80
+nGPU = 2
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
@@ -41,21 +42,22 @@ Sims = []
 factr = 1e3
 wph_ops = dict()
 for chunk_id in range(nb_chunks+1):
+    devid = chunk_id % nGPU
     wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
-    wph_op = wph_op.cuda()
+    wph_op = wph_op.cuda(devid)
     wph_ops[chunk_id] = wph_op
     print('chunk_id in compute Sim', chunk_id)
-    Sim_ = wph_op(im)*factr # (nb,nc,nb_channels,1,1,2)
-    Sims.append(Sim_.clone())
-    del Sim_
-    gc.collect()
+    im_ = im.to(devid)
+    Sim_ = wph_op(im_)*factr # (nb,nc,nb_channels,1,1,2) sur devid
+    Sims.append(Sim_)
+    #    gc.collect()
     
 # ---- Reconstruct marks. At initiation, every point has the average value of the marks.----#
 #---- Trying scipy L-BFGS ----#
 def obj_fun(x,chunk_id):
     if x.grad is not None:
         x.grad.data.zero_()
-    global wph_ops
+    #global wph_ops
     wph_op = wph_ops[chunk_id]
     p = wph_op(x)*factr
     diff = p-Sims[chunk_id]
@@ -70,7 +72,8 @@ def grad_obj_fun(x_gpu):
     grad_err[:] = 0
     #global wph_ops
     for chunk_id in range(nb_chunks+1):
-        x_t = x_gpu.clone().requires_grad_(True)
+        devid = chunk_id % nGPU
+        x_t = x_gpu.to(devid).requires_grad_(True)
         #if chunk_id not in wph_ops.keys():
         #    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
         #    wph_op = wph_op.cuda()

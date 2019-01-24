@@ -184,25 +184,28 @@ class PhaseHarmonics2d(object):
 
         return idx_wph
 
-    def _type(self, _type):
+    def _type(self, _type, devid=None):
         self.hatpsi = self.hatpsi.type(_type)
         self.hatphi = self.hatphi.type(_type)
+        if devid is not None:
+            self.hatpsi = self.hatpsi.to(devid)
+            self.hatphi = self.hatphi.to(devid)
         #print('in _type',type(self.hatpsi))
         self.pad.padding_module.type(_type)
         return self
     
-    def cuda(self):
+    def cuda(self, devid=0):
         """
             Moves tensors to the GPU
         """
         print('call cuda')
         if self.chunk_id < self.nb_chunks:
-            self.this_wph['la1'] = self.this_wph['la1'].type(torch.cuda.LongTensor)
-            self.this_wph['la2'] = self.this_wph['la2'].type(torch.cuda.LongTensor)
-            self.this_wph['k1'] = self.this_wph['k1'].type(torch.cuda.FloatTensor)
-            self.this_wph['k2'] = self.this_wph['k2'].type(torch.cuda.FloatTensor)
+            self.this_wph['la1'] = self.this_wph['la1'].type(torch.cuda.LongTensor).to(devid)
+            self.this_wph['la2'] = self.this_wph['la2'].type(torch.cuda.LongTensor).to(devid)
+            self.this_wph['k1'] = self.this_wph['k1'].type(torch.cuda.FloatTensor).to(devid)
+            self.this_wph['k2'] = self.this_wph['k2'].type(torch.cuda.FloatTensor).to(devid)
     
-        return self._type(torch.cuda.FloatTensor)
+        return self._type(torch.cuda.FloatTensor, devid)
 
     def cpu(self):
         """
