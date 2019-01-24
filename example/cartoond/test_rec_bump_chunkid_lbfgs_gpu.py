@@ -82,6 +82,8 @@ def fun_and_grad_conv(x):
     return  loss.cpu().item(), np.asarray(grad_err.reshape(size**2).cpu().numpy(), dtype=np.float64)
 
 #float(loss)
+def callback_print():
+    return
 
 x = torch.Tensor(1, 1, N, N).normal_(std=0.1)
 #x[0,0,0,0] = 2
