@@ -38,7 +38,7 @@ from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
 nb_chunks = 10
 Sims = []
 #n_coeff = 0
-for chunk_id in range(nb_chunks):
+for chunk_id in range(nb_chunks+1):
     wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
     Sim_ = wph_op(im) # (nb,nc,nb_channels,1,1,2)
     print('Sim_',Sim_.shape)
