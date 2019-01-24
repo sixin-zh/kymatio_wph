@@ -77,6 +77,7 @@ def grad_obj_fun(x):
         loss = loss + obj_fun(x,chunk_id)
         grad_err_, = grad([loss],[x], retain_graph=True)
         grad_err = grad_err + grad_err_
+        del grad_err_
         del wph_ops[chunk_id]
         gc.collect()
         
