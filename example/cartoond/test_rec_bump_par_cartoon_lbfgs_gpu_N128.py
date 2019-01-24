@@ -94,10 +94,14 @@ def callback_print(x):
         loss = torch.mul(diff,diff).mean()
         print(loss)
 
+        nelement = 0
         for obj in gc.get_objects():
             if torch.is_tensor(obj): #  or (hasattr(obj, 'data') and torch.is_tensor(obj.data)):
                 print(type(obj), obj.size())
-    
+                nelement += obj.nelement()
+
+        print('nelement floats', nelement, ', =', nelement*4/1024/1024, 'MB')
+        
         return loss
 
 x = torch.Tensor(1, 1, N, N).normal_(std=0.1)
