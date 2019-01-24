@@ -10,6 +10,9 @@ import scipy.io as sio
 import torch
 from torch.autograd import Variable, grad
 
+device_id = 6
+torch.cuda.set_device(device_id)
+
 from time import time
 import gc
 
