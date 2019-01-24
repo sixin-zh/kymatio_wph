@@ -96,7 +96,7 @@ class PhaseHarmonics2d(object):
         nb_cov = len(self.idx_wph['la1'])
         print('nb cov is', nb_cov)
         
-        n_chunks = self.nGPU * 4
+        n_chunks = self.nGPU * 16
         max_chunk = nb_cov // n_chunks
         nb_cov_chunk = np.zeros(n_chunks,dtype=np.int32)
         for idxc in range(n_chunks):
