@@ -53,10 +53,10 @@ class PhaseHarmonics2d(object):
         if self.chunk_id < self.nb_chunks:
             self.idx_wph = self.compute_idx()
             self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id) 
-            print(self.this_wph['la1'])
-            print(self.this_wph['la2'])
-            print(self.this_wph['k1'])
-            print(self.this_wph['k2'])
+            print('la1',self.this_wph['la1'])
+            #print(self.this_wph['la2'])
+            #print(self.this_wph['k1'])
+            #print(self.this_wph['k2'])
             self.subinitmean1 = SubInitSpatialMeanC()
             self.subinitmean2 = SubInitSpatialMeanC()
         else:
