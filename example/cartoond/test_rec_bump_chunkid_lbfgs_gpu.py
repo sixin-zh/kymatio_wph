@@ -32,6 +32,7 @@ delta_j = 1
 delta_l = L
 delta_k = 1
 
+
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
     import PhaseHarmonics2d
@@ -64,10 +65,18 @@ def grad_obj_fun(x):
     loss = 0
     global grad_err
     grad_err[:] = 0
+    global wph_ops
     for chunk_id in range(nb_chunks+1):
+        if wph_ops[chunk_id] is None:
+            wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
+            wph_op = wph_op.cuda()
+            wph_ops[chunk_id] = wph_op
         loss = loss + obj_fun(x,chunk_id)
         grad_err_, = grad([loss],[x], retain_graph=True)
         grad_err = grad_err + grad_err_
+        del wph_ops[chunk_id]
+        wph_ops[chunk_id] = None
+        
     return loss, grad_err
 
 count = 0

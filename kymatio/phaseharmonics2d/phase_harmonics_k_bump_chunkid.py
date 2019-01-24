@@ -3,6 +3,8 @@
 # Case: phase_harmonic_cor in representation_complex
 #      do not create new Sout for each forward
 
+# Init with SubInit
+
 __all__ = ['PhaseHarmonics2d']
 
 import warnings
