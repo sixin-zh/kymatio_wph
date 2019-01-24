@@ -45,7 +45,8 @@ for chunk_id in range(nb_chunks+1):
     wph_op = wph_op.cuda()
     wph_ops[chunk_id] = wph_op
     Sim_ = wph_op(im)*factr # (nb,nc,nb_channels,1,1,2)
-    Sims.append(Sim_)
+    Sims.append(Sim_.clone())
+    gc.collect()
     
 # ---- Reconstruct marks. At initiation, every point has the average value of the marks.----#
 #---- Trying scipy L-BFGS ----#
