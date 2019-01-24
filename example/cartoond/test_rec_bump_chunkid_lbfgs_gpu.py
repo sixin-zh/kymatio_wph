@@ -100,7 +100,7 @@ def fun_and_grad_conv(x):
     return  loss.cpu().item(), np.asarray(grad_err.reshape(size**2).cpu().numpy(), dtype=np.float64)
 
 #float(loss)
-def callback_print():
+def callback_print(x):
     return
 
 x = torch.Tensor(1, 1, N, N).normal_(std=0.1)
