@@ -37,10 +37,11 @@ from kymatio.phaseharmonics2d.phase_harmonics_k_bump \
 
 wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k).cuda()
 
-L2 = L*2
+
 Sim = wph_op(im) # (nb,nc,nb_channels,1,1,2)
-print(Sim.sum())
+print('sum', Sim.sum())
 nbc = Sim.shape[2]
+L2 = L*2
 for idxbc in range(nbc-1):
     j1 = wph_op.idx_wph['la1'][idxbc]//L2
     theta1 = wph_op.idx_wph['la1'][idxbc]%L2
