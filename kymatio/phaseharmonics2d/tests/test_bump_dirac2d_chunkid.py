@@ -47,7 +47,7 @@ for chunk_in in range(nb_chunks):
 
 Sim = torch.tensor(Sims)
 print(Sim.shape)
-Sim = .view(1,1,-1,1,1,2)
+Sim = Sim.view(1,1,-1,1,1,2)
 
 print(Sim.shape)
 
