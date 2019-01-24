@@ -62,6 +62,7 @@ grad_err = im.clone()
 
 def grad_obj_fun(x):
     loss = 0
+    global grad_err
     grad_err[:] = 0
     for chunk_id in range(nb_chunks+1):
         loss = loss + obj_fun(x,chunk_id)
