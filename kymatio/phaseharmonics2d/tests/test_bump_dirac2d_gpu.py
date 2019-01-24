@@ -56,5 +56,5 @@ for idxbc in range(nbc-1):
 # last channel is l2
 #print(nbc-1, "=> phiJ " ,  float(Sim[0,0,nbc-1,0,0,0]),  "+i ",float(Sim[0,0,nbc-1,0,0,1]) )
 
-plt.plot(Sim.squeeze().cpu().numpy()[...,0])
+plt.plot(Sim.squeeze().cpu().numpy()[...,1])
 plt.show()
