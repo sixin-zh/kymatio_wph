@@ -11,6 +11,7 @@ import torch
 from torch.autograd import Variable, grad
 
 from time import time
+import gc
 
 #---- create image without/with marks----#
 
@@ -74,8 +75,8 @@ def grad_obj_fun(x):
         loss = loss + obj_fun(x,chunk_id)
         grad_err_, = grad([loss],[x], retain_graph=True)
         grad_err = grad_err + grad_err_
-        del wph_ops[chunk_id]
         wph_ops[chunk_id] = None
+        gc.collect()
         
     return loss, grad_err
 
