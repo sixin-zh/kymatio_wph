@@ -70,27 +70,18 @@ def grad_obj_fun(x):
         grad_err = grad_err + grad_err_
     return loss, grad_err
 
+count = 0
 def fun_and_grad_conv(x):
     x_t = torch.reshape(torch.tensor(x, requires_grad=True,dtype=torch.float),
                         (1,1,size,size)).cuda()
     loss, grad_err = grad_obj_fun(x_t)
+    global count
+    count += 1
+    if count%40 == 1:
+        print(loss)
     return  loss.cpu().item(), np.asarray(grad_err.reshape(size**2).cpu().numpy(), dtype=np.float64)
 
 #float(loss)
-
-count = 0
-
-def callback_print(x):
-    global count
-    count +=1
-    if count%40 == 1:
-        #x_t = torch.reshape(torch.tensor(x, requires_grad=True,dtype=torch.float),
-        #                    (1,1,size,size)).cuda()
-        #p = wph_op(x_t)*factr
-        #diff = p-Sim
-        loss = -1 # torch.mul(diff,diff).mean()
-        print(loss)
-        return loss
 
 x = torch.Tensor(1, 1, N, N).normal_(std=0.1)
 #x[0,0,0,0] = 2
