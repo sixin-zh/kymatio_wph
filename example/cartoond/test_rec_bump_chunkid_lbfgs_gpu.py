@@ -70,19 +70,19 @@ def grad_obj_fun(x_gpu):
     global wph_ops
     for chunk_id in range(nb_chunks+1):
         x_t = x_gpu.clone().requires_grad_(True)
-        print('chunk_id in grad', chunk_id)
-        if chunk_id not in wph_ops.keys():
-            wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
-            wph_op = wph_op.cuda()
-            wph_ops[chunk_id] = wph_op
+        #print('chunk_id in grad', chunk_id)
+        #if chunk_id not in wph_ops.keys():
+        #    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
+        #    wph_op = wph_op.cuda()
+        #    wph_ops[chunk_id] = wph_op
         loss = loss + obj_fun(x_t,chunk_id)
         grad_err_, = grad([loss],[x_t], retain_graph=False)
         grad_err = grad_err + grad_err_
         x_t.detach()
         del x_t
         del grad_err_
-        del wph_ops[chunk_id]
-        gc.collect()
+        #del wph_ops[chunk_id]
+        #gc.collect()
         
     return loss, grad_err
 
