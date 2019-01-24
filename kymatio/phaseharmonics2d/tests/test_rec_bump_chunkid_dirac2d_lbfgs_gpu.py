@@ -43,9 +43,9 @@ wph_ops = []
 for chunk_id in range(nb_chunks+1):
     wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
     wph_op = wph_op.cuda()
+    wph_ops.append(wph_op)
     Sim_ = wph_op(im)*factr # (nb,nc,nb_channels,1,1,2)
-    Sims.append(Sim_.cpu().numpy())
-    wph_ops.append(wph_ops)
+    Sims.append(Sim_)
     
 # ---- Reconstruct marks. At initiation, every point has the average value of the marks.----#
 #---- Trying scipy L-BFGS ----#
@@ -53,7 +53,7 @@ def obj_fun(x,chunk_id):
     if x.grad is not None:
         x.grad.data.zero_()
     wph_op = wph_ops[chunk_id]
-    p = wph_op(a)*factr
+    p = wph_op(x)*factr
     diff = p-b
     loss = torch.mul(diff,diff).mean()
     return loss
