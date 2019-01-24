@@ -54,7 +54,7 @@ def obj_fun(x,chunk_id):
         x.grad.data.zero_()
     wph_op = wph_ops[chunk_id]
     p = wph_op(x)*factr
-    diff = p-b
+    diff = p-Sims[chunk_id]
     loss = torch.mul(diff,diff).mean()
     return loss
 
