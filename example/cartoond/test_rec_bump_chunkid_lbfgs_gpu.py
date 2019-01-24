@@ -69,14 +69,17 @@ def grad_obj_fun(x):
     grad_err[:] = 0
     global wph_ops
     for chunk_id in range(nb_chunks+1):
+        x_t = x_gpu.clone().requires_grad_(True)
         print('chunk_id in grad', chunk_id)
         if chunk_id not in wph_ops.keys():
             wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
             wph_op = wph_op.cuda()
             wph_ops[chunk_id] = wph_op
-        loss = loss + obj_fun(x,chunk_id)
-        grad_err_, = grad([loss],[x], retain_graph=True)
+        loss = loss + obj_fun(x_t,chunk_id)
+        grad_err_, = grad([loss],[x_t], retain_graph=True)
         grad_err = grad_err + grad_err_
+        x_t.detach()
+        del x_t
         del grad_err_
         del wph_ops[chunk_id]
         gc.collect()
@@ -85,9 +88,9 @@ def grad_obj_fun(x):
 
 count = 0
 def fun_and_grad_conv(x):
-    x_t = torch.reshape(torch.tensor(x, requires_grad=True,dtype=torch.float),
-                        (1,1,size,size)).cuda()
-    loss, grad_err = grad_obj_fun(x_t)
+    x_float = torch.reshape(torch.tensor(x,dtype=torch.float),(1,1,size,size))
+    x_gpu = x_float.cuda()
+    loss, grad_err = grad_obj_fun(x_gpu)
     del x_t
     gc.collect()
     global count
