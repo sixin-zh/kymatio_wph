@@ -45,7 +45,9 @@ for chunk_in in range(nb_chunks):
     #n_coeff += Sim_.shape[2]
     Sims.append(Sim_)
 
-Sim = torch.tensor(Sims).view(1,1,-1,1,1,2)
+Sim = torch.tensor(Sims)
+print(Sim.shape)
+Sim = .view(1,1,-1,1,1,2)
 
 print(Sim.shape)
 
