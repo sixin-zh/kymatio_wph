@@ -15,7 +15,7 @@ import gc
 
 #---- create image without/with marks----#
 
-size=256
+size=64 # 256
 
 # --- Dirac example---#
 
@@ -25,13 +25,13 @@ im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
 
 # Parameters for transforms
 
-J = 8
+J = 6 # 8
 L = 8
 M, N = im.shape[-2], im.shape[-1]
 delta_j = 4
 delta_l = L/2
 delta_k = 1
-nb_chunks = 40
+nb_chunks = 10 # 40
 nGPU = 3
 
 # kymatio scattering
@@ -79,9 +79,10 @@ def grad_obj_fun(x_gpu):
         #    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
         #    wph_op = wph_op.cuda()
         #    wph_ops[chunk_id] = wph_op
-        loss = loss + obj_fun(x_t,chunk_id)
+        loss_ = obj_fun(x_t,chunk_id)
         grad_err_, = grad([loss],[x_t], retain_graph=False)
         grad_err = grad_err + grad_err_
+        loss = loss + loss_
         #x_t.detach()
         #del x_t
         #del grad_err_
