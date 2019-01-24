@@ -87,6 +87,8 @@ def fun_and_grad_conv(x):
     x_t = torch.reshape(torch.tensor(x, requires_grad=True,dtype=torch.float),
                         (1,1,size,size)).cuda()
     loss, grad_err = grad_obj_fun(x_t)
+    del x_t
+    gc.collect()
     global count
     count += 1
     if count%40 == 1:
