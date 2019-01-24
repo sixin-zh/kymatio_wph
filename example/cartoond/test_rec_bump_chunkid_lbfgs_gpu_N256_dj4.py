@@ -64,7 +64,7 @@ def obj_fun(x,chunk_id):
     loss = torch.mul(diff,diff).mean()
     return loss
 
-grad_err = im.clone()
+grad_err = im.to(0)
 
 def grad_obj_fun(x_gpu):
     loss = 0
@@ -81,8 +81,8 @@ def grad_obj_fun(x_gpu):
         #    wph_ops[chunk_id] = wph_op
         loss_ = obj_fun(x_t,chunk_id)
         grad_err_, = grad([loss_],[x_t], retain_graph=False)
-        grad_err = grad_err + grad_err_
-        loss = loss + loss_
+        grad_err = grad_err + grad_err_.to(0)
+        loss = loss + loss_.to(0)
         #x_t.detach()
         #del x_t
         #del grad_err_
