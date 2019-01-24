@@ -91,7 +91,7 @@ def fun_and_grad_conv(x):
     x_float = torch.reshape(torch.tensor(x,dtype=torch.float),(1,1,size,size))
     x_gpu = x_float.cuda()
     loss, grad_err = grad_obj_fun(x_gpu)
-    del x_t
+    del x_gpu
     gc.collect()
     global count
     count += 1
