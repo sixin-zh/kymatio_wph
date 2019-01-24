@@ -100,9 +100,9 @@ class PhaseHarmonics2d(object):
         nb_cov_chunk = np.zeros(n_chunks,dtype=np.int32)
         for idxc in range(n_chunks):
             if idxc < n_chunks-1:
-                nb_cov_chunk[idxc] = int(self.max_chunk)
+                nb_cov_chunk[idxc] = int(max_chunk)
             else:
-                nb_cov_chunk[idxc] = int(nb_cov - self.max_chunk*(n_chunks-1))
+                nb_cov_chunk[idxc] = int(nb_cov - max_chunk*(n_chunks-1))
                 assert(nb_cov_chunk[idxc] > 0)
 
         print('nb cov chunk is', nb_cov_chunk)
