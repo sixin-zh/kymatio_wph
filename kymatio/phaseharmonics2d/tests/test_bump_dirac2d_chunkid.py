@@ -42,6 +42,7 @@ Sims = []
 for chunk_in in range(nb_chunks):
     wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
     Sim_ = wph_op(im) # (nb,nc,nb_channels,1,1,2)
+    print('Sim_',Sim_.shape)
     #n_coeff += Sim_.shape[2]
     Sims.append(Sim_)
 
