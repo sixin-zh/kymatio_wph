@@ -29,7 +29,7 @@ J = 7
 L = 8
 M, N = im.shape[-2], im.shape[-1]
 j_max = 1
-l_max = L
+l_max = L/2
 delta_k = 1
 nGPU = 4
 
@@ -119,7 +119,7 @@ final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
 im_opt = np.reshape(x_opt, (size,size))
 tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 
-torch.save(tensor_opt, './results/test_rec_bump_par_cartoon_lbfgs_gpu_N128.pt')
+torch.save(tensor_opt, './results/test_rec_bump_par_cartoon_lbfgs_gpu_N128_run2.pt')
 
 #plt.figure()
 #im_opt = np.reshape(x_opt, (size,size))
