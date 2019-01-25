@@ -90,6 +90,7 @@ def fun_and_grad_conv(x):
     global time0
     if count%10 == 1:
         print(count, loss, 'using time (sec):' , time()-time0)
+        print('grad norm is', grad_err:norm())
         time0 = time()
         
     return  loss.cpu().item(), np.asarray(grad_err.reshape(size**2).cpu().numpy(), dtype=np.float64)
