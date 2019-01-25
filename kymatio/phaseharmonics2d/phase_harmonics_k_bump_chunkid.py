@@ -247,7 +247,7 @@ class PhaseHarmonics2d(object):
                     xpsi_bc = ifft2_c2c(hatxpsi_bc)
                     # reshape to (1,J*L,M,N,2)
                     xpsi_bc = xpsi_bc.view(1,J*L2,M,N,2)
-                
+                    
                     # select la1, et la2, P_c = number of |la1| in this chunk
                     xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1']) # (1,P_c,M,N,2)
                     xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2']) # (1,P_c,M,N,2)

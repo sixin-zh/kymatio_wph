@@ -18,7 +18,6 @@ import gc
 size=256
 
 # --- Dirac example---#
-
 data = sio.loadmat('./example/cartoond/demo_toy7d_N' + str(size) + '.mat')
 im = data['imgs']
 im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
@@ -101,10 +100,10 @@ def fun_and_grad_conv(x):
 def callback_print(x):
     return
 
-x = torch.Tensor(1, 1, N, N).normal_(std=0.1)
+x = torch.Tensor(1, 1, N, N).normal_(std=0.01)+0.5
 #x[0,0,0,0] = 2
 #x = x.clone().detach().requires_grad_(True) # torch.tensor(x, requires_grad=True)
-x0 = x.reshape(size**2).detach().numpy()
+x0 = x.reshape(size**2).numpy()
 x0 = np.asarray(x0, dtype=np.float64)
 
 res = opt.minimize(fun_and_grad_conv, x0, method='L-BFGS-B', jac=True, tol=None,
@@ -115,7 +114,7 @@ final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
 im_opt = np.reshape(x_opt, (size,size))
 tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 
-torch.save(tensor_opt, 'test_rec_bump_chunkid_lbfgs_gpu_N256.pt')
+torch.save(tensor_opt, 'test_rec_bump_chunkid_lbfgs_gpu_N256_dj1.pt')
 
 #tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 #plt.figure()
