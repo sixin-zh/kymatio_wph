@@ -87,6 +87,8 @@ def grad_obj_fun(x_gpu):
     return loss, grad_err
 
 count = 0
+from time import time
+time0 = time()
 def fun_and_grad_conv(x):
     x_float = torch.reshape(torch.tensor(x,dtype=torch.float),(1,1,size,size))
     x_gpu = x_float.cuda()#.requires_grad_(True)
@@ -95,8 +97,9 @@ def fun_and_grad_conv(x):
     #gc.collect()
     global count
     count += 1
-    if count%50 == 1:
-        print(loss)
+    if count%10 == 1:
+        print(loss, 'using time (sec):' , time()-time0)
+        time0 = time()
     return  loss.cpu().item(), np.asarray(grad_err.reshape(size**2).cpu().numpy(), dtype=np.float64)
 
 #float(loss)
