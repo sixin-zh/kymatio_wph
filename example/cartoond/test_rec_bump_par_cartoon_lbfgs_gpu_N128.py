@@ -101,7 +101,7 @@ def callback_print(x):
         #        print(type(obj), obj.size())
         #        nelement += obj.nelement()
 
-        print('nelement floats', nelement, ', =', nelement*4/1024/1024, 'MB')
+        #print('nelement floats', nelement, ', =', nelement*4/1024/1024, 'MB')
         
         return loss
 
