@@ -99,7 +99,8 @@ def fun_and_grad_conv(x):
     count += 1
     if count%10 == 1:
         print(loss, 'using time (sec):' , time()-time0)
-        global time0 = time()
+        global time0
+        time0 = time()
     return  loss.cpu().item(), np.asarray(grad_err.reshape(size**2).cpu().numpy(), dtype=np.float64)
 
 #float(loss)
