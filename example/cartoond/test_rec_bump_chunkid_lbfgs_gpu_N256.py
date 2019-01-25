@@ -72,9 +72,11 @@ def grad_obj_fun(x_gpu):
         #    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
         #    wph_op = wph_op.cuda()
         #    wph_ops[chunk_id] = wph_op
-        loss = loss + obj_fun(x_t,chunk_id)
-        grad_err_, = grad([loss],[x_t], retain_graph=False)
-        grad_err = grad_err + grad_err_
+        
+        loss_t = obj_fun(x_t,chunk_id)
+        grad_err_t, = grad([loss_t],[x_t], retain_graph=False)
+        loss = loss + loss_t
+        grad_err = grad_err + grad_err_t
         #x_t.detach()
         #del x_t
         #del grad_err_
@@ -84,6 +86,8 @@ def grad_obj_fun(x_gpu):
     return loss, grad_err
 
 count = 0
+from time import time
+time0 = time()
 def fun_and_grad_conv(x):
     x_float = torch.reshape(torch.tensor(x,dtype=torch.float),(1,1,size,size))
     x_gpu = x_float.cuda()#.requires_grad_(True)
@@ -91,10 +95,12 @@ def fun_and_grad_conv(x):
     #del x_gpu
     #gc.collect()
     global count
+    global time0
     count += 1
-    if count%40 == 1:
-        print(loss)
-    return  loss.cpu().item(), np.asarray(grad_err.reshape(size**2).cpu().numpy(), dtype=np.float64)
+    if count%10 == 1:
+        print(count, loss, 'using time (sec):' , time()-time0)
+        time0 = time()
+    return loss.cpu().item(), np.asarray(grad_err.reshape(size**2).cpu().numpy(), dtype=np.float64)
 
 #float(loss)
 def callback_print(x):
@@ -114,7 +120,7 @@ final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
 im_opt = np.reshape(x_opt, (size,size))
 tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 
-torch.save(tensor_opt, 'test_rec_bump_chunkid_lbfgs_gpu_N256_dj1.pt')
+torch.save(tensor_opt, 'test_rec_bump_chunkid_lbfgs_gpu_N256_dj1_k2fix.pt')
 
 #tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 #plt.figure()

@@ -32,13 +32,12 @@ M, N = im.shape[-2], im.shape[-1]
 delta_j = 1
 delta_l = L/2
 delta_k = 1
-
+nb_chunks = 10
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
     import PhaseHarmonics2d
 
-nb_chunks = 10
 Sims = []
 factr = 1e3
 wph_ops = dict()
