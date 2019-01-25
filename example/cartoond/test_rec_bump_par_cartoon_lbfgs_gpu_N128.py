@@ -32,12 +32,13 @@ j_max = 1
 l_max = L/2
 delta_k = 1
 nGPU = 4
+nChunksPerGPU=1
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_par \
     import PhaseHarmonics2d
 
-wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max, delta_k, nGPU)
+wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max, delta_k, nGPU, nChunksPerGPU)
 wph_op = wph_op.cuda()
 
 factr = 1e3
