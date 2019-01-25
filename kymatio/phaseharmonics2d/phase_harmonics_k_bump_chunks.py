@@ -262,7 +262,6 @@ class PhaseHarmonics2d(object):
                 xpsi_bc = xpsi_bc.view(1,J*L2,M,N,2)
                 offset = 0
                 for idx_chunk in range(self.n_chunks):
-                    if 
                     # select la1, et la2, P_c = number of |la1| in this chunk
                     xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.idx_wph_chunks[('la1',idx_chunk)]) # (1,P_c,M,N,2)
                     xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.idx_wph_chunks[('la2',idx_chunk)]) # (1,P_c,M,N,2)
