@@ -75,9 +75,10 @@ def grad_obj_fun(x_gpu):
         #    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
         #    wph_op = wph_op.cuda()
         #    wph_ops[chunk_id] = wph_op
-        loss = loss + obj_fun(x_t,chunk_id)
-        grad_err_, = grad([loss],[x_t], retain_graph=False)
-        grad_err = grad_err + grad_err_
+        loss_t = obj_fun(x_t,chunk_id)
+        grad_err_t, = grad([loss_t],[x_t], retain_graph=False)
+        loss = loss + loss_t
+        grad_err = grad_err + grad_err_t
         #x_t.detach()
         #del x_t
         #del grad_err_
@@ -87,7 +88,7 @@ def grad_obj_fun(x_gpu):
     return loss, grad_err
 
 count = 0
-from tiem import time
+from time import time
 time0 = time()
 def fun_and_grad_conv(x):
     x_float = torch.reshape(torch.tensor(x,dtype=torch.float),(1,1,size,size))
