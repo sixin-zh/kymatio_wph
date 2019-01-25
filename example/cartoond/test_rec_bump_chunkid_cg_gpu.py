@@ -100,7 +100,7 @@ def fun_and_grad_conv(x):
     count += 1
     if count%10 == 1:
         
-        print(loss, 'using time (sec):' , time()-time0)
+        print(count, loss, 'using time (sec):' , time()-time0)
        
         time0 = time()
     return  loss.cpu().item(), np.asarray(grad_err.reshape(size**2).cpu().numpy(), dtype=np.float64)
@@ -109,10 +109,11 @@ def fun_and_grad_conv(x):
 def callback_print(x):
     return
 
-x = torch.Tensor(1, 1, N, N).normal_(std=0.1)
+x = torch.Tensor(1, 1, N, N).normal_(std=0.01) + 0.5
+
 #x[0,0,0,0] = 2
 #x = x.clone().detach().requires_grad_(True) # torch.tensor(x, requires_grad=True)
-x0 = x.reshape(size**2).detach().numpy()
+x0 = x.reshape(size**2).numpy()
 x0 = np.asarray(x0, dtype=np.float64)
 
 res = opt.minimize(fun_and_grad_conv, x0, method='CG', jac=True, tol=None,
