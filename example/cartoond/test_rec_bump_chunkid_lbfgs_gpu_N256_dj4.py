@@ -31,7 +31,7 @@ M, N = im.shape[-2], im.shape[-1]
 delta_j = 4
 delta_l = L/2
 delta_k = 1
-nb_chunks = 60 
+nb_chunks = 40 
 nGPU = 4
 
 # kymatio scattering
@@ -103,6 +103,7 @@ def fun_and_grad_conv(x):
     #del x_gpu
     #gc.collect()
     global count
+    global time0
     count += 1
     if count%10 == 1:
         print(count, loss, 'using time (sec):' , time()-time0)
