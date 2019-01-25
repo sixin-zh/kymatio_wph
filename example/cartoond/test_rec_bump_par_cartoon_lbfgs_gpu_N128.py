@@ -105,7 +105,7 @@ def callback_print(x):
         
         return loss
 
-x = torch.Tensor(1, 1, N, N).normal_(std=0.1)
+x = torch.Tensor(1, 1, N, N).normal_(std=0.01) + 0.5
 #x[0,0,0,0] = 2
 #x = torch.tensor(x, requires_grad=True)
 x0 = x.reshape(size**2).detach().numpy()
