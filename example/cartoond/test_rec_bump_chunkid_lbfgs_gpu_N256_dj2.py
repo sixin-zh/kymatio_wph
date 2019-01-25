@@ -108,7 +108,7 @@ def fun_and_grad_conv(x):
 def callback_print(x):
     return
 
-x = torch.Tensor(1, 1, N, N).normal_(std=0.1)
+x = torch.Tensor(1, 1, N, N).normal_(std=0.01)+0.5
 #x[0,0,0,0] = 2
 #x = x.clone().detach().requires_grad_(True) # torch.tensor(x, requires_grad=True)
 x0 = x.reshape(size**2).detach().numpy()

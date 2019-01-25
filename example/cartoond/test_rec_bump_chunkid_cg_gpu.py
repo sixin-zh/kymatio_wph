@@ -41,11 +41,13 @@ from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
 Sims = []
 factr = 1e3
 wph_ops = dict()
+nCov = 0
 for chunk_id in range(nb_chunks+1):
     wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
     wph_op = wph_op.cuda()
     wph_ops[chunk_id] = wph_op
     Sim_ = wph_op(im)*factr # (nb,nc,nb_channels,1,1,2)
+    nCov += Sim_.shape[2]
     Sims.append(Sim_)
     
 # ---- Reconstruct marks. At initiation, every point has the average value of the marks.----#
@@ -57,7 +59,7 @@ def obj_fun(x,chunk_id):
     wph_op = wph_ops[chunk_id]
     p = wph_op(x)*factr
     diff = p-Sims[chunk_id]
-    loss = torch.mul(diff,diff).mean()
+    loss = torch.mul(diff,diff).sum()/nCov
     return loss
 
 grad_err = im.clone()
@@ -125,4 +127,4 @@ im_opt = np.reshape(x_opt, (size,size))
 #plt.imshow(im_opt)
 #plt.show()
 tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
-torch.save(tensor_opt, 'test_rec_bump_chunkid_cg_gpu_N128_dj1_fixk2.pt')
+torch.save(tensor_opt, 'test_rec_bump_chunkid_cg_gpu_N128_dj1.pt')
