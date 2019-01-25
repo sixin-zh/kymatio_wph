@@ -30,7 +30,7 @@ J = 7
 L = 8
 M, N = im.shape[-2], im.shape[-1]
 delta_j = 1
-delta_l = L
+delta_l = L/2
 delta_k = 1
 
 
@@ -116,8 +116,8 @@ final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
 print('OPT fini avec:', final_loss,niter,msg)
 
 im_opt = np.reshape(x_opt, (size,size))
-#tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
-plt.figure()
-#im_opt = np.reshape(x_opt, (size,size))
-plt.imshow(im_opt)
-plt.show()
+#plt.figure()
+#plt.imshow(im_opt)
+#plt.show()
+tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
+torch.save(tensor_opt, 'test_rec_bump_chunkid_cg_gpu_N128_dj1.pt')
