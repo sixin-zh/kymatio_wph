@@ -40,11 +40,13 @@ from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
 Sims = []
 factr = 1e3
 wph_ops = dict()
+nCov = 0
 for chunk_id in range(nb_chunks+1):
     wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
     wph_op = wph_op.cuda()
     wph_ops[chunk_id] = wph_op
     Sim_ = wph_op(im)*factr # (nb,nc,nb_channels,1,1,2)
+    nCov += Sim_.shape[2]
     Sims.append(Sim_)
     
 # ---- Reconstruct marks. At initiation, every point has the average value of the marks.----#
@@ -56,7 +58,7 @@ def obj_fun(x,chunk_id):
     wph_op = wph_ops[chunk_id]
     p = wph_op(x)*factr
     diff = p-Sims[chunk_id]
-    loss = torch.mul(diff,diff).mean()
+    loss = torch.mul(diff,diff).sum()/nCov
     return loss
 
 grad_err = im.clone()
@@ -85,16 +87,20 @@ def grad_obj_fun(x_gpu):
     return loss, grad_err
 
 count = 0
+from tiem import time
+time0 = time()
 def fun_and_grad_conv(x):
     x_float = torch.reshape(torch.tensor(x,dtype=torch.float),(1,1,size,size))
-    x_gpu = x_float.cuda()#.requires_grad_(True)
+    x_gpu = x_float.cuda() #.requires_grad_(True)
     loss, grad_err = grad_obj_fun(x_gpu)
     #del x_gpu
     #gc.collect()
     global count
+    global time0
     count += 1
-    if count%40 == 1:
-        print(loss)
+    if count%10 == 1:
+        print(count, loss, 'using time (sec):' , time()-time0)
+        time0 = time()
     return  loss.cpu().item(), np.asarray(grad_err.reshape(size**2).cpu().numpy(), dtype=np.float64)
 
 #float(loss)
