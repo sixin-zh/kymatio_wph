@@ -177,7 +177,7 @@ class PhaseHarmonics2d(object):
                 for ell2 in range(L2):
                     if periodic_dis(ell1, ell2, L2) <= dl:
                         for j2 in range(j1+1,min(j1+dj+1,J)):
-                            for k2 in range(max(0,2**(j2-j1)-dk,2**(j2-j1)+dk+1)):
+                            for k2 in range(max(0,2**(j2-j1)-dk),2**(j2-j1)+dk+1):
                                 idx_la1.append(L2*j1+ell1)
                                 idx_la2.append(L2*j2+ell2)
                                 idx_k1.append(k1)
