@@ -29,7 +29,7 @@ im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
 J = 7
 L = 8
 M, N = im.shape[-2], im.shape[-1]
-delta_j = 1
+delta_j = 2
 delta_l = L/2
 delta_k = 1
 
