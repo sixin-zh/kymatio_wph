@@ -29,7 +29,7 @@ im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
 J = 7
 L = 8
 M, N = im.shape[-2], im.shape[-1]
-delta_j = 2
+delta_j = 1
 delta_l = L/2
 delta_k = 1
 
@@ -118,7 +118,7 @@ x0 = np.asarray(x0, dtype=np.float64)
 
 res = opt.minimize(fun_and_grad_conv, x0, method='CG', jac=True, tol=None,
                    callback=callback_print,
-                   options={'maxiter': 500, 'gtol': 0, 'norm': -np.Inf})
+                   options={'maxiter': 500, 'gtol': 0})
 final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
 print('OPT fini avec:', final_loss,niter,msg)
 
