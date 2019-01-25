@@ -111,7 +111,7 @@ x0 = np.asarray(x0, dtype=np.float64)
 
 res = opt.minimize(fun_and_grad_conv, x0, method='CG', jac=True, tol=None,
                    callback=callback_print,
-                   options={'maxiter': 500, 'gtol': 0, 'norm': -Inf})
+                   options={'maxiter': 500, 'gtol': 0, 'norm': -np.Inf})
 final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
 print('OPT fini avec:', final_loss,niter,msg)
 
