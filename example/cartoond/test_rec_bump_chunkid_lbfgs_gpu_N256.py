@@ -116,7 +116,7 @@ x0 = np.asarray(x0, dtype=np.float64)
 
 res = opt.minimize(fun_and_grad_conv, x0, method='L-BFGS-B', jac=True, tol=None,
                    callback=callback_print,
-                   options={'maxiter': 500, 'gtol': 1e-14, 'ftol': 1e-14, 'maxcor': 100})
+                   options={'maxiter': 1000, 'gtol': 1e-14, 'ftol': 1e-14, 'maxcor': 100})
 final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
 print('OPT fini avec:', final_loss,niter,msg)
 
@@ -124,7 +124,7 @@ im_opt = np.reshape(x_opt, (size,size))
 tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 
 
-torch.save(tensor_opt, 'test_rec_bump_chunkid_lbfgs_gpu_N256_dj1.pt')
+torch.save(tensor_opt, 'test_rec_bump_chunkid_lbfgs_gpu_N256_dj1_run2x.pt')
 
 #tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 #plt.figure()
