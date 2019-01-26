@@ -41,7 +41,7 @@ from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
 Sims = []
 factr = 1e3
 wph_ops = dict()
-nCo = 0
+nCov = 0
 for chunk_id in range(nb_chunks+1):
     wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
     wph_op = wph_op.cuda()
