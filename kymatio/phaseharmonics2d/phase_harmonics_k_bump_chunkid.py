@@ -29,7 +29,7 @@ class PhaseHarmonics2d(object):
         assert( self.chunk_id <= self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
         if self.dl > self.L:
             raise (ValueError('delta_l must be <= L'))
-        
+
         self.pre_pad = False # no padding
         self.cache = False # cache filter bank
         self.build()
@@ -54,7 +54,7 @@ class PhaseHarmonics2d(object):
         self.filters_tensor()
         if self.chunk_id < self.nb_chunks:
             self.idx_wph = self.compute_idx()
-            self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id) 
+            self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
             #print('la1',self.this_wph['la1'])
             #print(self.this_wph['la2'])
             #print(self.this_wph['k1'])
@@ -90,7 +90,7 @@ class PhaseHarmonics2d(object):
     def get_this_chunk(self, nb_chunks, chunk_id):
         # cut self.idx_wph into smaller pieces
         #print('la1 shape',self.idx_wph['la1'].shape)
-        
+
         nb_cov = len(self.idx_wph['la1'])
         print('nb cov is', nb_cov)
         max_chunk = nb_cov // nb_chunks
@@ -101,7 +101,7 @@ class PhaseHarmonics2d(object):
             else:
                 nb_cov_chunk[idxc] = int(nb_cov - max_chunk*(nb_chunks-1))
                 assert(nb_cov_chunk[idxc] > 0)
-        
+
         this_wph = dict()
         offset = int(0)
         for idxc in range(nb_chunks):
@@ -111,9 +111,9 @@ class PhaseHarmonics2d(object):
                 this_wph['k1'] = self.idx_wph['k1'][:,offset:offset+nb_cov_chunk[idxc],:,:]
                 this_wph['k2'] = self.idx_wph['k2'][:,offset:offset+nb_cov_chunk[idxc],:,:]
             offset = offset + nb_cov_chunk[idxc]
-            
+
         return this_wph
-    
+
     def compute_idx(self):
         L = self.L
         L2 = L*2
@@ -144,6 +144,22 @@ class PhaseHarmonics2d(object):
                         idx_la2.append(L2*j2+ell2)
                         idx_k1.append(k1)
                         idx_k2.append(k2)
+
+        # k1 = 0
+        # k2 = 0
+        # j1 = j2
+        for j1 in range(J):
+            for ell1 in range(L2):
+                k1=0
+                j2 = j1
+                for ell2 in range(L2):
+                    if periodic_dis(ell1, ell2, L2) <= dl:
+                        k2 = 0
+                        idx_la1.append(L2*j1+ell1)
+                        idx_la2.append(L2*j2+ell2)
+                        idx_k1.append(k1)
+                        idx_k2.append(k2)
+
 
         # k1 = 0
         # k2 = 0,1,2
@@ -192,7 +208,7 @@ class PhaseHarmonics2d(object):
         #print('in _type',type(self.hatpsi))
         self.pad.padding_module.type(_type)
         return self
-    
+
     def cuda(self, devid=0):
         """
             Moves tensors to the GPU
@@ -203,7 +219,7 @@ class PhaseHarmonics2d(object):
             self.this_wph['la2'] = self.this_wph['la2'].type(torch.cuda.LongTensor).to(devid)
             self.this_wph['k1'] = self.this_wph['k1'].type(torch.cuda.FloatTensor).to(devid)
             self.this_wph['k2'] = self.this_wph['k2'].type(torch.cuda.FloatTensor).to(devid)
-    
+
         return self._type(torch.cuda.FloatTensor, devid)
 
     def cpu(self):
@@ -221,7 +237,7 @@ class PhaseHarmonics2d(object):
         dj = self.dj
         dl = self.dl
         pad = self.pad
-   
+
         # denote
         # nb=batch number
         # nc=number of color channels
@@ -247,7 +263,7 @@ class PhaseHarmonics2d(object):
                     xpsi_bc = ifft2_c2c(hatxpsi_bc)
                     # reshape to (1,J*L,M,N,2)
                     xpsi_bc = xpsi_bc.view(1,J*L2,M,N,2)
-                    
+
                     # select la1, et la2, P_c = number of |la1| in this chunk
                     xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1']) # (1,P_c,M,N,2)
                     xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2']) # (1,P_c,M,N,2)
