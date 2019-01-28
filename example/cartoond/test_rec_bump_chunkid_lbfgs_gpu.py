@@ -121,15 +121,15 @@ x0 = np.asarray(x0, dtype=np.float64)
 
 res = opt.minimize(fun_and_grad_conv, x0, method='L-BFGS-B', jac=True, tol=None,
                    callback=callback_print,
-                   options={'maxiter': 500, 'gtol': 1e-14, 'ftol': 1e-14, 'maxcor': 100})
+                   options={'maxiter': 500, 'gtol': 1e-14, 'ftol': 1e-14, 'maxcor': 20})
 final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
 print('OPT fini avec:', final_loss,niter,msg)
 
 
 for start in range(nb_restarts):
-    res = opt.minimize(fun_and_grad_conv, x0, method='L-BFGS-B', jac=True, tol=None,
+    res = opt.minimize(fun_and_grad_conv, x_opt, method='L-BFGS-B', jac=True, tol=None,
                        callback=callback_print,
-                       options={'maxiter': 500, 'gtol': 1e-14, 'ftol': 1e-14, 'maxcor': 100})
+                       options={'maxiter': 500, 'gtol': 1e-14, 'ftol': 1e-14, 'maxcor': 20})
     final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
     print('OPT fini avec:', final_loss,niter,msg)
 
