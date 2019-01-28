@@ -31,7 +31,7 @@ j_max = 1
 l_max = L/2
 delta_k = 1
 nGPU = 4
-nChunksPerGPU = 16
+nChunksPerGPU = 32 # 16
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_par \
