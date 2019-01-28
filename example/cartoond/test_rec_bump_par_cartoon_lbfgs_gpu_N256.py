@@ -40,7 +40,7 @@ from kymatio.phaseharmonics2d.phase_harmonics_k_bump_par \
 wph_op = PhaseHarmonics2d(M, N, J, L, j_max, l_max, delta_k, nGPU, nChunksPerGPU)
 wph_op = wph_op.cuda()
 
-factr = 1e3
+factr = 1e4
 Sim = wph_op(im)*factr
 #for key,val in Smeta.items():
 #    print (key, "=>", val, ":", Sim[0,0,key,0,0,0], "+i ", Sim[0,0,key,0,0,1])
@@ -133,7 +133,7 @@ print('OPT fini avec:', final_loss,niter,msg)
 im_opt = np.reshape(x_opt, (size,size))
 tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 
-torch.save(tensor_opt, './results/test_rec_bump_par_cartoon_lbfgs_gpu_N256.pt')
+torch.save(tensor_opt, './results/test_rec_bump_par_cartoon_lbfgs_gpu_N256_dj1.pt')
 
 #plt.figure()
 #im_opt = np.reshape(x_opt, (size,size))
