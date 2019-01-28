@@ -36,11 +36,11 @@ class PhaseHarmonics2d(object):
         self.pad = Pad(0, pre_pad = self.pre_pad)
         #self.subsample_fourier = SubsampleFourier()
         #self.phaseexp = StablePhaseExp.apply
-        
+
         self.subinitmean1 = SubInitSpatialMeanC()
         self.subinitmean2 = SubInitSpatialMeanC()
         self.subinitmeanJ = SubInitSpatialMeanC()
-        
+
         #self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
         self.phase_harmonics = PhaseHarmonic(check_for_nan=check_for_nan)
 
@@ -136,7 +136,7 @@ class PhaseHarmonics2d(object):
                 for ell2 in range(L2):
                     if periodic_dis(ell1, ell2, L2) <= dl:
                         for j2 in range(j1+1,min(j1+dj+1,J)):
-                            for k2 in range(max(0,2**(j2-j1)-dk,2**(j2-j1)+dk+1)):
+                            for k2 in range(max(0,2**(j2-j1)-dk),2**(j2-j1)+dk+1):
                                 idx_la1.append(L2*j1+ell1)
                                 idx_la2.append(L2*j2+ell2)
                                 idx_k1.append(k1)
@@ -156,7 +156,7 @@ class PhaseHarmonics2d(object):
         #print('in _type',type(self.hatpsi))
         self.pad.padding_module.type(_type)
         return self
-    
+
     def cuda(self):
         """
             Moves tensors to the GPU
@@ -166,7 +166,7 @@ class PhaseHarmonics2d(object):
         self.idx_wph['la2'] = self.idx_wph['la2'].type(torch.cuda.LongTensor)
         self.idx_wph['k1'] = self.idx_wph['k1'].type(torch.cuda.FloatTensor)
         self.idx_wph['k2'] = self.idx_wph['k2'].type(torch.cuda.FloatTensor)
-        
+
         return self._type(torch.cuda.FloatTensor)
 
     def cpu(self):
