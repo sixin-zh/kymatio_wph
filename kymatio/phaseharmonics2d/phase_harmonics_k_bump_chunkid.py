@@ -14,7 +14,7 @@ import numpy as np
 import scipy.io as sio
 #import torch.nn.functional as F
 from .backend import cdgmm, Modulus, fft, \
-    Pad, SubInitSpatialMeanC, PhaseHarmonic, mul # , conjugate
+    Pad, SubInitSpatialMeanC, PhaseHarmonic, mul
 from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 

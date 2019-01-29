@@ -240,7 +240,13 @@ class cdgmmMul(Function):
         cublas.cublasSetStream(handle, stream)
         cublas.cublasCdgmm(handle, 'l', m, n, A.data_ptr(), lda, B.data_ptr(), incx, C.data_ptr(), ldc)
         return C
+    
+    @staticmethod
+    def backward(ctx, grad_output):
 
+        grad_A = grad_output
+        grad_B = grad_output[0,0,:,:,:]
+        return grad_A, grad_B
 
 
 cdgmm = cdgmmMul.apply
