@@ -21,6 +21,9 @@ size=256
 data = sio.loadmat('./example/cartoond/demo_toy7d_N' + str(size) + '.mat')
 im = data['imgs']
 im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0) # .cuda()
+
+recim = torch.load('./results/test_rec_bump_chunkid_lbfgs_gpu_N256_dj1_restart.pt')
+
 # Parameters for transforms
 J = 8
 L = 8
@@ -30,13 +33,15 @@ delta_l = L/2
 delta_k = 1
 nb_chunks = 10
 
-
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
     import PhaseHarmonics2d
 
 chunk_id = nb_chunks
 wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
-Sout = wph_op.compute_mean(im)
-print('chunk mean', chunk_id, Sout)
-print('im mean', im.mean())
+Sim = wph_op.compute_mean(im)
+Srec = wph_op.compute_mean(recim)
+
+print(Sim.shape)
+print(Srec.shape)
+
