@@ -230,7 +230,7 @@ class cdgmmMul(Function):
         if not A.is_cuda:
             raise RuntimeError('Use the torch backend for cpu tensors!')
 
-        C = A.new(A.size()) if not inplace else A
+        C = A.new(A.size())
         m, n = B.nelement() // 2, A.nelement() // B.nelement()
         lda = m
         ldc = m
