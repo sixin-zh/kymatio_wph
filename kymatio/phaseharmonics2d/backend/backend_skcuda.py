@@ -253,9 +253,9 @@ class cdgmmMul(Function):
         m, n = conjB.nelement() // 2, conjA.nelement() // conjB.nelement()
         # n is the B*C
         # m is the M*N
-        gradA = conjA.new(conjA.size()) # (n,m)
+        gradA = conjA.new(conjA.size()) # (n,m), col-major
         gradB = conjB.new(conjB.size()) # (m)
-        gradC = grad_output # (n,m)
+        gradC = grad_output # (n,m), col-major
         # grad_A = grad_C * conj(B)
         lda = m
         ldc = m
@@ -269,7 +269,7 @@ class cdgmmMul(Function):
         #gradB_ = gradC * conjA # (B,C,M,N,2)
         #gradB = torch.mean(torch.mean(gradC,0),0) # 
         
-        return gradA, gradB
+        return gradA # , gradB
 
 
 cdgmm = cdgmmMul.apply
