@@ -14,7 +14,7 @@ import numpy as np
 import scipy.io as sio
 #import torch.nn.functional as F
 from .backend import cdgmm, Modulus, fft, \
-    Pad, SubInitSpatialMeanC, PhaseHarmonics2, mul
+    Pad, SubInitSpatialMeanC, PhaseHarmonics2, mulcu
 from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 
@@ -277,7 +277,7 @@ class PhaseHarmonics2d(object):
                     xpsi0_bc_la1k1 = self.subinitmean1(xpsi_bc_la1k1) # (1,P_c,M,N,2)
                     xpsi0_bc_la2k2 = self.subinitmean2(xpsi_bc_la2k2) # (1,P_c,M,N,2)
                     # compute mean spatial
-                    corr_xpsi_bc = mul(xpsi0_bc_la1k1,xpsi0_bc_la2k2) # (1,P_c,M,N,2)
+                    corr_xpsi_bc = mulcu(xpsi0_bc_la1k1,xpsi0_bc_la2k2) # (1,P_c,M,N,2)
                     corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2)
                     Sout[idxb,idxc,:,:,:,:] = corr_bc[0,:,:,:,:]
 
@@ -289,7 +289,7 @@ class PhaseHarmonics2d(object):
             # submean from spatial M N
             xpsi0_c = self.subinitmeanJ(xpsi_c)
             xpsi0_mod = self.modulus(xpsi0_c) # (nb,nc,M,N,2)
-            xpsi0_mod2 = mul(xpsi0_mod,xpsi0_mod) # (nb,nc,M,N,2)
+            xpsi0_mod2 = mulcu(xpsi0_mod,xpsi0_mod) # (nb,nc,M,N,2)
             nb = hatx_c.shape[0]
             nc = hatx_c.shape[1]
             Sout = input.new(nb, nc, 1, \

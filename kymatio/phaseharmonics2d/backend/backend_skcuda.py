@@ -469,6 +469,5 @@ class cdgmmMulcu(Function):
         #gradB = torch.sum(torch.sum(gradB_,0),0) # 
         
         return gradA, gradB
-
     
 mulcu = cdgmmMulcu.apply
