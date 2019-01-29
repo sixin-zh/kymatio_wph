@@ -401,5 +401,20 @@ def mul(z1, z2):
     z = torch.stack((zr, zi), dim=-1)
     return z
 
-#class cdgmmMulcu(Function):   
+#class cdgmmMulcu(Function):
+#    @staticmethod
+#    def forward(ctx, A, B):
+        # assume A and B has the same size , with last dim = 2
+#        A, B = A.contiguous(), B.contiguous()
+                
+#        if not iscomplex(A) or not iscomplex(B):
+#            raise TypeError('The input, filter and output should be complex')
+
+#        if type(A) is not type(B):
+#            raise RuntimeError('A and B should be same type!')
+
+#        if not A.is_cuda:
+#            raise RuntimeError('Use the torch backend for cpu tensors!')
+
+        
 #mulcu = cdgmmMulcu.apply
