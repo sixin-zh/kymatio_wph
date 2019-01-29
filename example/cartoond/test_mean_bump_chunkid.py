@@ -31,7 +31,7 @@ M, N = im.shape[-2], im.shape[-1]
 delta_j = 1
 delta_l = L/2
 delta_k = 1
-nb_chunks = 10
+nb_chunks = 100
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
@@ -42,6 +42,8 @@ wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chun
 Sim = wph_op.compute_mean(im)
 Srec = wph_op.compute_mean(recim)
 
-print(Sim.shape)
-print(Srec.shape)
+plt.figure()
+plt.plot(Sim[0,:,:,:,:,:,0].squeeze().numpy())
+plt.plot(Srec[0,:,:,:,:,:,0].squeeze().numpy())
+plt.show()
 
