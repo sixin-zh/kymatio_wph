@@ -31,19 +31,19 @@ M, N = im.shape[-2], im.shape[-1]
 delta_j = 1
 delta_l = L/2
 delta_k = 1
-nb_chunks = 10
+nb_chunks = 50
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
     import PhaseHarmonics2d
 
 for chunk_id in range(nb_chunks):
-    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
-    Sim = wph_op.forward(im)
-    Srec = wph_op.forward(recim)
+    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id).cuda()
+    Sim = wph_op.forward(im.cuda())
+    Srec = wph_op.forward(recim.cuda())
     plt.figure()
-    S1 = Sim[0,0,:,:,:,0].squeeze().numpy()
-    S2 = Srec[0,0,:,:,:,0].squeeze().numpy()
+    S1 = Sim[0,0,:,:,:,0].squeeze().cpu().numpy()
+    S2 = Srec[0,0,:,:,:,0].squeeze().cpu().numpy()
     plt.plot(S1)
     plt.plot((S2-S1))
     plt.show()
