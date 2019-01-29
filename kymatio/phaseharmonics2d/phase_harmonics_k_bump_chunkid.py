@@ -299,6 +299,14 @@ class PhaseHarmonics2d(object):
         return Sout
 
     def compute_mean(self,input):
+        J = self.J
+        M = self.M
+        N = self.N
+        L2 = self.L*2
+        dj = self.dj
+        dl = self.dl
+        pad = self.pad
+        
         x_c = pad(input) # add zeros to imag part -> (nb,nc,M,N,2)
         hatx_c = fft2_c2c(x_c) # fft2 -> (nb,nc,M,N,2)
         #print('nbchannels',nb_channels)
