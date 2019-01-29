@@ -253,9 +253,9 @@ class cdgmmMul(Function):
         m, n = conjB.nelement() // 2, conjA.nelement() // conjB.nelement()
         # n is the B*C
         # m is the M*N
-        grad_A = conjA.new(conjA.size()) # (n,m)
-        grad_B = conjB.new(conjB.size()) # (m)
-        grad_C = grad_output # (n,m)
+        gradA = conjA.new(conjA.size()) # (n,m)
+        gradB = conjB.new(conjB.size()) # (m)
+        gradC = grad_output # (n,m)
         # grad_A = grad_C * conj(B)
         lda = m
         ldc = m
@@ -266,10 +266,10 @@ class cdgmmMul(Function):
         cublas.cublasCdgmm(handle, 'l', m, n, grad_C.data_ptr(), lda, conjB.data_ptr(), incx, gradA.data_ptr(), ldc)
         
         # grad_B = sum_n grad_C * conj(A)
-        grad_B_ = grad_C * conjA # (B,C,M,N,2)
-        grad_B = torch.mean(torch.mean(grad_C,0),0) # 
+        gradB_ = grad_C * conjA # (B,C,M,N,2)
+        gradB = torch.mean(torch.mean(gradC,0),0) # 
         
-        return grad_A, grad_B
+        return gradA, gradB
 
 
 cdgmm = cdgmmMul.apply
