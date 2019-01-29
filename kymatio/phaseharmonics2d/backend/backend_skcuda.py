@@ -401,20 +401,74 @@ def mul(z1, z2):
     z = torch.stack((zr, zi), dim=-1)
     return z
 
-#class cdgmmMulcu(Function):
-#    @staticmethod
-#    def forward(ctx, A, B):
+class cdgmmMulcu(Function):
+    @staticmethod
+    def forward(ctx, A, B):
         # assume A and B has the same size , with last dim = 2
-#        A, B = A.contiguous(), B.contiguous()
+        A, B = A.contiguous(), B.contiguous()
                 
-#        if not iscomplex(A) or not iscomplex(B):
-#            raise TypeError('The input, filter and output should be complex')
+        if not iscomplex(A) or not iscomplex(B):
+            raise TypeError('The input, filter and output should be complex')
 
-#        if type(A) is not type(B):
-#            raise RuntimeError('A and B should be same type!')
+        if A.nelement() != B.nelement():
+            raise TypeError('The input and filter should have same size')
 
-#        if not A.is_cuda:
-#            raise RuntimeError('Use the torch backend for cpu tensors!')
+        if type(A) is not type(B):
+            raise RuntimeError('A and B should be same type!')
 
+        if not A.is_cuda:
+            raise RuntimeError('Use the torch backend for cpu tensors!')
+
+        conjA = A.clone()
+        conjB = B.clone()
+        conjA[...,1] = -A[...,1]
+        conjB[...,1] = -B[...,1]
+        ctx.save_for_backward(conjA, conjB)
         
-#mulcu = cdgmmMulcu.apply
+        C = A.new(A.size())
+        m, n = B.nelement() // 2, A.nelement() // B.nelement()
+        lda = m
+        ldc = m
+        incx = 1
+        handle = torch.cuda.current_blas_handle()
+        stream = torch.cuda.current_stream()._as_parameter_
+        cublas.cublasSetStream(handle, stream)
+        cublas.cublasCdgmm(handle, 'l', m, n, A.data_ptr(), lda, B.data_ptr(), incx, C.data_ptr(), ldc)
+        return C
+    
+    @staticmethod
+    def backward(ctx, grad_output):
+        conjA, conjB =  ctx.saved_tensors
+        m, n = conjB.nelement() // 2, conjA.nelement() // conjB.nelement()
+        # n is the B*C
+        # m is the M*N
+        gradA = conjA.new(conjA.size()) # (n,m), col-major
+        #gradB = conjB.new(conjB.size()) # (m)
+        gradC = grad_output # (n,m), col-major
+        # grad_A = grad_C * conj(B)
+        lda = m
+        ldc = m
+        incx = 1
+        handle = torch.cuda.current_blas_handle()
+        stream = torch.cuda.current_stream()._as_parameter_
+        cublas.cublasSetStream(handle, stream)
+        cublas.cublasCdgmm(handle, 'l', m, n, gradC.data_ptr(), lda, conjB.data_ptr(), incx, gradA.data_ptr(), ldc)
+        
+        # grad_B = sum_n grad_C * conj(A)
+        # view grad_C and conjA as one vector of size n*m
+        gradB = gradC.new(gradC.size()) # mul(gradC,conjA) # (B,C,M,N,2)
+        lda = m*n
+        ldc = m*n
+        incx = 1
+        #handle = torch.cuda.current_blas_handle()
+        #stream = torch.cuda.current_stream()._as_parameter_
+        cublas.cublasSetStream(handle, stream)
+        cublas.cublasCdgmm(handle, 'l', m*n, 1, gradC.data_ptr(), lda, conjA.data_ptr(), incx, gradB.data_ptr(), ldc)
+
+       # gradB_ = mul(gradC,conjA) # (B,C,M,N,2)
+        #gradB = torch.sum(torch.sum(gradB_,0),0) # 
+        
+        return gradA, gradB
+
+    
+mulcu = cdgmmMulcu.apply
