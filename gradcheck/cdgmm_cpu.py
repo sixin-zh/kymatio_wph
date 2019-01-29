@@ -12,5 +12,5 @@ B = torch.zeros((M,N,2),dtype=torch.float32)
 from kymatio.phaseharmonics2d.backend import cdgmm
 
 #C = cdgmm(A,B)
-A.require_grad(True)
+A.requires_grad_(True)
 gradcheck(cdgmm, (A,B))
