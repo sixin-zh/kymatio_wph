@@ -42,7 +42,9 @@ for chunk_id in range(nb_chunks):
     Sim = wph_op.compute_mean(im)
     Srec = wph_op.compute_mean(recim)
     plt.figure()
-    plt.plot(Sim[1,:,:,:,:,:,0].squeeze().numpy())
-    plt.plot(Srec[1,:,:,:,:,:,0].squeeze().numpy())
+    S1 = Sim[1,:,:,:,:,:,0].squeeze().numpy()
+    S2 = Srec[1,:,:,:,:,:,0].squeeze().numpy()
+    plt.plot(S1)
+    plt.plot((S2-S1))
     plt.show()
 
