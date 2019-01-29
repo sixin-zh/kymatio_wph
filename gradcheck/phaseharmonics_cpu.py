@@ -12,7 +12,7 @@ from kymatio.phaseharmonics2d.backend import PhaseHarmonic
 phase_harmonics = PhaseHarmonic(check_for_nan=False)
 
 A.requires_grad_(True)
-result = gradcheck(phase_harmonics, (A,k))
+result = gradcheck(phase_harmonics, (A,k), eps=1e-4)
 if result:
     print('pass')
 else:
