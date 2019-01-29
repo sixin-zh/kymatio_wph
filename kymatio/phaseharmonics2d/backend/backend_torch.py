@@ -555,15 +555,19 @@ class PhaseHarmonics2(Function):
         x, y, r, k = ctx.saved_tensors
         theta = torch.atan2(y, x)
         ktheta = k * theta
-        eiktheta = torch.stack((torch.cos(ktheta), torch.sin(ktheta)), dim=-1)
+        cosktheta = torch.cos(ktheta)
+        sinktheta = torch.sin(ktheta)
+        costheta = torch.cos(theta)
+        sintheta = torch.sin(theta)
 
-        dfdx = eiktheta*torch.stack((torch.cos(theta), -k*torch.sin(theta)), -1)
-        dfdy = eiktheta*torch.stack((torch.sin(theta), k*torch.cos(theta)), -1)
+        df1dx = costheta*cosktheta + k*sintheta*sinktheta
+        df2dx = costheta*sinktheta - k*sintheta*cosktheta
+        df1dy = sintheta*cosktheta - k*costheta*sinktheta
+        df2dy = sintheta*sinktheta + k*costheta*cosktheta
 
-        back_r = grad_output[...,0] * dfdx[...,0] + grad_output[...,1]*dfdx[...,1]
-        back_i = grad_output[...,0] * dfdy[...,0] + grad_output[...,1]*dfdy[...,1]
+        dx1 = df1dx*grad_output[...,0] + df2dx*grad_output[...,1]
+        dx2 = df1dy*grad_output[...,0] + df2dy*grad_output[...,1]
 
-        return torch.stack((back_r, back_i), -1)
-
+        return torch.stack((dx1, dx2), -1), torch.zeros_like(k)
 
 phase_exp = PhaseHarmonics2.apply
