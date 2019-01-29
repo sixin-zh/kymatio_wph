@@ -6,8 +6,8 @@ nb=1
 nc=1
 M=2
 N=2
-A = torch.zeros((nb,nc,M,N,2),dtype=torch.float32).cuda()
-B = torch.zeros((M,N,2),dtype=torch.float32).cuda()
+A = torch.randn((nb,nc,M,N,2),dtype=torch.float32).cuda()
+B = torch.randn((M,N,2),dtype=torch.float32).cuda()
 
 from kymatio.phaseharmonics2d.backend import cdgmm
 
