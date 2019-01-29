@@ -267,7 +267,7 @@ class cdgmmMul(Function):
         
         # grad_B = sum_n grad_C * conj(A)
         # view grad_C and conjA as one vector of size n*m
-        gradB_ = grad_C.new(grad_C.size()) # mul(gradC,conjA) # (B,C,M,N,2)
+        gradB_ = grad_C.new(gradC.size()) # mul(gradC,conjA) # (B,C,M,N,2)
         lda = m*n
         ldc = m*n
         incx = 1
