@@ -230,6 +230,12 @@ class cdgmmMul(Function):
         if not A.is_cuda:
             raise RuntimeError('Use the torch backend for cpu tensors!')
 
+        conjA = A.new(Astar.size())
+        conjB = B.new(Bstar.size())
+        conjA[:,:,:,:,1] = -A[:,:,:,:,1]
+        conjB[:,:,:,:,1] = -B[:,:,1]
+        ctx.save_for_backward(conjA, conjB)
+        
         C = A.new(A.size())
         m, n = B.nelement() // 2, A.nelement() // B.nelement()
         lda = m
@@ -243,9 +249,26 @@ class cdgmmMul(Function):
     
     @staticmethod
     def backward(ctx, grad_output):
-
-        grad_A = grad_output
-        grad_B = grad_output[0,0,:,:,:]
+        conjA, conjB =  ctx.saved_tensors
+        m, n = B.nelement() // 2, A.nelement() // B.nelement()
+        # n is the B*C
+        # m is the M*N
+        grad_A = A.new(A.size()) # (n,m)
+        grad_B = B.new(B.size()) # (m)
+        grad_C = grad_output # (n,m)
+        # grad_A = grad_C * conj(B)
+        lda = m
+        ldc = m
+        incx = 1
+        handle = torch.cuda.current_blas_handle()
+        stream = torch.cuda.current_stream()._as_parameter_
+        cublas.cublasSetStream(handle, stream)
+        cublas.cublasCdgmm(handle, 'l', m, n, grad_C.data_ptr(), lda, conjB.data_ptr(), incx, gradA.data_ptr(), ldc)
+        
+        # grad_B = sum_n grad_C * conj(A)
+        grad_B_ = grad_C * conjA # (B,C,M,N,2)
+        grad_B = torch.mean(torch.mean(grad_C,0),0) # 
+        
         return grad_A, grad_B
 
 
