@@ -230,8 +230,8 @@ class cdgmmMul(Function):
         if not A.is_cuda:
             raise RuntimeError('Use the torch backend for cpu tensors!')
 
-        conjA = A.new(Astar.size())
-        conjB = B.new(Bstar.size())
+        conjA = A.new(A.size())
+        conjB = B.new(B.size())
         conjA[:,:,:,:,1] = -A[:,:,:,:,1]
         conjB[:,:,:,:,1] = -B[:,:,1]
         ctx.save_for_backward(conjA, conjB)
