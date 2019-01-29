@@ -48,10 +48,10 @@ class SubInitSpatialMeanC(object):
             minput = torch.mean(minput, -3, True)
             self.minput = minput
             print('sum of minput',self.minput.sum())
-            
+
         output = input - self.minput
         return output
-    
+
 class Pad(object):
     def __init__(self, pad_size, pre_pad=False):
         """
@@ -536,3 +536,28 @@ class PhaseHarmonic(nn.Module):
             z_pe.register_hook(HookDetectNan("z_pe in PhaseExp"))
 
         return z_pe
+
+
+class PhaseHarmonics2(Function):
+    @staticmethod
+    def forward(z, k, ctx):
+        z = z.detach()
+        x, y = real(z), imag(z)
+        r = z.norm(p=2, dim=-1)
+        theta = torch.atan2(y, x)
+        ktheta = k * theta
+        eiktheta = torch.stack((torch.cos(ktheta), torch.sin(ktheta)), dim=-1)
+        ctx.save_for_backward(x, y, r, k)
+        return r.unsqueeze(-1)*eiktheta
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        x, y, r, k = ctx.saved_tensors
+        theta = torch.atan2(y, x)
+        ktheta = k * theta
+        eiktheta = torch.stack((torch.cos(ktheta), torch.sin(ktheta)), dim=-1)
+
+        dfdx = eiktheta*torch.stack((torch.cos(theta), -k*torch.sin(theta)), -1)
+        dfdy = eiktheta*torch.stack((torch.sin(theta), k*torch.cos(theta)), -1)
+
+        return grad_output.unsqueeze(-1) * torch.stack((dfdx, dfdy), -1)
