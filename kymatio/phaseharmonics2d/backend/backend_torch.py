@@ -328,6 +328,8 @@ def mul(z1, z2):
     z = torch.stack((zr, zi), dim=-1)
     return z
 
+mulcu = mul
+
 # k in Linear or Log
 class PhaseExpLL(nn.Module):
     def __init__(self, K, k_type='linear', keep_k_dim=False, check_for_nan=False):
