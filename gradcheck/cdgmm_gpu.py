@@ -14,7 +14,7 @@ from kymatio.phaseharmonics2d.backend import cdgmm
 #C = cdgmm(A,B)
 A.requires_grad_(True)
 B.requires_grad_(True)
-result = gradcheck(cdgmm, (A,B), eps=1e-4, atol=1e-3, rtol=1e-3)
+result = gradcheck(cdgmm, (A,B), eps=1e-4, atol=1e-2, rtol=1e-3)
 if result:
     print('pass')
 else:
