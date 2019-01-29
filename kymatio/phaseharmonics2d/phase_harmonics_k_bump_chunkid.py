@@ -340,7 +340,7 @@ class PhaseHarmonics2d(object):
                     xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,P_c,M,N,2)
                     xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2, -k2) # (1,P_c,M,N,2)
                     mean1_bc = torch.mean(torch.mean(xpsi_bc_la1k1,-2,True),-3,True) # (1,P_c,1,1,2)
-                    mean2_bc = torch.mean(torch.mean(xpsi_bc_la1k2,-2,True),-3,True) # (1,P_c,1,1,2)
+                    mean2_bc = torch.mean(torch.mean(xpsi_bc_la2k2,-2,True),-3,True) # (1,P_c,1,1,2)
                     Sout1[idxb,idxc,:,:,:,:] = mean1_bc[0,:,:,:,:]
                     Sout2[idxb,idxc,:,:,:,:] = mean2_bc[0,:,:,:,:]
             Sout = torch.stack((Sout1,Sout2),dim=0)
