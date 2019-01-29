@@ -269,7 +269,7 @@ class cdgmmMul(Function):
         #gradB_ = gradC * conjA # (B,C,M,N,2)
         #gradB = torch.mean(torch.mean(gradC,0),0) # 
         
-        return gradA # , gradB
+        return gradA, gradA
 
 
 cdgmm = cdgmmMul.apply
