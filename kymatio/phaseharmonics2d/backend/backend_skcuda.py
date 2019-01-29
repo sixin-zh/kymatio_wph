@@ -233,7 +233,7 @@ class cdgmmMul(Function):
         conjA = A.new(A.size())
         conjB = B.new(B.size())
         conjA[:,:,:,:,1] = -A[:,:,:,:,1]
-        conjB[:,:,:,:,1] = -B[:,:,1]
+        conjB[:,:,1] = -B[:,:,1]
         ctx.save_for_backward(conjA, conjB)
         
         C = A.new(A.size())
