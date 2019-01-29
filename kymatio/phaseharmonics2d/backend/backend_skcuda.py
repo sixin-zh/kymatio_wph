@@ -254,7 +254,7 @@ class cdgmmMul(Function):
         # n is the B*C
         # m is the M*N
         gradA = conjA.new(conjA.size()) # (n,m), col-major
-        gradB = conjB.new(conjB.size()) # (m)
+        #gradB = conjB.new(conjB.size()) # (m)
         gradC = grad_output # (n,m), col-major
         # grad_A = grad_C * conj(B)
         lda = m
@@ -266,6 +266,16 @@ class cdgmmMul(Function):
         cublas.cublasCdgmm(handle, 'l', m, n, gradC.data_ptr(), lda, conjB.data_ptr(), incx, gradA.data_ptr(), ldc)
         
         # grad_B = sum_n grad_C * conj(A)
+        # view grad_C and conjA as one vector of size n*m
+        gradB_ = gradC.new(gradC.size()) # mul(gradC,conjA) # (B,C,M,N,2)
+        lda = m*n
+        ldc = m*n
+        incx = 1
+        handle = torch.cuda.current_blas_handle()
+        stream = torch.cuda.current_stream()._as_parameter_
+        cublas.cublasSetStream(handle, stream)
+        cublas.cublasCdgmm(handle, 'l', m*n, 1, gradC.data_ptr(), lda, conjA.data_ptr(), incx, gradB_.data_ptr(), ldc)
+
         gradB_ = mul(gradC,conjA) # (B,C,M,N,2)
         gradB = torch.mean(torch.mean(gradB_,0),0) # 
         
@@ -390,3 +400,6 @@ def mul(z1, z2):
     zi = real(z1) * imag(z2) + imag(z1) * real(z2)
     z = torch.stack((zr, zi), dim=-1)
     return z
+
+#class cdgmmMulcu(Function):   
+#mulcu = cdgmmMulcu.apply
