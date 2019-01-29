@@ -15,4 +15,8 @@ from kymatio.phaseharmonics2d.backend import cdgmm
 A.requires_grad_(True)
 B.requires_grad_(True)
 result = gradcheck(cdgmm, (A,B))
-print(result)
+if result:
+    print('pass')
+else:
+    print('not pass')
+    
