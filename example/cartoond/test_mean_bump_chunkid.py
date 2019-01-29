@@ -31,7 +31,7 @@ M, N = im.shape[-2], im.shape[-1]
 delta_j = 1
 delta_l = L/2
 delta_k = 1
-nb_chunks = 20
+nb_chunks = 50
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
