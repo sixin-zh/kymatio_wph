@@ -253,8 +253,8 @@ class cdgmmMul(Function):
         m, n = conjB.nelement() // 2, conjA.nelement() // conjB.nelement()
         # n is the B*C
         # m is the M*N
-        grad_A = A.new(A.size()) # (n,m)
-        grad_B = B.new(B.size()) # (m)
+        grad_A = conjA.new(conjA.size()) # (n,m)
+        grad_B = conjB.new(conjB.size()) # (m)
         grad_C = grad_output # (n,m)
         # grad_A = grad_C * conj(B)
         lda = m
