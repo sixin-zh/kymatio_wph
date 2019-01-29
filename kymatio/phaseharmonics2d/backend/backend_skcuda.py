@@ -471,3 +471,38 @@ class cdgmmMulcu(Function):
         return gradA, gradB
     
 mulcu = cdgmmMulcu.apply
+
+
+class PhaseHarmonics2(Function):
+    @staticmethod
+    def forward(ctx, z, k):
+        z = z.detach()
+        x, y = real(z), imag(z)
+        r = z.norm(p=2, dim=-1)
+        theta = torch.atan2(y, x)
+        ktheta = k * theta
+        eiktheta = torch.stack((torch.cos(ktheta), torch.sin(ktheta)), dim=-1)
+        ctx.save_for_backward(x, y, r, k)
+        return r.unsqueeze(-1)*eiktheta
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        x, y, r, k = ctx.saved_tensors
+        theta = torch.atan2(y, x)
+        ktheta = k * theta
+        cosktheta = torch.cos(ktheta)
+        sinktheta = torch.sin(ktheta)
+        costheta = torch.cos(theta)
+        sintheta = torch.sin(theta)
+
+        df1dx = costheta*cosktheta + k*sintheta*sinktheta
+        df2dx = costheta*sinktheta - k*sintheta*cosktheta
+        df1dy = sintheta*cosktheta - k*costheta*sinktheta
+        df2dy = sintheta*sinktheta + k*costheta*cosktheta
+
+        dx1 = df1dx*grad_output[...,0] + df2dx*grad_output[...,1]
+        dx2 = df1dy*grad_output[...,0] + df2dy*grad_output[...,1]
+
+        return torch.stack((dx1, dx2), -1), torch.zeros_like(k)
+
+phase_exp = PhaseHarmonics2.apply
