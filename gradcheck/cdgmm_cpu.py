@@ -13,4 +13,6 @@ from kymatio.phaseharmonics2d.backend import cdgmm
 
 #C = cdgmm(A,B)
 A.requires_grad_(True)
-gradcheck(cdgmm, (A,B))
+B.requires_grad_(True)
+result = gradcheck(cdgmm, (A,B))
+print(result)
