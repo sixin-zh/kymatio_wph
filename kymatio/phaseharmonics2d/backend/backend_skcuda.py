@@ -263,7 +263,7 @@ class cdgmmMul(Function):
         handle = torch.cuda.current_blas_handle()
         stream = torch.cuda.current_stream()._as_parameter_
         cublas.cublasSetStream(handle, stream)
-        cublas.cublasCdgmm(handle, 'l', m, n, grad_C.data_ptr(), lda, conjB.data_ptr(), incx, gradA.data_ptr(), ldc)
+        cublas.cublasCdgmm(handle, 'l', m, n, gradC.data_ptr(), lda, conjB.data_ptr(), incx, gradA.data_ptr(), ldc)
         
         # grad_B = sum_n grad_C * conj(A)
         gradB_ = grad_C * conjA # (B,C,M,N,2)
