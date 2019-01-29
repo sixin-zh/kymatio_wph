@@ -33,11 +33,11 @@ nb_chunks = 10
 nb_restarts = 10
 
 # kymatio scattering
-from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
+from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_simplephase \
     import PhaseHarmonics2d
 
 Sims = []
-factr = 1e3
+factr = 1e5
 wph_ops = dict()
 nCov = 0
 for chunk_id in range(nb_chunks+1):
@@ -110,4 +110,4 @@ for start in range(nb_restarts):
 im_opt = np.reshape(x_opt, (size,size))
 tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 
-torch.save(tensor_opt, 'test_rec_bump_chunkid_lbfgs_gpu_N256_dj1_restart_run2.pt')
+torch.save(tensor_opt, 'test_rec_bump_chunkid_lbfgs_gpu_N256_dj1_simplephase.pt')
