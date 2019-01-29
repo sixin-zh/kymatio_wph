@@ -540,7 +540,7 @@ class PhaseHarmonic(nn.Module):
 
 class PhaseHarmonics2(Function):
     @staticmethod
-    def forward(z, k, ctx):
+    def forward(ctx, z, k):
         z = z.detach()
         x, y = real(z), imag(z)
         r = z.norm(p=2, dim=-1)
@@ -560,4 +560,10 @@ class PhaseHarmonics2(Function):
         dfdx = eiktheta*torch.stack((torch.cos(theta), -k*torch.sin(theta)), -1)
         dfdy = eiktheta*torch.stack((torch.sin(theta), k*torch.cos(theta)), -1)
 
-        return grad_output.unsqueeze(-1) * torch.stack((dfdx, dfdy), -1)
+        back_r = grad_output[...,0] * dfdx[...,0] + grad_output[...,1]*dfdx[...,1]
+        back_i = grad_output[...,0] * dfdy[...,0] + grad_output[...,1]*dfdy[...,1]
+
+        return torch.stack((back_r, back_i), -1)
+
+
+phase_exp = PhaseHarmonics2.apply
