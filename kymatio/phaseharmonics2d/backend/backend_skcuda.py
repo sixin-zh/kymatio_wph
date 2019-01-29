@@ -266,8 +266,8 @@ class cdgmmMul(Function):
         cublas.cublasCdgmm(handle, 'l', m, n, gradC.data_ptr(), lda, conjB.data_ptr(), incx, gradA.data_ptr(), ldc)
         
         # grad_B = sum_n grad_C * conj(A)
-        gradB_ = gradC * conjA # (B,C,M,N,2)
-        gradB = torch.mean(torch.mean(gradC,0),0) # 
+        #gradB_ = gradC * conjA # (B,C,M,N,2)
+        #gradB = torch.mean(torch.mean(gradC,0),0) # 
         
         return gradA, gradB
 
