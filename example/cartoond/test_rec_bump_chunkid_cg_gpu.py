@@ -12,7 +12,9 @@ from torch.autograd import Variable, grad
 
 from time import time
 import gc
+import sys
 
+sys.path.append('~/kymatio_wph/')
 #---- create image without/with marks----#
 
 
@@ -32,21 +34,24 @@ M, N = im.shape[-2], im.shape[-1]
 delta_j = 1
 delta_l = L/2
 delta_k = 1
+nb_chunks = 2 # 10
+nb_restarts = 10
 
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
     import PhaseHarmonics2d
 
-nb_chunks = 10
 Sims = []
 factr = 1e3
 wph_ops = dict()
+nCov = 0
 for chunk_id in range(nb_chunks+1):
     wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
     wph_op = wph_op.cuda()
     wph_ops[chunk_id] = wph_op
     Sim_ = wph_op(im)*factr # (nb,nc,nb_channels,1,1,2)
+    nCov += Sim_.shape[2]
     Sims.append(Sim_)
     
 # ---- Reconstruct marks. At initiation, every point has the average value of the marks.----#
@@ -58,7 +63,7 @@ def obj_fun(x,chunk_id):
     wph_op = wph_ops[chunk_id]
     p = wph_op(x)*factr
     diff = p-Sims[chunk_id]
-    loss = torch.mul(diff,diff).mean()
+    loss = torch.mul(diff,diff).sum()/nCov
     return loss
 
 grad_err = im.clone()
@@ -121,9 +126,17 @@ res = opt.minimize(fun_and_grad_conv, x0, method='CG', jac=True, tol=None,
 final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
 print('OPT fini avec:', final_loss,niter,msg)
 
+for starts in range(nb_restarts):
+    res = opt.minimize(fun_and_grad_conv, x_opt, method='CG', jac=True, tol=None,
+                       callback=callback_print,
+                       options={'maxiter': 500, 'gtol': 0})
+    final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
+    print('OPT fini avec:', final_loss,niter,msg)
+
+
 im_opt = np.reshape(x_opt, (size,size))
 #plt.figure()
 #plt.imshow(im_opt)
 #plt.show()
 tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
-torch.save(tensor_opt, 'test_rec_bump_chunkid_cg_gpu_N128_dj1.pt')
+torch.save(tensor_opt, 'test_rec_bump_chunkid_cg_gpu_N128_dj1_run2x_run1.pt')

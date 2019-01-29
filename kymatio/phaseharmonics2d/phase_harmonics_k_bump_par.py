@@ -134,7 +134,6 @@ class PhaseHarmonics2d(object):
         idx_k1 = []
         idx_k2 = []
 
-        # TODO add dl
         # j1=j2, k1=1, k2=0 or 1
         for j1 in range(J):
             for ell1 in range(L2):
@@ -153,6 +152,19 @@ class PhaseHarmonics2d(object):
                         idx_k1.append(k1)
                         idx_k2.append(k2)
 
+        # j1=j2, k1=0, k2=0
+        for j1 in range(J):
+            for ell1 in range(L2):
+                k1 = 0
+                j2 = j1
+                for ell2 in range(L2):
+                    if periodic_dis(ell1, ell2, L2) <= dl:
+                        k2 = 0
+                        idx_la1.append(L2*j1+ell1)
+                        idx_la2.append(L2*j2+ell2)
+                        idx_k1.append(k1)
+                        idx_k2.append(k2)
+                        
         # k1 = 0
         # k2 = 0,1,2
         # j1+1 <= j2 <= min(j1+dj,J-1)
@@ -169,20 +181,20 @@ class PhaseHarmonics2d(object):
                                 idx_k2.append(k2)
 
         # k1 = 1
-        # k2 = 2^(j2-j1)±dk
+        # k2 = [2^(j2-j1)-dk,2^(j2-j1)+dk]
         # j1+1 <= j2 <= min(j1+dj,J-1)
         for j1 in range(J):
             for ell1 in range(L2):
                 k1 = 1
-                for ell2 in range(L2):
-                    if periodic_dis(ell1, ell2, L2) <= dl:
-                        for j2 in range(j1+1,min(j1+dj+1,J)):
-                            for k2 in range(max(0,2**(j2-j1)-dk,2**(j2-j1)+dk+1)):
+                for j2 in range(j1+1,min(j1+dj+1,J)):
+                    for ell2 in range(L2):
+                        if periodic_dis(ell1, ell2, L2) <= dl:
+                            for k2 in range(max(0,2**(j2-j1)-dk),2**(j2-j1)+dk+1):
                                 idx_la1.append(L2*j1+ell1)
                                 idx_la2.append(L2*j2+ell2)
                                 idx_k1.append(k1)
                                 idx_k2.append(k2)
-
+        
         idx_wph = dict()
         idx_wph['la1'] = torch.tensor(idx_la1).type(torch.long)
         idx_wph['k1'] = torch.tensor(idx_k1).type(torch.long).float().unsqueeze(0).unsqueeze(-1).unsqueeze(-1)

@@ -15,30 +15,27 @@ import gc
 
 #---- create image without/with marks----#
 
-
-size=128
+size=256
 
 # --- Dirac example---#
-
 data = sio.loadmat('./example/cartoond/demo_toy7d_N' + str(size) + '.mat')
 im = data['imgs']
 im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
 
 # Parameters for transforms
-
-J = 7
+J = 8
 L = 8
 M, N = im.shape[-2], im.shape[-1]
 delta_j = 1
 delta_l = L/2
 delta_k = 1
+nb_chunks = 10
 nb_restarts = 10
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
     import PhaseHarmonics2d
 
-nb_chunks = 10
 Sims = []
 factr = 1e3
 wph_ops = dict()
@@ -69,24 +66,13 @@ def grad_obj_fun(x_gpu):
     loss = 0
     global grad_err
     grad_err[:] = 0
-    #global wph_ops
     for chunk_id in range(nb_chunks+1):
         x_t = x_gpu.clone().requires_grad_(True)
-        #print('chunk_id in grad', chunk_id)
-        #if chunk_id not in wph_ops.keys():
-        #    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
-        #    wph_op = wph_op.cuda()
-        #    wph_ops[chunk_id] = wph_op
         loss_t = obj_fun(x_t,chunk_id)
         grad_err_t, = grad([loss_t],[x_t], retain_graph=False)
         loss = loss + loss_t
         grad_err = grad_err + grad_err_t
-        
-        #x_t.detach()
-        #del x_t
-        #del grad_err_
-        #del wph_ops[chunk_id]
-        #gc.collect()
+  
         
     return loss, grad_err
 
@@ -95,51 +81,33 @@ from time import time
 time0 = time()
 def fun_and_grad_conv(x):
     x_float = torch.reshape(torch.tensor(x,dtype=torch.float),(1,1,size,size))
-    x_gpu = x_float.cuda()#.requires_grad_(True)
+    x_gpu = x_float.cuda()
     loss, grad_err = grad_obj_fun(x_gpu)
-    #del x_gpu
-    #gc.collect()
     global count
-    count += 1
     global time0
+    count += 1
     if count%10 == 1:
         print(count, loss, 'using time (sec):' , time()-time0)
-        print('grad norm is', grad_err.norm())
         time0 = time()
-        
-    return  loss.cpu().item(), np.asarray(grad_err.reshape(size**2).cpu().numpy(), dtype=np.float64)
+    return loss.cpu().item(), np.asarray(grad_err.reshape(size**2).cpu().numpy(), dtype=np.float64)
 
-#float(loss)
 def callback_print(x):
     return
 
-x = torch.Tensor(1, 1, N, N).normal_(std=0.01) + 0.5
-#x[0,0,0,0] = 2
-#x = x.clone().detach().requires_grad_(True) # torch.tensor(x, requires_grad=True)
-x0 = x.reshape(size**2).detach().numpy()
+x = torch.Tensor(1, 1, N, N).normal_(std=0.01)+0.5
+x0 = x.reshape(size**2).numpy()
 x0 = np.asarray(x0, dtype=np.float64)
 
-res = opt.minimize(fun_and_grad_conv, x0, method='L-BFGS-B', jac=True, tol=None,
-                   callback=callback_print,
-                   options={'maxiter': 500, 'gtol': 1e-14, 'ftol': 1e-14, 'maxcor': 20})
-final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
-print('OPT fini avec:', final_loss,niter,msg)
-
-
 for start in range(nb_restarts):
+    if start==0:
+        x_opt = x0
     res = opt.minimize(fun_and_grad_conv, x_opt, method='L-BFGS-B', jac=True, tol=None,
                        callback=callback_print,
                        options={'maxiter': 500, 'gtol': 1e-14, 'ftol': 1e-14, 'maxcor': 20})
     final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
     print('OPT fini avec:', final_loss,niter,msg)
 
-
-
 im_opt = np.reshape(x_opt, (size,size))
-#tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
-#plt.figure()
-#im_opt = np.reshape(x_opt, (size,size))
-#plt.imshow(im_opt)
-#plt.show()
 tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
-torch.save(tensor_opt, 'test_rec_bump_chunkid_lbfgs_gpu_N128_dj1.pt')
+
+torch.save(tensor_opt, 'test_rec_bump_chunkid_lbfgs_gpu_N256_dj1_restart_run2.pt')
