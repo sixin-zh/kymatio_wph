@@ -37,7 +37,7 @@ nb_chunks = 100
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
     import PhaseHarmonics2d
 
-chunk_id = 0 # nb_chunks
+chunk_id = 1 # nb_chunks
 wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
 Sim = wph_op.compute_mean(im)
 Srec = wph_op.compute_mean(recim)
