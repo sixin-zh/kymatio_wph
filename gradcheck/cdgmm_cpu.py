@@ -8,6 +8,7 @@ M=2
 N=2
 A = torch.FloatTensor((nb,nc,M,N,2))
 B = torch.FloatTensor((M,N,2))
+print(A.shape,B.shape)
 
 from kymatio.phaseharmonics2d.backend import cdgmm
 
