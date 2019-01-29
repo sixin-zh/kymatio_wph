@@ -250,7 +250,7 @@ class cdgmmMul(Function):
     @staticmethod
     def backward(ctx, grad_output):
         conjA, conjB =  ctx.saved_tensors
-        m, n = B.nelement() // 2, A.nelement() // B.nelement()
+        m, n = conjB.nelement() // 2, conjA.nelement() // conjB.nelement()
         # n is the B*C
         # m is the M*N
         grad_A = A.new(A.size()) # (n,m)
