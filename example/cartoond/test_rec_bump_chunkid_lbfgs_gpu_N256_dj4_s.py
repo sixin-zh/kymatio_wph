@@ -63,7 +63,7 @@ def obj_fun(x,chunk_id):
     loss = torch.mul(diff,diff).sum()/nCov
     return loss
 
-grad_err = im.clone()
+grad_err = im.to(0)
 
 def grad_obj_fun(x_gpu):
     loss = 0
