@@ -47,7 +47,7 @@ for chunk_id in range(nb_chunks+1):
     wph_op = wph_op.cuda(devid)
     wph_ops[chunk_id] = wph_op
     im_ = im.to(devid)
-    Sim_ = wph_op(im)*factr # (nb,nc,nb_channels,1,1,2)
+    Sim_ = wph_op(im_)*factr # (nb,nc,nb_channels,1,1,2)
     nCov += Sim_.shape[2]
     Sims.append(Sim_)
     
@@ -72,7 +72,6 @@ def grad_obj_fun(x_gpu):
     for chunk_id in range(nb_chunks+1):
         devid = chunk_id % nGPU
         x_t = x_gpu.to(devid).requires_grad_(True)
-
         loss_ = obj_fun(x_t,chunk_id)
         grad_err_, = grad([loss_],[x_t], retain_graph=False)
         grad_err = grad_err + grad_err_.to(0)
