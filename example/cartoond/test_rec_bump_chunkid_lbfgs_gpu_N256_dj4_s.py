@@ -26,10 +26,10 @@ im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
 J = 8
 L = 8
 M, N = im.shape[-2], im.shape[-1]
-delta_j = 3
+delta_j = 4
 delta_l = L/2
 delta_k = 1
-nb_chunks = 30
+nb_chunks = 40
 nb_restarts = 10
 nGPU = 2
 
