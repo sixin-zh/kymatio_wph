@@ -53,10 +53,10 @@ else:
 
 
 # general env:
-BACKEND = os.environ.get("SCATTERING_BACKEND", BACKEND)
+BACKEND = os.environ.get("KYMATIO_BACKEND", BACKEND)
 
 # 2d specific env:
-BACKEND = os.environ.get("SCATTERING_BACKEND_2D", BACKEND)
+#BACKEND = os.environ.get("SCATTERING_BACKEND_2D", BACKEND)
 
 
 
