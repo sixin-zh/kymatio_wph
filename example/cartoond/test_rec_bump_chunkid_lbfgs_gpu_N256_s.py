@@ -1,5 +1,5 @@
 # TEST ON GPU
-import os
+import os,sys
 FOLOUT = sys.argv[1] # store the result in output folder
 os.execute('mkdir -p ' + FOLOUT)
 
