@@ -113,6 +113,6 @@ im_opt = np.reshape(x_opt, (size,size))
 tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 
 ret = dict()
-ret.tensor_opt = tensor_opt
-ret.normalized_loss = final_loss/(factr**2)
+ret['tensor_opt'] = tensor_opt
+ret['normalized_loss'] = final_loss/(factr**2)
 torch.save(ret, FOLOUT + '/' + 'test_rec_bump_chunkid_lbfgs_gpu_N256_dj1_simplephase.pt')
