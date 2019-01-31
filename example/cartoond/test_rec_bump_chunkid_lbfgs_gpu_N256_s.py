@@ -1,7 +1,7 @@
 # TEST ON GPU
 import os,sys
 FOLOUT = sys.argv[1] # store the result in output folder
-os.execute('mkdir -p ' + FOLOUT)
+os.system('mkdir -p ' + FOLOUT)
 
 #import pandas as pd
 import numpy as np
