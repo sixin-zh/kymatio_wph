@@ -1,4 +1,7 @@
 # TEST ON GPU
+import os
+FOLOUT = sys.argv[1] # store the result in output folder
+os.execute('mkdir -p ' + FOLOUT)
 
 #import pandas as pd
 import numpy as np
@@ -73,7 +76,6 @@ def grad_obj_fun(x_gpu):
         loss = loss + loss_t
         grad_err = grad_err + grad_err_t
   
-        
     return loss, grad_err
 
 count = 0
@@ -101,13 +103,16 @@ x0 = np.asarray(x0, dtype=np.float64)
 for start in range(nb_restarts):
     if start==0:
         x_opt = x0
-    res = opt.minimize(fun_and_grad_conv, x_opt, method='L-BFGS-B', jac=True, tol=None,
-                       callback=callback_print,
-                       options={'maxiter': 500, 'gtol': 1e-14, 'ftol': 1e-14, 'maxcor': 20})
-    final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
-    print('OPT fini avec:', final_loss,niter,msg)
+    #res = opt.minimize(fun_and_grad_conv, x_opt, method='L-BFGS-B', jac=True, tol=None,
+    #                   callback=callback_print,
+    #                   options={'maxiter': 500, 'gtol': 1e-14, 'ftol': 1e-14, 'maxcor': 20})
+    #final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
+    #print('OPT fini avec:', final_loss,niter,msg)
 
 im_opt = np.reshape(x_opt, (size,size))
 tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 
-torch.save(tensor_opt, 'test_rec_bump_chunkid_lbfgs_gpu_N256_dj1_simplephase.pt')
+ret = dict()
+ret.tensor_opt = tensor_opt
+ret.normalized_loss = final_loss/(factr**2)
+torch.save(ret, FOLOUT + '/' + 'test_rec_bump_chunkid_lbfgs_gpu_N256_dj1_simplephase.pt')
