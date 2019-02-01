@@ -234,7 +234,7 @@ class PhaseHarmonics2d(object):
 
     def forward(self, input):
         if self.devid >= 0:
-            torch.cuda(set_device(self.devid))
+            torch.cuda.set_device(self.devid)
         
         J = self.J
         M = self.M
