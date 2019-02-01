@@ -198,7 +198,7 @@ class PhaseHarmonics2d(object):
                                     hit_nb1[(j2,k2,ell2)]=2
                                     hit_nb2[(j1,k1,ell1,j2,k2,ell2)]=2
 
-        print('hit nb1 values',list(hit_nb1.values()))
+        #print('hit nb1 values',list(hit_nb1.values()))
         nb1 = np.array(list(hit_nb1.values()), dtype=int).sum() + 1 # plus last phiJ channel
         nb2 = np.array(list(hit_nb2.values()), dtype=int).sum() + 1 # complex-valued, plus last phiJ channel
 
