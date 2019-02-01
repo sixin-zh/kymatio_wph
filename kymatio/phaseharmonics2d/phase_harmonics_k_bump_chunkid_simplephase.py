@@ -126,6 +126,7 @@ class PhaseHarmonics2d(object):
         
         hit_nb1 = dict() # hash table
         hit_nb2 = dict() # value counts either real or complex numbers
+        
         # j1=j2, k1=1, k2=0 or 1
         for j1 in range(J):
             for ell1 in range(L2):
@@ -200,7 +201,7 @@ class PhaseHarmonics2d(object):
 
         #print('hit nb1 values',list(hit_nb1.values()))
         nb1 = np.array(list(hit_nb1.values()), dtype=int).sum() + 1 # plus last phiJ channel
-        nb2 = np.array(list(hit_nb2.values()), dtype=int).sum() + 1 # complex-valued, plus last phiJ channel
+        nb2 = np.array(list(hit_nb2.values()), dtype=int).sum() + 1 # plus last phiJ channel
 
         return nb1, nb2
     
