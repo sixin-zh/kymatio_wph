@@ -117,8 +117,14 @@ class PhaseHarmonics2d(object):
 
     def compute_ncoeff(self):
         # return number of mean (nb1) and cov (nb2) of all idx
-        nb1 = 0
-        hit_nb1 = dict()
+        L = self.L
+        L2 = L*2
+        J = self.J
+        dj = self.dj
+        dl = self.dl
+        dk = self.dk
+        
+        hit_nb1 = dict() # hash table
 
         # j1=j2, k1=1, k2=0 or 1
         for j1 in range(J):
