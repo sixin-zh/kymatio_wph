@@ -169,7 +169,7 @@ class PhaseHarmonics2d(object):
         nb1 = len(hit_nb1.keys())*2 + 1 # complex-valued, plus last phiJ channel
         nb2 = self.idx_wph['la1'].shape[0]*2 + 1 # complex-valued, plus last phiJ channel
 
-        return nb1+nb2
+        return nb1, nb2
     
     def compute_idx(self):
         L = self.L
