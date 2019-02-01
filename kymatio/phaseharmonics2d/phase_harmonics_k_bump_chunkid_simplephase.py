@@ -216,6 +216,7 @@ class PhaseHarmonics2d(object):
         """
         devid = self.devid
         print('call cuda with devid=', devid)
+        assert(devid>=0)
         if self.chunk_id < self.nb_chunks:
             self.this_wph['la1'] = self.this_wph['la1'].type(torch.cuda.LongTensor).to(devid)
             self.this_wph['la2'] = self.this_wph['la2'].type(torch.cuda.LongTensor).to(devid)
