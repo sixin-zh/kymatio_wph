@@ -233,8 +233,8 @@ class PhaseHarmonics2d(object):
         return self._type(torch.FloatTensor)
 
     def forward(self, input):
-        if self.devid >= 0:
-            torch.cuda.set_device(self.devid)
+        #if self.devid >= 0:
+        #    torch.cuda.set_device(self.devid)
         
         J = self.J
         M = self.M
