@@ -115,6 +115,62 @@ class PhaseHarmonics2d(object):
 
         return this_wph
 
+    def compute_ncoeff(self):
+        # return number of mean (nb1) and cov (nb2) of all idx
+        nb1 = 0
+        hit_nb1 = dict()
+
+        # j1=j2, k1=1, k2=0 or 1
+        for j1 in range(J):
+            for ell1 in range(L2):
+                k1 = 1
+                j2 = j1
+                for ell2 in range(L2):
+                    if periodic_dis(ell1, ell2, L2) <= dl:
+                        k2 = 0
+                        hit_nb1[(j1,k1,j2,k2)] = 1
+
+        # k1 = 0
+        # k2 = 0
+        # j1 = j2
+        for j1 in range(J):
+            for ell1 in range(L2):
+                k1=0
+                j2 = j1
+                for ell2 in range(L2):
+                    if periodic_dis(ell1, ell2, L2) <= dl:
+                        k2 = 0
+                        hit_nb1[(j1,k1,j2,k2)] = 1
+
+        # k1 = 0
+        # k2 = 0,1,2
+        # j1+1 <= j2 <= min(j1+dj,J-1)
+        for j1 in range(J):
+            for ell1 in range(L2):
+                k1 = 0
+                for j2 in range(j1+1,min(j1+dj+1,J)):
+                    for ell2 in range(L2):
+                        if periodic_dis(ell1, ell2, L2) <= dl:
+                            for k2 in range(3):
+                                hit_nb1[(j1,k1,j2,k2)] = 1
+
+        # k1 = 1
+        # k2 = 2^(j2-j1)±dk
+        # j1+1 <= j2 <= min(j1+dj,J-1)
+        for j1 in range(J):
+            for ell1 in range(L2):
+                k1 = 1
+                for ell2 in range(L2):
+                    if periodic_dis(ell1, ell2, L2) <= dl:
+                        for j2 in range(j1+1,min(j1+dj+1,J)):
+                            for k2 in range(max(0,2**(j2-j1)-dk),2**(j2-j1)+dk+1):
+                                hit_nb1[(j1,k1,j2,k2)] = 1
+
+        nb1 = len(hit_nb1.keys())*2 + 1 # complex-valued, plus last phiJ channel
+        nb2 = self.idx_wph['la1'].shape[0]*2 + 1 # complex-valued, plus last phiJ channel
+
+        return nb1+nb2
+    
     def compute_idx(self):
         L = self.L
         L2 = L*2
@@ -303,7 +359,7 @@ class PhaseHarmonics2d(object):
             Sout[:,:,0,:,:,:] = torch.mean(torch.mean(xpsi0_mod2,-2,True),-3,True)
 
         return Sout
-
+        
     def compute_mean(self,input):
         J = self.J
         M = self.M
