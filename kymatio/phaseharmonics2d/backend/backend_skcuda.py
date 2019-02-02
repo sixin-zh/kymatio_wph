@@ -230,11 +230,7 @@ class cdgmmMul(Function):
         if not A.is_cuda:
             raise RuntimeError('Use the torch backend for cpu tensors!')
 
-        conjA = A.clone()
-        conjB = B.clone()
-        conjA[:,:,:,:,1] = -A[:,:,:,:,1]
-        conjB[:,:,1] = -B[:,:,1]
-        ctx.save_for_backward(conjA, conjB)
+        ctx.save_for_backward(A,B)
         
         C = A.new(A.size())
         m, n = B.nelement() // 2, A.nelement() // B.nelement()
@@ -249,7 +245,11 @@ class cdgmmMul(Function):
     
     @staticmethod
     def backward(ctx, grad_output):
-        conjA, conjB =  ctx.saved_tensors
+        A, B = ctx.saved_tensors
+        conjA = A.clone()
+        conjB = B.clone()
+        conjA[:,:,:,:,1] = -A[:,:,:,:,1]
+        conjB[:,:,1] = -B[:,:,1]
         m, n = conjB.nelement() // 2, conjA.nelement() // conjB.nelement()
         # n is the B*C
         # m is the M*N
