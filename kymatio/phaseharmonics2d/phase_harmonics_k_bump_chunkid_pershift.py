@@ -90,7 +90,7 @@ class PhaseHarmonics2d(object):
                 this_wph['k2'] = self.idx_wph['k2'][:,offset:offset+nb_cov_chunk[idxc],:,:]
             offset = offset + nb_cov_chunk[idxc]
 
-        print('this chunk', self.chunk_id, 'la1',self.this_wph['la1'])
+        print('this chunk', self.chunk_id, 'la1',this_wph['la1'])
         
         return this_wph
 
