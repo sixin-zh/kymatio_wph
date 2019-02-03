@@ -523,7 +523,7 @@ phaseexp = StablePhaseExp.apply
 # periodic shift in 2d
 
 class PeriodicShift2D(nn.Module):
-    def __init__(self, M,N,shift1,shift2)
+    def __init__(self, M,N,shift1,shift2):
         super(PeriodicShift2D, self).__init__()
         self.shift1 = shift1 % M # [0,M-1]
         self.shift2 = shift2 % N # [0,N-1]
