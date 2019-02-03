@@ -1,3 +1,66 @@
+
+import torch
+import torch.nn as nn
+from torch.nn import ReflectionPad2d
+from torch.autograd import Function
+import numpy as np
+
+
+def iscomplex(input):
+    return input.size(-1) == 2
+
+
+def ones_like(z):
+    re = torch.ones_like(z[..., 0])
+    im = torch.zeros_like(z[..., 1])
+    return torch.stack((re, im), dim=-1)
+
+
+
+def real(z):
+    return z[..., 0]
+
+
+def imag(z):
+    return z[..., 1]
+
+
+def conjugate(z):
+    z_copy = z.clone()
+    z_copy[..., 1] = -z_copy[..., 1]
+    return z_copy
+
+
+def pows(z, max_k, dim=0):
+    z_pows = [ones_like(z)]
+    if max_k > 0:
+        z_pows.append(z)
+        z_acc = z
+        for k in range(2, max_k + 1):
+            z_acc = mul(z_acc, z)
+            z_pows.append(z_acc)
+    z_pows = torch.stack(z_pows, dim=dim)
+    return z_pows
+
+
+def log2_pows(z, max_pow_k, dim=0):
+    z_pows = [ones_like(z)]
+    if max_pow_k > 0:
+        z_pows.append(z)
+        z_acc = z
+        for k in range(2, max_pow_k + 1):
+            z_acc = mul(z_acc, z_acc)
+            z_pows.append(z_acc)
+    assert len(z_pows) == max_pow_k + 1
+    z_pows = torch.stack(z_pows, dim=dim)
+    return z_pows
+
+def mul(z1, z2):
+    zr = real(z1) * real(z2) - imag(z1) * imag(z2)
+    zi = real(z1) * imag(z2) + imag(z1) * real(z2)
+    z = torch.stack((zr, zi), dim=-1)
+    return z
+
 # substract spatial mean (complex valued input)
 class SubInitSpatialMeanC(object):
     def __init__(self):
@@ -14,6 +77,40 @@ class SubInitSpatialMeanC(object):
         output = input - self.minput
         return output
 
+        
+class SubsampleFourier(object):
+    """
+        Subsampling of a 2D image performed in the Fourier domain
+        Subsampling in the spatial domain amounts to periodization
+        in the Fourier domain, hence the formula.
+
+        Parameters
+        ----------
+        x : tensor_like
+            input tensor with at least 5 dimensions, the last being the real
+             and imaginary parts.
+            Ideally, the last dimension should be a power of 2 to avoid errors.
+        k : int
+            integer such that x is subsampled by 2**k along the spatial variables.
+
+        Returns
+        -------
+        res : tensor_like
+            tensor such that its fourier transform is the Fourier
+            transform of a subsampled version of x, i.e. in
+            FFT^{-1}(res)[u1, u2] = FFT^{-1}(x)[u1 * (2**k), u2 * (2**k)]
+    """
+    def __call__(self, input, k):
+        out = input.new(input.size(0), input.size(1), input.size(2) // k, input.size(3) // k, 2)
+
+
+        y = input.view(input.size(0), input.size(1),
+                       input.size(2)//out.size(2), out.size(2),
+                       input.size(3)//out.size(3), out.size(3),
+                       2)
+
+        out = y.mean(4, keepdim=False).mean(2, keepdim=False)
+        return out
 
 class SubInitMean(object):
     def __init__(self, dim):
