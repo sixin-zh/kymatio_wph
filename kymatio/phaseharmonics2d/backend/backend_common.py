@@ -528,7 +528,7 @@ class PeriodicShift2D(nn.Module):
         self.shift1 = shift1 % M # [0,M-1]
         self.shift2 = shift2 % N # [0,N-1]
         
-    def forward(self, input, shift1, shift2):
+    def forward(self, input):
         # input dim is (1,P_c,M,N,2)
         # per. shift along M and N dim by shift1 and shift2
         #M = input.shape[2]
