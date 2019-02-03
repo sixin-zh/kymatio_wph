@@ -18,7 +18,7 @@ class PhaseHarmonics2d(object):
     # chunk_id is the scale parameter j
     def __init__(self, M, N, J, L, dn, delta_l, nb_chunks, chunk_id, devid=0):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
-        self.dn = delta_n # shift 2^j * dn at scale j
+        self.dn = dn # shift 2^j * dn at scale j
         self.dl = delta_l # max angular interactions
         assert(nb_chunks == J)
         self.nb_chunks = nb_chunks # number of chunks to cut whp cov
