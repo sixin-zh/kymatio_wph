@@ -15,8 +15,6 @@ def ones_like(z):
     im = torch.zeros_like(z[..., 1])
     return torch.stack((re, im), dim=-1)
 
-
-
 def real(z):
     return z[..., 0]
 
@@ -174,41 +172,6 @@ def unpad(in_):
     """
     return in_[..., 1:-1, 1:-1]
 
-class SubsampleFourier(object):
-    """
-        Subsampling of a 2D image performed in the Fourier domain
-        Subsampling in the spatial domain amounts to periodization
-        in the Fourier domain, hence the formula.
-
-        Parameters
-        ----------
-        x : tensor_like
-            input tensor with at least 5 dimensions, the last being the real
-             and imaginary parts.
-            Ideally, the last dimension should be a power of 2 to avoid errors.
-        k : int
-            integer such that x is subsampled by 2**k along the spatial variables.
-
-        Returns
-        -------
-        res : tensor_like
-            tensor such that its fourier transform is the Fourier
-            transform of a subsampled version of x, i.e. in
-            FFT^{-1}(res)[u1, u2] = FFT^{-1}(x)[u1 * (2**k), u2 * (2**k)]
-    """
-    def __call__(self, input, k):
-        out = input.new(input.size(0), input.size(1), input.size(2) // k, input.size(3) // k, 2)
-
-
-        y = input.view(input.size(0), input.size(1),
-                       input.size(2)//out.size(2), out.size(2),
-                       input.size(3)//out.size(3), out.size(3),
-                       2)
-
-        out = y.mean(4, keepdim=False).mean(2, keepdim=False)
-        return out
-
-
 class Modulus(object):
     """
         This class implements a modulus transform for complex numbers.
@@ -318,8 +281,6 @@ class PhaseHarmonics2(Function):
         return torch.stack((dx1, dx2), -1), torch.zeros_like(k)
 
 phase_exp = PhaseHarmonics2.apply
-
-# periodic shift in 2d
 
 # rest
 
@@ -558,3 +519,5 @@ class StablePhaseExp(Function):
 
 phaseexp = StablePhaseExp.apply
 
+
+# periodic shift in 2d
