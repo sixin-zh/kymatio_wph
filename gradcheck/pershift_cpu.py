@@ -12,11 +12,11 @@ shift2 = 1
 
 from kymatio.phaseharmonics2d.backend import PeriodicShift2D
 pershift = PeriodicShift2D.apply
-Y = pershift(X)
+Y = pershift(X,shift1,shift2)
 print(X,Y)
 
 X.requires_grad_(True)
-result = gradcheck(pershift, X, eps=1e-4, atol=1e-2, rtol=1e-3)
+result = gradcheck(pershift, (X,shift1,shift2), eps=1e-4, atol=1e-2, rtol=1e-3)
 if result:
     print('pass')
 else:
