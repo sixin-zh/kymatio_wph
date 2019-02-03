@@ -13,6 +13,9 @@ import numpy as np
 
 NAME = 'skcuda'
 
+from .backend_common import iscomplex
+
+
 @cupy.util.memoize(for_each_device=True)
 def load_kernel(kernel_name, code, **kwargs):
     code = Template(code).substitute(**kwargs)
