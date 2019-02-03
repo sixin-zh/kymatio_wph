@@ -13,7 +13,7 @@ import numpy as np
 
 NAME = 'skcuda'
 
-from .backend_common import iscomplex
+from .backend_common import iscomplex, real, imag, mul
 
 
 @cupy.util.memoize(for_each_device=True)

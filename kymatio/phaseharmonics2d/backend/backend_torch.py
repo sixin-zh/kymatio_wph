@@ -10,11 +10,9 @@ NAME = 'torch'
 
 from .backend_utils import is_long_tensor
 from .backend_utils import HookDetectNan, masked_fill_zero
+from .backend_common import iscomplex, real, imag, mul
 
 
-
-def iscomplex(input):
-    return input.size(-1) == 2
 
 
 
@@ -64,54 +62,5 @@ def cdgmm(A, B, inplace=False):
 
     return C if not inplace else A.copy_(C)
 
-
-def ones_like(z):
-    re = torch.ones_like(z[..., 0])
-    im = torch.zeros_like(z[..., 1])
-    return torch.stack((re, im), dim=-1)
-
-
-def real(z):
-    return z[..., 0]
-
-
-def imag(z):
-    return z[..., 1]
-
-
-def conjugate(z):
-    z_copy = z.clone()
-    z_copy[..., 1] = -z_copy[..., 1]
-    return z_copy
-
-def pows(z, max_k, dim=0):
-    z_pows = [ones_like(z)]
-    if max_k > 0:
-        z_pows.append(z)
-        z_acc = z
-        for k in range(2, max_k + 1):
-            z_acc = mul(z_acc, z)
-            z_pows.append(z_acc)
-    z_pows = torch.stack(z_pows, dim=dim)
-    return z_pows
-
-
-def log2_pows(z, max_pow_k, dim=0):
-    z_pows = [ones_like(z)]
-    if max_pow_k > 0:
-        z_pows.append(z)
-        z_acc = z
-        for k in range(2, max_pow_k + 1):
-            z_acc = mul(z_acc, z_acc)
-            z_pows.append(z_acc)
-    assert len(z_pows) == max_pow_k + 1
-    z_pows = torch.stack(z_pows, dim=dim)
-    return z_pows
-
-def mul(z1, z2):
-    zr = real(z1) * real(z2) - imag(z1) * imag(z2)
-    zi = real(z1) * imag(z2) + imag(z1) * real(z2)
-    z = torch.stack((zr, zi), dim=-1)
-    return z
 
 mulcu = mul
