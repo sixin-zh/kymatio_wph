@@ -278,9 +278,9 @@ class PhaseHarmonics2(Function):
         dx1 = df1dx*grad_output[...,0] + df2dx*grad_output[...,1]
         dx2 = df1dy*grad_output[...,0] + df2dy*grad_output[...,1]
 
-        return torch.stack((dx1, dx2), -1), torch.zeros_like(k)
+        return torch.stack((dx1, dx2), -1), k # dummy gradient torch.zeros_like(k)
 
-phase_exp = PhaseHarmonics2.apply
+#phase_exp = PhaseHarmonics2.apply
 
 # rest
 
@@ -521,3 +521,24 @@ phaseexp = StablePhaseExp.apply
 
 
 # periodic shift in 2d
+
+class PeriodicShift2D(Function):
+    @staticmethod
+    def forward(ctx, input, shift1, shift2):
+        # input dim is (1,P_c,M,N,2)
+        # per. shift along M and N dim by shift1 and shift2
+        M = input.shape[2]
+        N = input.shape[3]
+        shift1 = shift1 % M # [0,M-1]
+        shift2 = shift2 % N # [0,N-1]
+        #blk11 = [[0,0],[shift1-1,shift2-1]]
+        #blk22 = [[shift1,shift2],[M-1,N-1]]
+        #blk12 = [[shift1,0],[M-1,shift2-1]]
+        #blk21 = [[0,shift2],[shift1-1,N-1]]
+        output = input.clone()
+        output[:,:,0:M-shift1,0:N-shift2,:] = input[:,:,shift1:M,shift2:N,:]
+        output[:,:,0:M-shift1,N-shift2:N,:] = input[:,:,shift1:M,0:shift2,:]
+        output[:,:,M-shift1:M,0:N-shift2,:] = input[:,:,0:shift1,shift2:N,:]
+        output[:,:,M-shift1:M,N-shift2:N,:] = input[:,:,0:shift1,0:shift2,:]
+        
+        return output

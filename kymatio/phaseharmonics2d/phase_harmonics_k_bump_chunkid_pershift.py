@@ -16,9 +16,10 @@ from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 class PhaseHarmonics2d(object):
     # nb_chunks = J, so that each dn can be applied to each chunk with the same shift,
     # chunk_id is the scale parameter j
-    def __init__(self, M, N, J, L, dn, delta_l, nb_chunks, chunk_id, devid=0):
+    def __init__(self, M, N, J, L, dn1, dn2, delta_l, nb_chunks, chunk_id, devid=0):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
-        self.dn = dn # shift 2^j * dn at scale j
+        self.dn1 = dn1 # shift 2^j * dn1 at scale j along x
+        self.dn2 = dn2 # shift 2^j * dn1 at scale j along y
         self.dl = delta_l # max angular interactions
         assert(nb_chunks == J)
         self.nb_chunks = nb_chunks # number of chunks to cut whp cov
@@ -44,6 +45,7 @@ class PhaseHarmonics2d(object):
         self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
         self.subinitmean1 = SubInitSpatialMeanC()
         self.subinitmean2 = SubInitSpatialMeanC()
+        self.pershift = PeriodicShift2D()
         
     def filters_tensor(self):
         J = self.J
@@ -196,10 +198,12 @@ class PhaseHarmonics2d(object):
         M = self.M
         N = self.N
         L2 = self.L*2
-        dn = self.dn
+        
         dl = self.dl
         pad = self.pad
-        
+        j = self.chunk_id
+        shift1 = self.dn1*(2**j)
+        shift2 = self.dn2*(2**j)
         # denote
         # nb=batch number
         # nc=number of color channels
@@ -226,12 +230,13 @@ class PhaseHarmonics2d(object):
                 xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1']) # (1,P_c,M,N,2)
                 xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2']) # (1,P_c,M,N,2)
                 # shift xpsi_bc_la2 by 2^j*dn
+                xpsi_bc_la2_shift = self.pershift(xpsi_bc_la2, shift1, shift2)
                 #print('xpsi la1 shape', xpsi_bc_la1.shape)
                 #print('xpsi la2 shape', xpsi_bc_la2.shape)
                 k1 = self.this_wph['k1']
                 k2 = self.this_wph['k2']
                 xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,P_c,M,N,2)
-                xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2, -k2) # (1,P_c,M,N,2)
+                xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2_shift, -k2) # (1,P_c,M,N,2)
                 # sub spatial mean along M and N
                 xpsi0_bc_la1k1 = self.subinitmean1(xpsi_bc_la1k1) # (1,P_c,M,N,2)
                 xpsi0_bc_la2k2 = self.subinitmean2(xpsi_bc_la2k2) # (1,P_c,M,N,2)
