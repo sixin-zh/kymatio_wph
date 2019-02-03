@@ -522,15 +522,17 @@ phaseexp = StablePhaseExp.apply
 
 # periodic shift in 2d
 
-class PeriodicShift2D(Function):
-    @staticmethod
-    def forward(ctx, input, shift1, shift2):
+class PeriodicShift2D(nn.Module):
+    def __init__(self, M,N,shift1,shift2)
+        super(PeriodicShift2D, self).__init__()
+        self.shift1 = shift1 % M # [0,M-1]
+        self.shift2 = shift2 % N # [0,N-1]
+        
+    def forward(self, input, shift1, shift2):
         # input dim is (1,P_c,M,N,2)
         # per. shift along M and N dim by shift1 and shift2
-        M = input.shape[2]
-        N = input.shape[3]
-        shift1 = shift1 % M # [0,M-1]
-        shift2 = shift2 % N # [0,N-1]
+        #M = input.shape[2]
+        #N = input.shape[3]
         #blk11 = [[0,0],[shift1-1,shift2-1]]
         #blk22 = [[shift1,shift2],[M-1,N-1]]
         #blk12 = [[shift1,0],[M-1,shift2-1]]
