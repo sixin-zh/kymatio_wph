@@ -1,4 +1,4 @@
-# add periodic shift cov coefficients
+# periodic shift cov coefficients
 
 __all__ = ['PhaseHarmonics2d']
 
@@ -43,7 +43,7 @@ class PHkPerShift2d(object):
         self.subinitmean1 = SubInitSpatialMeanC()
         self.subinitmean2 = SubInitSpatialMeanC()
         j = self.chunk_id
-        shift1 = self.dn1*(2**j)
+        shift1 = self.dn1*(2**j) # resolution=1 at scale j=0
         shift2 = self.dn2*(2**j)
         print('shift1=',shift1,'shift2=',shift2)
         self.pershift = PeriodicShift2D(self.M,self.N,shift1,shift2)

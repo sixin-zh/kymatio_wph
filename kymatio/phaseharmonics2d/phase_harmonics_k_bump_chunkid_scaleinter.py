@@ -1,9 +1,4 @@
-# implement basic phase harmonics
-# based on John's code to check correctness
-# Case: phase_harmonic_cor in representation_complex
-#      do not create new Sout for each forward
-
-# Init with SubInit
+# scale interaction cov coefficients
 
 __all__ = ['PhaseHarmonics2d']
 
@@ -18,7 +13,7 @@ from .backend import cdgmm, Modulus, fft, \
 from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 
-class PhaseHarmonics2d(object):
+class PhkScaleInter2d(object):
     def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, devid=0):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         self.dj = delta_j # max scale interactions
@@ -40,20 +35,33 @@ class PhaseHarmonics2d(object):
         #self.meta = None
         self.modulus = Modulus()
         self.pad = Pad(0, pre_pad = self.pre_pad)
+        #self.subsample_fourier = SubsampleFourier()
+        #self.phaseexp = StablePhaseExp.apply
+
+        #self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
         self.phase_harmonics = PhaseHarmonics2.apply
 
         self.M_padded, self.N_padded = self.M, self.N
 
+        #filters = filter_bank(self.M_padded, self.N_padded, self.J, self.L, False, self.cache) # no Haar
+
+        #self.Psi = filters['psi']
+        #self.Phi = [filters['phi'][j] for j in range(self.J)]
         self.filters_tensor()
         if self.chunk_id < self.nb_chunks:
             self.idx_wph = self.compute_idx()
             self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
+            #print('la1',self.this_wph['la1'])
+            #print(self.this_wph['la2'])
+            #print(self.this_wph['k1'])
+            #print(self.this_wph['k2'])
             self.subinitmean1 = SubInitSpatialMeanC()
             self.subinitmean2 = SubInitSpatialMeanC()
         else:
             self.subinitmeanJ = SubInitSpatialMeanC()
 
     def filters_tensor(self):
+        # TODO load bump steerable wavelets
         J = self.J
         L = self.L
         L2 = L*2
@@ -65,6 +73,7 @@ class PhaseHarmonics2d(object):
         hatphi = np.stack((np.real(fftphi), np.imag(fftphi)), axis=-1)
 
         fftpsi = matfilters['filt_fftpsi'].astype(np.complex_)
+        #print(self.hatpsi.dtype)
         hatpsi = np.stack((np.real(fftpsi), np.imag(fftpsi)), axis=-1)
 
         self.hatpsi = torch.FloatTensor(hatpsi) # (J,L2,M,N,2)
@@ -113,36 +122,6 @@ class PhaseHarmonics2d(object):
         hit_nb1 = dict() # hash table
         hit_nb2 = dict() # value counts either real or complex numbers
         
-        # j1=j2, k1=1, k2=0 or 1
-        for j1 in range(J):
-            for ell1 in range(L2):
-                k1 = 1
-                j2 = j1
-                for ell2 in range(L2):
-                    if periodic_dis(ell1, ell2, L2) <= dl:
-                        k2 = 0
-                        hit_nb1[(j1,k1,ell1)]=0
-                        hit_nb1[(j2,k2,ell2)]=1
-                        hit_nb2[(j1,k1,ell1,j2,k2,ell2)] = 2
-                        k2 = 1
-                        hit_nb1[(j1,k1,ell1)]=0
-                        hit_nb1[(j2,k2,ell2)]=0
-                        hit_nb2[(j1,k1,ell1,j2,k2,ell2)] = 2
-                        
-        # k1 = 0
-        # k2 = 0
-        # j1 = j2
-        for j1 in range(J):
-            for ell1 in range(L2):
-                k1 = 0
-                hit_nb1[(j1,k1,ell1)]=1
-                j2 = j1
-                for ell2 in range(L2):
-                    if periodic_dis(ell1, ell2, L2) <= dl:
-                        k2 = 0
-                        hit_nb1[(j2,k2,ell2)]=1
-                        hit_nb2[(j1,k1,ell1,j2,k2,ell2)] = 1
-
         # k1 = 0
         # k2 = 0,1,2
         # j1+1 <= j2 <= min(j1+dj,J-1)
@@ -203,40 +182,6 @@ class PhaseHarmonics2d(object):
         idx_la2 = []
         idx_k1 = []
         idx_k2 = []
-
-        # j1=j2, k1=1, k2=0 or 1
-        for j1 in range(J):
-            for ell1 in range(L2):
-                k1 = 1
-                j2 = j1
-                for ell2 in range(L2):
-                    if periodic_dis(ell1, ell2, L2) <= dl:
-                        k2 = 0
-                        idx_la1.append(L2*j1+ell1)
-                        idx_la2.append(L2*j2+ell2)
-                        idx_k1.append(k1)
-                        idx_k2.append(k2)
-                        k2 = 1
-                        idx_la1.append(L2*j1+ell1)
-                        idx_la2.append(L2*j2+ell2)
-                        idx_k1.append(k1)
-                        idx_k2.append(k2)
-
-        # k1 = 0
-        # k2 = 0
-        # j1 = j2
-        for j1 in range(J):
-            for ell1 in range(L2):
-                k1=0
-                j2 = j1
-                for ell2 in range(L2):
-                    if periodic_dis(ell1, ell2, L2) <= dl:
-                        k2 = 0
-                        idx_la1.append(L2*j1+ell1)
-                        idx_la2.append(L2*j2+ell2)
-                        idx_k1.append(k1)
-                        idx_k2.append(k2)
-
 
         # k1 = 0
         # k2 = 0,1,2
@@ -309,7 +254,6 @@ class PhaseHarmonics2d(object):
         return self._type(torch.FloatTensor)
 
     def forward(self, input):
-          
         J = self.J
         M = self.M
         N = self.N
