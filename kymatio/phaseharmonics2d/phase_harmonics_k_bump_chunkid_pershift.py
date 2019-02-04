@@ -13,7 +13,7 @@ from .backend import cdgmm, Modulus, fft, \
 from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 
-class PhaseHarmonics2d(object):
+class PHkPerShift2d(object):
     # nb_chunks = J, so that each dn can be applied to each chunk with the same shift,
     # chunk_id is the scale parameter j
     def __init__(self, M, N, J, L, dn1, dn2, delta_l, nb_chunks, chunk_id, devid=0):
@@ -38,14 +38,15 @@ class PhaseHarmonics2d(object):
         self.modulus = Modulus()
         self.pad = Pad(0, pre_pad = self.pre_pad)
         self.phase_harmonics = PhaseHarmonics2.apply
-        
-        self.M_padded, self.N_padded = self.M, self.N
         self.filters_tensor()
         self.idx_wph = self.compute_idx()
         self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
         self.subinitmean1 = SubInitSpatialMeanC()
         self.subinitmean2 = SubInitSpatialMeanC()
-        self.pershift = PeriodicShift2D()
+        j = self.chunk_id
+        shift1 = self.dn1*(2**j)
+        shift2 = self.dn2*(2**j)
+        self.pershift = PeriodicShift2D(self.M,self.N,shift1,shift2)
         
     def filters_tensor(self):
         J = self.J
@@ -201,9 +202,7 @@ class PhaseHarmonics2d(object):
         
         dl = self.dl
         pad = self.pad
-        j = self.chunk_id
-        shift1 = self.dn1*(2**j)
-        shift2 = self.dn2*(2**j)
+     
         # denote
         # nb=batch number
         # nc=number of color channels
@@ -230,7 +229,7 @@ class PhaseHarmonics2d(object):
                 xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1']) # (1,P_c,M,N,2)
                 xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2']) # (1,P_c,M,N,2)
                 # shift xpsi_bc_la2 by 2^j*dn
-                xpsi_bc_la2_shift = self.pershift(xpsi_bc_la2, shift1, shift2)
+                xpsi_bc_la2_shift = self.pershift(xpsi_bc_la2)
                 #print('xpsi la1 shape', xpsi_bc_la1.shape)
                 #print('xpsi la2 shape', xpsi_bc_la2.shape)
                 k1 = self.this_wph['k1']
