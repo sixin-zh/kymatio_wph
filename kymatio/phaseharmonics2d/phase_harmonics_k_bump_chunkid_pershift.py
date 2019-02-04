@@ -7,7 +7,7 @@ import math
 import torch
 import numpy as np
 import scipy.io as sio
-from .backend import fft, cdgmm, mulcu, Modulus \
+from .backend import fft, cdgmm, mulcu, Modulus, \
     Pad, SubInitSpatialMeanC, PhaseHarmonics2, PeriodicShift2D
 from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
