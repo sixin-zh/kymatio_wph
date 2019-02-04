@@ -13,9 +13,6 @@ from .backend_utils import HookDetectNan, masked_fill_zero
 from .backend_common import iscomplex, real, imag, mul
 
 
-
-
-
 def cdgmm(A, B, inplace=False):
     """
         Complex pointwise multiplication between (batched) tensor A and tensor B.

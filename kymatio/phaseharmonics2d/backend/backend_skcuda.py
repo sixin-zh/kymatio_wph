@@ -13,7 +13,7 @@ import numpy as np
 
 NAME = 'skcuda'
 
-from .backend_common import iscomplex, real, imag, mul
+from .backend_common import iscomplex # , real, imag # , mul
 
 
 @cupy.util.memoize(for_each_device=True)
@@ -120,12 +120,6 @@ class cdgmmMul(Function):
 cdgmm = cdgmmMul.apply
 
 
-
-def mul(z1, z2):
-    zr = real(z1) * real(z2) - imag(z1) * imag(z2)
-    zi = real(z1) * imag(z2) + imag(z1) * real(z2)
-    z = torch.stack((zr, zi), dim=-1)
-    return z
 
 class cdgmmMulcu(Function):
     @staticmethod
