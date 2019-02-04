@@ -7,9 +7,8 @@ import math
 import torch
 import numpy as np
 import scipy.io as sio
-#import torch.nn.functional as F
-from .backend import cdgmm, Modulus, fft, \
-    Pad, SubInitSpatialMeanC, PhaseHarmonics2, mulcu
+from .backend import fft, cdgmm, mulcu, Modulus \
+    Pad, SubInitSpatialMeanC, PhaseHarmonics2, PeriodicShift2D
 from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 
@@ -93,7 +92,7 @@ class PHkPerShift2d(object):
                 this_wph['k2'] = self.idx_wph['k2'][:,offset:offset+nb_cov_chunk[idxc],:,:]
             offset = offset + nb_cov_chunk[idxc]
 
-        print('this chunk', self.chunk_id, 'la1',this_wph['la1'])
+        #print('this chunk', self.chunk_id, 'la1',this_wph['la1'])
         
         return this_wph
 
