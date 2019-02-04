@@ -32,6 +32,7 @@ delta_l = L/2
 delta_k = 1
 delta_n = 1
 nb_chunks = 10
+factr = 1e3
 
 # kymatio scattering
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid \
@@ -40,15 +41,17 @@ from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_pershift \
     import PHkPerShift2d
 
 Sims = []
-factr = 1e3
-wph_ops = dict()
+wph_ops = []
+opid = 0
 for dn1 in range(-delta_n,delta_n+1):
     for dn2 in range(-delta_n,delta_n+1):
         if dn1 != 0 and dn2 != 0:
             for chunk_id in range(J):
                 wph_op = PHkPerShift2d(M, N, J, L, dn1, dn2, delta_l, J, chunk_id) 
                 wph_op = wph_op.cuda()
-                wph_ops[chunk_id] = wph_op
+                wph_ops.append(wph_op)
+                assert(wph_ops[opid]==wph_op)
+                opid += 1
                 Sim_ = wph_op(im)*factr # (nb,nc,nb_channels,1,1,2)
                 Sims.append(Sim_)
 

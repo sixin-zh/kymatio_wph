@@ -45,6 +45,7 @@ class PHkPerShift2d(object):
         j = self.chunk_id
         shift1 = self.dn1*(2**j)
         shift2 = self.dn2*(2**j)
+        print('shift1=',shift1,'shift2=',shift2)
         self.pershift = PeriodicShift2D(self.M,self.N,shift1,shift2)
         
     def filters_tensor(self):
