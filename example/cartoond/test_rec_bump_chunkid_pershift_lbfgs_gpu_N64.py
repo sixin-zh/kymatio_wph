@@ -45,7 +45,7 @@ wph_ops = []
 opid = 0
 for dn1 in range(-delta_n,delta_n+1):
     for dn2 in range(-delta_n,delta_n+1):
-        if dn1 != 0 and dn2 != 0:
+        if dn1**2+dn2**2 <= delta_n**2:
             for chunk_id in range(J):
                 wph_op = PHkPerShift2d(M, N, J, L, dn1, dn2, delta_l, J, chunk_id) 
                 wph_op = wph_op.cuda()
@@ -57,14 +57,14 @@ for dn1 in range(-delta_n,delta_n+1):
 
 # ---- Reconstruct marks. At initiation, every point has the average value of the marks.----#
 #---- Trying scipy L-BFGS ----#
-'''
-def obj_fun(x,chunk_id):
+
+def obj_fun(x,opid):
     if x.grad is not None:
         x.grad.data.zero_()
     global wph_ops
-    wph_op = wph_ops[chunk_id]
+    wph_op = wph_ops[opid]
     p = wph_op(x)*factr
-    diff = p-Sims[chunk_id]
+    diff = p-Sims[opid]
     loss = torch.mul(diff,diff).mean()
     return loss
 
@@ -74,25 +74,13 @@ def grad_obj_fun(x_gpu):
     loss = 0
     global grad_err
     grad_err[:] = 0
-    #global wph_ops
-    for chunk_id in range(nb_chunks+1):
+    for opid in range(len(Sims)):
         x_t = x_gpu.clone().requires_grad_(True)
-        #print('chunk_id in grad', chunk_id)
-        #if chunk_id not in wph_ops.keys():
-        #    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
-        #    wph_op = wph_op.cuda()
-        #    wph_ops[chunk_id] = wph_op
-        
-        loss_t = obj_fun(x_t,chunk_id)
+        loss_t = obj_fun(x_t,opid)
         grad_err_t, = grad([loss_t],[x_t], retain_graph=False)
         loss = loss + loss_t
         grad_err = grad_err + grad_err_t
-        #x_t.detach()
-        #del x_t
-        #del grad_err_
-        #del wph_ops[chunk_id]
-        #gc.collect()
-        
+            
     return loss, grad_err
 
 count = 0
@@ -100,10 +88,8 @@ from time import time
 time0 = time()
 def fun_and_grad_conv(x):
     x_float = torch.reshape(torch.tensor(x,dtype=torch.float),(1,1,size,size))
-    x_gpu = x_float.cuda()#.requires_grad_(True)
+    x_gpu = x_float.cuda()
     loss, grad_err = grad_obj_fun(x_gpu)
-    #del x_gpu
-    #gc.collect()
     global count
     global time0
     count += 1
@@ -124,9 +110,14 @@ res = opt.minimize(fun_and_grad_conv, x0, method='L-BFGS-B', jac=True, tol=None,
                    callback=callback_print,
                    options={'maxiter': 500, 'gtol': 1e-14, 'ftol': 1e-14, 'maxcor': 100})
 final_loss, x_opt, niter, msg = res['fun'], res['x'], res['nit'], res['message']
+print('OPT fini avec:', final_loss,niter,msg)
 
-#im_opt = np.reshape(x_opt, (size,size))
-#tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
+im_opt = np.reshape(x_opt, (size,size))
+tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
 
-#torch.save(tensor_opt, 'test_rec_bump_chunkid_pershift_lbfgs_gpu_N64_dj1_s.pt')
-'''
+ret = dict()
+ret['tensor_opt'] = tensor_opt
+ret['normalized_loss'] = final_loss/(factr**2)
+
+torch.save(ret, 'test_rec_bump_chunkid_pershift_lbfgs_gpu_N64.pt')
+

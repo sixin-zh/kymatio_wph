@@ -54,8 +54,9 @@ class PHkPerShift2d(object):
         L2 = L*2
 
         assert(self.M == self.N)
-        matfilters = sio.loadmat('./matlab/filters/bumpsteerableg1_fft2d_N' + str(self.N) + '_J' + str(self.J) + '_L' + str(self.L) + '.mat')
-
+        matfilters = sio.loadmat('./matlab/filters/bumpsteerableg1_fft2d_N' + \
+                                 str(self.N) + '_J' + str(self.J) + '_L' + str(self.L) + '.mat')
+        
         fftphi = matfilters['filt_fftphi'].astype(np.complex_)
         hatphi = np.stack((np.real(fftphi), np.imag(fftphi)), axis=-1)
 
