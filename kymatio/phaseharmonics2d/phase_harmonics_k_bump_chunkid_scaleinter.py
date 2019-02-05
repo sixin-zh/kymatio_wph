@@ -88,7 +88,7 @@ class PhkScaleInter2d(object):
         #print('la1 shape',self.idx_wph['la1'].shape)
 
         nb_cov = len(self.idx_wph['la1'])
-        print('nb cov is', nb_cov)
+        #print('nb cov is', nb_cov)
         max_chunk = nb_cov // nb_chunks
         nb_cov_chunk = np.zeros(nb_chunks,dtype=np.int32)
         for idxc in range(nb_chunks):
@@ -107,6 +107,8 @@ class PhkScaleInter2d(object):
                 this_wph['k1'] = self.idx_wph['k1'][:,offset:offset+nb_cov_chunk[idxc],:,:]
                 this_wph['k2'] = self.idx_wph['k2'][:,offset:offset+nb_cov_chunk[idxc],:,:]
             offset = offset + nb_cov_chunk[idxc]
+
+        print('this chunk', chunk_id, ' size is ', len(this_wph['la1']), ' among ', nb_cov)
 
         return this_wph
 

@@ -74,7 +74,7 @@ class PHkPerShift2d(object):
         # cut self.idx_wph into smaller pieces
 
         nb_cov = len(self.idx_wph['la1'])
-        print('nb cov is', nb_cov)
+        #print('nb cov is', nb_cov)
         max_chunk = nb_cov // nb_chunks
         nb_cov_chunk = np.zeros(nb_chunks,dtype=np.int32)
         for idxc in range(nb_chunks):
@@ -94,7 +94,8 @@ class PHkPerShift2d(object):
                 this_wph['k2'] = self.idx_wph['k2'][:,offset:offset+nb_cov_chunk[idxc],:,:]
             offset = offset + nb_cov_chunk[idxc]
 
-        #print('this chunk', self.chunk_id, 'la1',this_wph['la1'])
+        print('this chunk', chunk_id, ' size is ', len(this_wph['la1']), ' among ', nb_cov)
+        # 'la1',this_wph['la1'])
         
         return this_wph
 
