@@ -7,8 +7,8 @@ nc=1
 M=4
 N=4
 X = torch.randn((nb,nc,M,N,2),dtype=torch.float32)
-shift1 = 1
-shift2 = 1
+shift1 = 2
+shift2 = 0
 
 from kymatio.phaseharmonics2d.backend import PeriodicShift2D
 pershift = PeriodicShift2D(M,N,shift1,shift2)
