@@ -88,8 +88,10 @@ class cdgmmMul(Function):
         A, B = ctx.saved_tensors
         conjA = A.clone()
         conjB = B.clone()
-        conjA[:,:,:,:,1] = -A[:,:,:,:,1]
-        conjB[:,:,1] = -B[:,:,1]
+        conjA[...,1] = -A[...,1]
+        conjB[...,1] = -B[...,1]
+        #conjA[:,:,:,:,1] = -A[:,:,:,:,1]
+        #conjB[:,:,1] = -B[:,:,1]
         m, n = conjB.nelement() // 2, conjA.nelement() // conjB.nelement()
         # n is the B*C
         # m is the M*N
@@ -156,8 +158,8 @@ class cdgmmMulcu(Function):
         A, B = ctx.saved_tensors
         conjA = A.clone()
         conjB = B.clone()
-        conjA[:,:,:,:,1] = -A[:,:,:,:,1]
-        conjB[:,:,1] = -B[:,:,1]
+        conjA[...,1] = -A[...,1]
+        conjB[...,1] = -B[...,1]
         m, n = conjB.nelement() // 2, conjA.nelement() // conjB.nelement()
         # n is the B*C
         # m is the M*N
