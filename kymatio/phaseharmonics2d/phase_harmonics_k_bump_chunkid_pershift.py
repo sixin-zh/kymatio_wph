@@ -114,8 +114,8 @@ class PHkPerShift2d(object):
         # TODO
         
         #print('hit nb1 values',list(hit_nb1.values()))
-        nb1 = np.array(list(hit_nb1.values()), dtype=int).sum() + 1 # plus last phiJ channel
-        nb2 = np.array(list(hit_nb2.values()), dtype=int).sum() + 1 # plus last phiJ channel
+        nb1 = np.array(list(hit_nb1.values()), dtype=int).sum() 
+        nb2 = np.array(list(hit_nb2.values()), dtype=int).sum() 
 
         return nb1, nb2
     
