@@ -55,6 +55,8 @@ class cdgmmMul(Function):
             C[b, c, m, n, :] = A[b, c, m, n, :] * B[m, n, :]
         """
         A, B = A.contiguous(), B.contiguous()
+        ctx.save_for_backward(A,B)
+        
         if A.size()[-3:] != B.size():
             raise RuntimeError('The filters are not compatible for multiplication!')
         
@@ -69,8 +71,6 @@ class cdgmmMul(Function):
 
         if not A.is_cuda:
             raise RuntimeError('Use the torch backend for cpu tensors!')
-
-        ctx.save_for_backward(A,B)
         
         C = A.new(A.size())
         m, n = B.nelement() // 2, A.nelement() // B.nelement()
@@ -94,7 +94,7 @@ class cdgmmMul(Function):
         # n is the B*C
         # m is the M*N
         gradA = conjA.new(conjA.size()) # (n,m), col-major
-        gradC = grad_output # (n,m), col-major
+        gradC = grad_output.contiguous() # (n,m), col-major
         # grad_A = grad_C * conj(B)
         lda = m
         ldc = m
@@ -126,7 +126,8 @@ class cdgmmMulcu(Function):
     def forward(ctx, A, B):
         # assume A and B has the same size , with last dim = 2
         A, B = A.contiguous(), B.contiguous()
-                
+        ctx.save_for_backward(A, B)
+                        
         if not iscomplex(A) or not iscomplex(B):
             raise TypeError('The input, filter and output should be complex')
 
@@ -139,12 +140,6 @@ class cdgmmMulcu(Function):
         if not A.is_cuda:
             raise RuntimeError('Use the torch backend for cpu tensors!')
 
-        conjA = A.clone()
-        conjB = B.clone()
-        conjA[...,1] = -A[...,1]
-        conjB[...,1] = -B[...,1]
-        ctx.save_for_backward(conjA, conjB)
-        
         C = A.new(A.size())
         m, n = B.nelement() // 2, A.nelement() // B.nelement()
         lda = m
@@ -158,13 +153,15 @@ class cdgmmMulcu(Function):
     
     @staticmethod
     def backward(ctx, grad_output):
-        conjA, conjB =  ctx.saved_tensors
+        A, B = ctx.saved_tensors
+        conjA = A.clone()
+        conjB = B.clone()
         m, n = conjB.nelement() // 2, conjA.nelement() // conjB.nelement()
         # n is the B*C
         # m is the M*N
         gradA = conjA.new(conjA.size()) # (n,m), col-major
         #gradB = conjB.new(conjB.size()) # (m)
-        gradC = grad_output # (n,m), col-major
+        gradC = grad_output.contiguous() # (n,m), col-major
         # grad_A = grad_C * conj(B)
         lda = m
         ldc = m
