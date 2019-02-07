@@ -204,7 +204,7 @@ class PHkPerShift2d(object):
         
         dl = self.dl
         pad = self.pad
-     
+        
         # denote
         # nb=batch number
         # nc=number of color channels
