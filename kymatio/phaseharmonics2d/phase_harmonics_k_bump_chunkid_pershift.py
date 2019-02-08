@@ -40,6 +40,8 @@ class PHkPerShift2d(object):
         self.filters_tensor()
         self.idx_wph = self.compute_idx()
         self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
+        self.preselect_filters()
+
         self.subinitmean1 = SubInitSpatialMeanC()
         self.subinitmean2 = SubInitSpatialMeanC()
         j = self.chunk_id
@@ -47,6 +49,16 @@ class PHkPerShift2d(object):
         shift2 = self.dn2*(2**j)
         print('shift1=',shift1,'shift2=',shift2)
         self.pershift = PeriodicShift2D(self.M,self.N,shift1,shift2)
+
+    def preselect_filters(self):
+        # only use thoses filters in the this_wph list
+        min_la1 = self.idx_wph['la1'].min()
+        max_la1 = self.idx_wph['la1'].max()
+        min_la2 = self.idx_wph['la2'].min()
+        max_la2 = self.idx_wph['la2'].max()
+        min_la = min(min_la1,min_la2)
+        max_la = max(max_la1,max_la2)
+        print('la range',min_la,max_la)
         
     def filters_tensor(self):
         J = self.J
