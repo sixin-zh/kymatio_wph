@@ -28,14 +28,17 @@ nb_restarts = 10
 nGPU = 1
 factr = 1e5
 
-from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_pershift \
-    import PHkPerShift2d
+#from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_pershift \
+#    import PHkPerShift2d
+from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_scaleinter \
+    import PhkScaleInter2d
 
 dn1 = 0
 dn2 = 0
 chunk_id = 1
 devid = 0
-wph_op = PHkPerShift2d(M, N, J, L, dn1, dn2, delta_l, J, chunk_id, devid)
+#wph_op = PHkPerShift2d(M, N, J, L, dn1, dn2, delta_l, J, chunk_id, devid)
+wph_op = PhkScaleInter2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, devid)
 Sim = wph_op(im)
 
 print('shape',Sim.shape)

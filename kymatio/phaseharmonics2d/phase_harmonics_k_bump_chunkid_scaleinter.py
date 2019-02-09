@@ -51,6 +51,7 @@ class PhkScaleInter2d(object):
         if self.chunk_id < self.nb_chunks:
             self.idx_wph = self.compute_idx()
             self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
+            self.min_la, self.max_la = self.preselect_filters()
             #print('la1',self.this_wph['la1'])
             #print(self.this_wph['la2'])
             #print(self.this_wph['k1'])
@@ -60,6 +61,17 @@ class PhkScaleInter2d(object):
         else:
             self.subinitmeanJ = SubInitSpatialMeanC()
 
+    def preselect_filters(self):
+        # only use thoses filters in the this_wph list
+        min_la1 = self.this_wph['la1'].min()
+        max_la1 = self.this_wph['la1'].max()
+        min_la2 = self.this_wph['la2'].min()
+        max_la2 = self.this_wph['la2'].max()
+        min_la = min(min_la1,min_la2)
+        max_la = max(max_la1,max_la2)
+        print('this la range',min_la,max_la)
+        return min_la,max_la
+    
     def filters_tensor(self):
         # TODO load bump steerable wavelets
         J = self.J
@@ -274,7 +286,9 @@ class PhkScaleInter2d(object):
         if self.chunk_id < self.nb_chunks:
             nb = hatx_c.shape[0]
             nc = hatx_c.shape[1]
-            hatpsi_la = self.hatpsi # (J,L2,M,N,2)
+            # hatpsi_la = self.hatpsi # (J,L2,M,N,2)
+            hatpsi_la = self.hatpsi.view(1,J*L2,M,N,2) # (J,L2,M,N,2) -> (1,J*L2,M,N,2)
+            hatpsi_pre = hatpsi_la[:,self.min_la:self.max_la+1,:,:,:] # Pa = max_la-min_la+1, (1,Pa,M,N,2)
             assert(nb==1 and nc==1) # for submeanC
             nb_channels = self.this_wph['la1'].shape[0]
             Sout = input.new(nb, nc, nb_channels, \
@@ -284,15 +298,16 @@ class PhkScaleInter2d(object):
                     hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
                     #               print('hatpsi_la is cuda?',hatpsi_la.is_cuda)
                     #                print('hatx_bc is cuda?',hatx_bc.is_cuda)
-                    hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L2,M,N,2)
+                    #hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L2,M,N,2)
+                    hatxpsi_bc = cdgmm(hatpsi_pre, hatx_bc) # (1,Pa,M,N,2)
                     #print( 'hatxpsi_bc shape', hatxpsi_bc.shape )
                     xpsi_bc = ifft2_c2c(hatxpsi_bc)
                     # reshape to (1,J*L,M,N,2)
                     xpsi_bc = xpsi_bc.view(1,J*L2,M,N,2)
 
                     # select la1, et la2, P_c = number of |la1| in this chunk
-                    xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1']) # (1,P_c,M,N,2)
-                    xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2']) # (1,P_c,M,N,2)
+                    xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1'] - self.min_la) # (1,P_c,M,N,2)
+                    xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2'] - self.min_la) # (1,P_c,M,N,2)
                     #print('xpsi la1 shape', xpsi_bc_la1.shape)
                     #print('xpsi la2 shape', xpsi_bc_la2.shape)
                     k1 = self.this_wph['k1']
