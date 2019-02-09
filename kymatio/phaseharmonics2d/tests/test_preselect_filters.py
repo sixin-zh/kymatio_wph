@@ -38,4 +38,5 @@ devid = 0
 wph_op = PHkPerShift2d(M, N, J, L, dn1, dn2, delta_l, J, chunk_id, devid)
 Sim = wph_op(im)
 
-print(Sim)
+print('shape',Sim.shape)
+print('value',Sim.squeeze())
