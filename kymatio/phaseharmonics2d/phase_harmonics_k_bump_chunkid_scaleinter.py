@@ -245,13 +245,15 @@ class PhkScaleInter2d(object):
         return idx_wph
 
     def _type(self, _type, devid=None):
-        self.hatpsi = self.hatpsi.type(_type)
         self.hatphi = self.hatphi.type(_type)
-        self.hatpsi_pre = self.hatpsi_pre.type(_type)
+        if self.chunk_id < self.nb_chunks:
+            self.hatpsi = self.hatpsi.type(_type)
+            self.hatpsi_pre = self.hatpsi_pre.type(_type)
         if devid is not None:
-            self.hatpsi = self.hatpsi.to(devid)
             self.hatphi = self.hatphi.to(devid)
-            self.hatpsi_pre = self.hatpsi_pre.to(devid)
+            if self.chunk_id < self.nb_chunks:
+                self.hatpsi = self.hatpsi.to(devid)
+                self.hatpsi_pre = self.hatpsi_pre.to(devid)
         #print('in _type',type(self.hatpsi))
         self.pad.padding_module.type(_type)
         return self
