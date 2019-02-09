@@ -51,6 +51,9 @@ class PHkPerShift2d(object):
 
     def preselect_filters(self):
         # only use thoses filters in the this_wph list
+        J = self.J
+        L = self.L
+        L2 = L*2
         min_la1 = self.this_wph['la1'].min()
         max_la1 = self.this_wph['la1'].max()
         min_la2 = self.this_wph['la2'].min()
