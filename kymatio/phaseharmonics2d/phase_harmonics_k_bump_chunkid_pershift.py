@@ -40,7 +40,7 @@ class PHkPerShift2d(object):
         self.filters_tensor()
         self.idx_wph = self.compute_idx()
         self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
-        self.min_la, self.max_la = self.preselect_filters()
+        self.preselect_filters()
         self.subinitmean1 = SubInitSpatialMeanC()
         self.subinitmean2 = SubInitSpatialMeanC()
         j = self.chunk_id
@@ -58,7 +58,11 @@ class PHkPerShift2d(object):
         min_la = min(min_la1,min_la2)
         max_la = max(max_la1,max_la2)
         print('this la range',min_la,max_la)
-        return min_la,max_la
+        hatpsi_la = self.hatpsi.view(1,J*L2,M,N,2) # (J,L2,M,N,2) -> (1,J*L2,M,N,2)
+        self.hatpsi_pre = hatpsi_la[:,min_la:max_la+1,:,:,:] # Pa = max_la-min_la+1, (1,Pa,M,N,2)
+        self.this_wph['la1_pre'] = self.this_wph['la1'] - self.min_la
+        self.this_wph['la2_pre'] = self.this_wph['la2'] - self.min_la
+        #return min_la,max_la
     
     def filters_tensor(self):
         J = self.J
@@ -179,9 +183,11 @@ class PHkPerShift2d(object):
     def _type(self, _type, devid=None):
         self.hatpsi = self.hatpsi.type(_type)
         self.hatphi = self.hatphi.type(_type)
+        self.hatpsi_pre = self.hatpsi_pre.type(_type)
         if devid is not None:
             self.hatpsi = self.hatpsi.to(devid)
             self.hatphi = self.hatphi.to(devid)
+            self.hatpsi_pre = self.hatpsi_pre.to(devid)
         #print('in _type',type(self.hatpsi))
         self.pad.padding_module.type(_type)
         return self
@@ -198,7 +204,8 @@ class PHkPerShift2d(object):
             self.this_wph['la2'] = self.this_wph['la2'].type(torch.cuda.LongTensor).to(devid)
             self.this_wph['k1'] = self.this_wph['k1'].type(torch.cuda.FloatTensor).to(devid)
             self.this_wph['k2'] = self.this_wph['k2'].type(torch.cuda.FloatTensor).to(devid)
-
+            self.this_wph['la1_pre'] = self.this_wph['la1_pre'].type(torch.cuda.LongTensor).to(devid)
+            self.this_wph['la2_pre'] = self.this_wph['la2_pre'].type(torch.cuda.LongTensor).to(devid)
         return self._type(torch.cuda.FloatTensor, devid)
 
     def cpu(self):
@@ -227,8 +234,8 @@ class PHkPerShift2d(object):
         #if self.chunk_id < self.nb_chunks:
         nb = hatx_c.shape[0]
         nc = hatx_c.shape[1]
-        hatpsi_la = self.hatpsi.view(1,J*L2,M,N,2) # (J,L2,M,N,2) -> (1,J*L2,M,N,2)
-        hatpsi_pre = hatpsi_la[:,self.min_la:self.max_la+1,:,:,:] # Pa = max_la-min_la+1, (1,Pa,M,N,2)
+        #hatpsi_la = self.hatpsi.view(1,J*L2,M,N,2) # (J,L2,M,N,2) -> (1,J*L2,M,N,2)
+        hatpsi_pre = self.hatpsi_pre # hatpsi_la[:,self.min_la:self.max_la+1,:,:,:] # Pa = max_la-min_la+1, (1,Pa,M,N,2)
         assert(nb==1 and nc==1) # for submeanC
         nb_channels = self.this_wph['la1'].shape[0]
         Sout = input.new(nb, nc, nb_channels, \
@@ -242,8 +249,8 @@ class PHkPerShift2d(object):
                 # reshape to (1,J*L,M,N,2)
                 #xpsi_bc = xpsi_bc.view(1,J*L2,M,N,2)
                 # select la1, et la2, P_c = number of |la1| in this chunk
-                xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1'] - self.min_la) # (1,P_c,M,N,2)
-                xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2'] - self.min_la) # (1,P_c,M,N,2)
+                xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1_pre']) # (1,P_c,M,N,2)
+                xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2_pre']) # (1,P_c,M,N,2)
                 # shift xpsi_bc_la2 by 2^j*dn
                 xpsi_bc_la2_shift = self.pershift(xpsi_bc_la2)
                 #print('xpsi la1 shape', xpsi_bc_la1.shape)
