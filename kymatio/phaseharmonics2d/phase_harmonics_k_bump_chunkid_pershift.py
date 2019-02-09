@@ -65,8 +65,8 @@ class PHkPerShift2d(object):
         print('this la range',min_la,max_la)
         hatpsi_la = self.hatpsi.view(1,J*L2,M,N,2) # (J,L2,M,N,2) -> (1,J*L2,M,N,2)
         self.hatpsi_pre = hatpsi_la[:,min_la:max_la+1,:,:,:] # Pa = max_la-min_la+1, (1,Pa,M,N,2)
-        self.this_wph['la1_pre'] = self.this_wph['la1'] - self.min_la
-        self.this_wph['la2_pre'] = self.this_wph['la2'] - self.min_la
+        self.this_wph['la1_pre'] = self.this_wph['la1'] - min_la
+        self.this_wph['la2_pre'] = self.this_wph['la2'] - min_la
         #return min_la,max_la
     
     def filters_tensor(self):
