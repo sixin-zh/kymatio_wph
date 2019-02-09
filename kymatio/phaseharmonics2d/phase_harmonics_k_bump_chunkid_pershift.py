@@ -52,13 +52,13 @@ class PHkPerShift2d(object):
 
     def preselect_filters(self):
         # only use thoses filters in the this_wph list
-        min_la1 = self.idx_wph['la1'].min()
-        max_la1 = self.idx_wph['la1'].max()
-        min_la2 = self.idx_wph['la2'].min()
-        max_la2 = self.idx_wph['la2'].max()
+        min_la1 = self.this_wph['la1'].min()
+        max_la1 = self.this_wph['la1'].max()
+        min_la2 = self.this_wph['la2'].min()
+        max_la2 = self.this_wph['la2'].max()
         min_la = min(min_la1,min_la2)
         max_la = max(max_la1,max_la2)
-        print('la range',min_la,max_la)
+        print('this la range',min_la,max_la)
         
     def filters_tensor(self):
         J = self.J
