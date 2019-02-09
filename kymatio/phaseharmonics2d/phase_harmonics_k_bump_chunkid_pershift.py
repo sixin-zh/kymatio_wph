@@ -51,6 +51,8 @@ class PHkPerShift2d(object):
 
     def preselect_filters(self):
         # only use thoses filters in the this_wph list
+        M = self.M
+        N = self.N
         J = self.J
         L = self.L
         L2 = L*2
