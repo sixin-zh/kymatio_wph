@@ -269,8 +269,8 @@ class PhkScaleInter2d(object):
         print('call cuda with devid=', devid)
         assert(devid>=0)
         if self.chunk_id < self.nb_chunks:
-            self.this_wph['la1'] = self.this_wph['la1'].type(torch.cuda.LongTensor).to(devid)
-            self.this_wph['la2'] = self.this_wph['la2'].type(torch.cuda.LongTensor).to(devid)
+            #self.this_wph['la1'] = self.this_wph['la1'].type(torch.cuda.LongTensor).to(devid)
+            #self.this_wph['la2'] = self.this_wph['la2'].type(torch.cuda.LongTensor).to(devid)
             self.this_wph['k1'] = self.this_wph['k1'].type(torch.cuda.FloatTensor).to(devid)
             self.this_wph['k2'] = self.this_wph['k2'].type(torch.cuda.FloatTensor).to(devid)
             self.this_wph['la1_pre'] = self.this_wph['la1_pre'].type(torch.cuda.LongTensor).to(devid)
@@ -307,7 +307,7 @@ class PhkScaleInter2d(object):
             #hatpsi_la = self.hatpsi.view(1,J*L2,M,N,2) # (J,L2,M,N,2) -> (1,J*L2,M,N,2)
             hatpsi_pre = self.hatpsi_pre # hatpsi_la[:,self.min_la:self.max_la+1,:,:,:] # Pa = max_la-min_la+1, (1,Pa,M,N,2)
             assert(nb==1 and nc==1) # for submeanC
-            nb_channels = self.this_wph['la1'].shape[0]
+            nb_channels = self.this_wph['la1_pre'].shape[0]
             Sout = input.new(nb, nc, nb_channels, \
                              1, 1, 2) # (nb,nc,nb_channels,1,1,2)
             for idxb in range(nb):
