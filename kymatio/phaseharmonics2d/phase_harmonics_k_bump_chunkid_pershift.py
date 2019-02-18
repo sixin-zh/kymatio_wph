@@ -40,6 +40,7 @@ class PHkPerShift2d(object):
         self.filters_tensor()
         self.idx_wph = self.compute_idx()
         self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
+        self.this_wph_size = torch.numel(self.this_wph['la1'])
         self.preselect_filters()
         self.subinitmean1 = SubInitSpatialMeanC()
         self.subinitmean2 = SubInitSpatialMeanC()
@@ -235,12 +236,12 @@ class PHkPerShift2d(object):
         # input: (nb,nc,M,N)
         x_c = pad(input) # add zeros to imag part -> (nb,nc,M,N,2)
         hatx_c = fft2_c2c(x_c) # fft2 -> (nb,nc,M,N,2)
-        #print('nbchannels',nb_channels)
-        #if self.chunk_id < self.nb_chunks:
+        y_c = self.pershift(x_c)
+        haty_c = fft2_c2c(y_c)
+        
         nb = hatx_c.shape[0]
         nc = hatx_c.shape[1]
-        #hatpsi_la = self.hatpsi.view(1,J*L2,M,N,2) # (J,L2,M,N,2) -> (1,J*L2,M,N,2)
-        hatpsi_pre = self.hatpsi_pre # hatpsi_la[:,self.min_la:self.max_la+1,:,:,:] # Pa = max_la-min_la+1, (1,Pa,M,N,2)
+        hatpsi_pre = self.hatpsi_pre
         assert(nb==1 and nc==1) # for submeanC
         nb_channels = self.this_wph['la1_pre'].shape[0]
         Sout = input.new(nb, nc, nb_channels, \
@@ -248,27 +249,25 @@ class PHkPerShift2d(object):
         for idxb in range(nb):
             for idxc in range(nc):
                 hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
-                #hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L2,M,N,2)
                 hatxpsi_bc = cdgmm(hatpsi_pre, hatx_bc) # (1,Pa,M,N,2)
                 xpsi_bc = ifft2_c2c(hatxpsi_bc) # (1,Pa,M,N,2)
-                # reshape to (1,J*L,M,N,2)
-                #xpsi_bc = xpsi_bc.view(1,J*L2,M,N,2)
-                # select la1, et la2, P_c = number of |la1| in this chunk
+                haty_bc = haty_c[idxb,idxc,:,:,:]
+                hatypsi_bc = cdgmm(hatpsi_pre, haty_bc) # (1,Pa,M,N,2)
+                ypsi_bc = ifft2_c2c(hatypsi_bc) # (1,Pa,M,N,2)
+                # select la1, et la2, P_c = number of |la1| in this chunk = self.this_wph_size
                 xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1_pre']) # (1,P_c,M,N,2)
-                xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2_pre']) # (1,P_c,M,N,2)
-                # shift xpsi_bc_la2 by 2^j*dn
-                xpsi_bc_la2_shift = self.pershift(xpsi_bc_la2)
+                ypsi_bc_la2 = torch.index_select(ypsi_bc, 1, self.this_wph['la2_pre']) # (1,P_c,M,N,2)
                 #print('xpsi la1 shape', xpsi_bc_la1.shape)
                 #print('xpsi la2 shape', xpsi_bc_la2.shape)
                 k1 = self.this_wph['k1']
                 k2 = self.this_wph['k2']
                 xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,P_c,M,N,2)
-                xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2_shift, -k2) # (1,P_c,M,N,2)
+                ypsi_bc_la2k2 = self.phase_harmonics(ypsi_bc_la2, -k2) # (1,P_c,M,N,2)
                 # sub spatial mean along M and N
                 xpsi0_bc_la1k1 = self.subinitmean1(xpsi_bc_la1k1) # (1,P_c,M,N,2)
-                xpsi0_bc_la2k2 = self.subinitmean2(xpsi_bc_la2k2) # (1,P_c,M,N,2)
+                ypsi0_bc_la2k2 = self.subinitmean2(ypsi_bc_la2k2) # (1,P_c,M,N,2)
                 # compute mean spatial
-                corr_xpsi_bc = mulcu(xpsi0_bc_la1k1,xpsi0_bc_la2k2) # (1,P_c,M,N,2)
+                corr_xpsi_bc = mulcu(xpsi0_bc_la1k1,ypsi0_bc_la2k2) # (1,P_c,M,N,2)
                 corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2)
                 Sout[idxb,idxc,:,:,:,:] = corr_bc[0,:,:,:,:]
 
