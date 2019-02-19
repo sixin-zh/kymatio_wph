@@ -15,7 +15,7 @@ from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 class PHkPerShift2d(object):
     # nb_chunks = J, so that each dn can be applied to each chunk with the same shift,
     # chunk_id is the scale parameter j
-    def __init__(self, M, N, J, L, dn1, dn2, delta_l, nb_chunks, chunk_id, devid=0):
+    def __init__(self, M, N, J, L, dn1, dn2, delta_l, nb_chunks, chunk_id, devid=0, filname='bumpsteerableg', filid=1):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         self.dn1 = dn1 # shift 2^j * dn1 at scale j along x
         self.dn2 = dn2 # shift 2^j * dn1 at scale j along y
@@ -24,6 +24,10 @@ class PHkPerShift2d(object):
         self.nb_chunks = nb_chunks # number of chunks to cut whp cov
         self.chunk_id = chunk_id
         self.devid = devid # gpu id
+        self.filname = filname
+        self.filid = filid
+        self.haspsi0 = False
+        
         assert( self.chunk_id < self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
         if self.dl > self.L:
             raise (ValueError('delta_l must be <= L'))
@@ -49,7 +53,7 @@ class PHkPerShift2d(object):
         shift2 = self.dn2*(2**j)
         print('shift1=',shift1,'shift2=',shift2)
         self.pershift = PeriodicShift2D(self.M,self.N,shift1,shift2)
-
+    
     def preselect_filters(self):
         # only use thoses filters in the this_wph list
         M = self.M
@@ -68,7 +72,6 @@ class PHkPerShift2d(object):
         self.hatpsi_pre = hatpsi_la[:,min_la:max_la+1,:,:,:] # Pa = max_la-min_la+1, (1,Pa,M,N,2)
         self.this_wph['la1_pre'] = self.this_wph['la1'] - min_la
         self.this_wph['la2_pre'] = self.this_wph['la2'] - min_la
-        #return min_la,max_la
     
     def filters_tensor(self):
         J = self.J
@@ -76,9 +79,15 @@ class PHkPerShift2d(object):
         L2 = L*2
 
         assert(self.M == self.N)
-        matfilters = sio.loadmat('./matlab/filters/bumpsteerableg1_fft2d_N' + \
-                                 str(self.N) + '_J' + str(self.J) + '_L' + str(self.L) + '.mat')
+        filpath = './matlab/filters/' + self.filname + str(self.filid) + '_fft2d_N'\
+                  + str(self.N) + '_J' + str(self.J) + '_L' + str(self.L) + '.mat'
+        matfilters = sio.loadmat(filpath)
+        print('filter loaded:', filpath)
         
+        if 'filt_fftpsi0' in matfilters:
+            print('skip psi0 in PHkPerShift2d since no need')
+            self.haspsi0 = True
+            
         fftphi = matfilters['filt_fftphi'].astype(np.complex_)
         hatphi = np.stack((np.real(fftphi), np.imag(fftphi)), axis=-1)
 
@@ -187,12 +196,8 @@ class PHkPerShift2d(object):
         return idx_wph
 
     def _type(self, _type, devid=None):
-        #self.hatpsi = self.hatpsi.type(_type)
-        #self.hatphi = self.hatphi.type(_type)
         self.hatpsi_pre = self.hatpsi_pre.type(_type)
         if devid is not None:
-            #self.hatpsi = self.hatpsi.to(devid)
-            #self.hatphi = self.hatphi.to(devid)
             self.hatpsi_pre = self.hatpsi_pre.to(devid)
         #print('in _type',type(self.hatpsi))
         self.pad.padding_module.type(_type)
@@ -206,8 +211,6 @@ class PHkPerShift2d(object):
         print('call cuda with devid=', devid)
         assert(devid>=0)
         if self.chunk_id < self.nb_chunks:
-            #self.this_wph['la1'] = self.this_wph['la1'].type(torch.cuda.LongTensor).to(devid)
-            #self.this_wph['la2'] = self.this_wph['la2'].type(torch.cuda.LongTensor).to(devid)
             self.this_wph['k1'] = self.this_wph['k1'].type(torch.cuda.FloatTensor).to(devid)
             self.this_wph['k2'] = self.this_wph['k2'].type(torch.cuda.FloatTensor).to(devid)
             self.this_wph['la1_pre'] = self.this_wph['la1_pre'].type(torch.cuda.LongTensor).to(devid)

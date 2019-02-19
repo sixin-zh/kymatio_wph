@@ -2,7 +2,6 @@
 
 #import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 
 import scipy.optimize as opt
 import scipy.io as sio
