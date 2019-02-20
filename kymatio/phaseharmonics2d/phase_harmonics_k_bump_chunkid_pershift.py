@@ -135,17 +135,35 @@ class PHkPerShift2d(object):
         L = self.L
         L2 = L*2
         J = self.J
-        dj = self.dj
         dl = self.dl
-        dk = self.dk
+             
+        hit_nb1 = dict() # hat Ix counts, true zero is not counted
+        hit_nb2 = dict() # hat Cx counts, complex value is counted twice
         
-        hit_nb1 = dict() # hash table
-        hit_nb2 = dict() # value counts either real or complex numbers
-        
-        # TODO
+        # j1=j2, k1=1, k2=0 or 1; k1=0, k2=0
+        for j1 in range(J):
+            j2 = j1
+            for ell1 in range(L2):
+                for ell2 in range(L2):
+                    if periodic_dis(ell1, ell2, L2) <= dl:
+                        k1 = 1
+                        k2 = 0
+                        hit_nb1[(j1,k1,ell1)]=0
+                        hit_nb1[(j2,k2,ell2)]=1
+                        hit_nb2[(j1,k1,ell1,j2,k2,ell2)] = 2
+                        k1 = 1
+                        k2 = 1
+                        hit_nb1[(j1,k1,ell1)]=0
+                        hit_nb1[(j2,k2,ell2)]=0
+                        hit_nb2[(j1,k1,ell1,j2,k2,ell2)] = 2
+                        k1 = 0
+                        k2 = 0
+                        hit_nb1[(j1,k1,ell1)]=1
+                        hit_nb1[(j2,k2,ell2)]=1
+                        hit_nb2[(j1,k1,ell1,j2,k2,ell2)] = 1
         
         #print('hit nb1 values',list(hit_nb1.values()))
-        nb1 = np.array(list(hit_nb1.values()), dtype=int).sum() 
+        nb1 = np.array(list(hit_nb1.values()), dtype=int).sum()
         nb2 = np.array(list(hit_nb2.values()), dtype=int).sum() 
 
         return nb1, nb2

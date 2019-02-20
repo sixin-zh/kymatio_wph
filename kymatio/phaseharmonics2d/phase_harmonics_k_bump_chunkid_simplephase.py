@@ -135,7 +135,7 @@ class PhaseHarmonics2d(object):
         for j1 in range(J):
             for ell1 in range(L2):
                 k1 = 0
-                hit_nb1[(j1,k1,ell1)]=1
+                hit_nb1[(j1,k1,ell1)]=1 # BUG!, move it down 4 lines
                 j2 = j1
                 for ell2 in range(L2):
                     if periodic_dis(ell1, ell2, L2) <= dl:

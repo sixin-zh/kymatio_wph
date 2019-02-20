@@ -148,19 +148,20 @@ class PhkScaleInter2d(object):
         # k1 = 0
         # k2 = 0,1,2
         # j1+1 <= j2 <= min(j1+dj,J-1)
+        # skip nb1 counted in pershift
         for j1 in range(J):
             for ell1 in range(L2):
                 k1 = 0
-                hit_nb1[(j1,k1,ell1)]=1
                 for j2 in range(j1+1,min(j1+dj+1,J)):
                     for ell2 in range(L2):
                         if periodic_dis(ell1, ell2, L2) <= dl:
+                            #hit_nb1[(j1,k1,ell1)]=1
                             for k2 in range(3):
                                 if k2==0:
-                                    hit_nb1[(j2,k2,ell2)]=1
+                                    #hit_nb1[(j2,k2,ell2)]=1
                                     hit_nb2[(j1,k1,ell1,j2,k2,ell2)]=1
                                 elif k2==1:
-                                    hit_nb1[(j2,k2,ell2)]=0
+                                    #hit_nb1[(j2,k2,ell2)]=0
                                     hit_nb2[(j1,k1,ell1,j2,k2,ell2)]=2
                                 else:
                                     hit_nb1[(j2,k2,ell2)]=2
@@ -169,28 +170,36 @@ class PhkScaleInter2d(object):
         # k1 = 1
         # k2 = 2^(j2-j1)±dk
         # j1+1 <= j2 <= min(j1+dj,J-1)
+        # skip nb1 counted in pershift
         for j1 in range(J):
             for ell1 in range(L2):
                 k1 = 1
-                hit_nb1[(j1,k1,ell1)]=0
                 for j2 in range(j1+1,min(j1+dj+1,J)):
                      for ell2 in range(L2):
                          if periodic_dis(ell1, ell2, L2) <= dl:
+                             #hit_nb1[(j1,k1,ell1)]=0
                              for k2 in range(max(0,2**(j2-j1)-dk),2**(j2-j1)+dk+1):
                                 if k2==0:
-                                    hit_nb1[(j2,k2,ell2)]=1
+                                    #hit_nb1[(j2,k2,ell2)]=1
                                     hit_nb2[(j1,k1,ell1,j2,k2,ell2)]=1
                                 elif k2==1:
-                                    hit_nb1[(j2,k2,ell2)]=0
+                                    #hit_nb1[(j2,k2,ell2)]=0
                                     hit_nb2[(j1,k1,ell1,j2,k2,ell2)]=2
                                 else:
                                     hit_nb1[(j2,k2,ell2)]=2
                                     hit_nb2[(j1,k1,ell1,j2,k2,ell2)]=2
 
         #print('hit nb1 values',list(hit_nb1.values()))
-        nb1 = np.array(list(hit_nb1.values()), dtype=int).sum() + 1 # plus last phiJ channel
-        nb2 = np.array(list(hit_nb2.values()), dtype=int).sum() + 1 # plus last phiJ channel
+        nb1 = np.array(list(hit_nb1.values()), dtype=int).sum()
+        nb2 = np.array(list(hit_nb2.values()), dtype=int).sum()
 
+        # plus last phiJ channel
+        nb1 += 1
+        nb2 += 1
+
+        if self.haspsi0:
+            nb2 += 1 # plus psi0 channel
+        
         return nb1, nb2
     
     def compute_idx(self):
