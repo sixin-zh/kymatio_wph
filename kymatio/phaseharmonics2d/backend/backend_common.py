@@ -75,7 +75,22 @@ class SubInitSpatialMeanC(object):
         output = input - self.minput
         return output
 
-        
+class SubInitMeanIso(object):
+    def __init__(self):
+        self.minput = None
+
+    def __call__(self, input):
+        if self.minput is None:
+            minput = input.clone().detach()  # input size:(J,Q,K,M,N,2)
+            minput = torch.mean(minput, -2, True)
+            minput = torch.mean(minput, -3, True)
+            minput[:, 1:, ...] = 0
+            self.minput = minput
+            print('sum of minput', self.minput.sum())
+
+        output = input - self.minput
+        return output
+
 class SubsampleFourier(object):
     """
         Subsampling of a 2D image performed in the Fourier domain
@@ -279,6 +294,41 @@ class PhaseHarmonics2(Function):
         dx2 = df1dy*grad_output[...,0] + df2dy*grad_output[...,1]
 
         return torch.stack((dx1, dx2), -1), k # dummy gradient torch.zeros_like(k)
+
+class PhaseHarmonicsIso(Function):
+    # z.size(): (J,L2,M,N,1,2)
+    # k.size(): (K)
+    @staticmethod
+    def forward(ctx, z, k):
+        z = z.detach()
+        x, y = real(z), imag(z)
+        r = z.norm(p=2, dim=-1)  # (J, L2, M, N, 1)
+        theta = torch.atan2(y, x)  # (J, L2, M, N, 1)
+        ktheta = k * theta  # (J, L2, M, N, K)
+        eiktheta = torch.stack((torch.cos(ktheta), torch.sin(ktheta)), dim=-1)
+        # eiktheta.size(): (J, L2, M, N, K, 2)
+        ctx.save_for_backward(x, y, r, k)
+        return r.unsqueeze(-1)*eiktheta
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        x, y, r, k = ctx.saved_tensors
+        theta = torch.atan2(y, x)
+        ktheta = k * theta
+        cosktheta = torch.cos(ktheta)
+        sinktheta = torch.sin(ktheta)
+        costheta = torch.cos(theta)
+        sintheta = torch.sin(theta)
+
+        df1dx = costheta*cosktheta + k*sintheta*sinktheta
+        df2dx = costheta*sinktheta - k*sintheta*cosktheta
+        df1dy = sintheta*cosktheta - k*costheta*sinktheta
+        df2dy = sintheta*sinktheta + k*costheta*cosktheta
+
+        dx1 = df1dx*grad_output[..., 0] + df2dx*grad_output[..., 1]
+        dx2 = df1dy*grad_output[..., 0] + df2dy*grad_output[..., 1]
+
+        return torch.stack((dx1, dx2), -1), torch.zeros_like(k)
 
 #phase_exp = PhaseHarmonics2.apply
 
@@ -529,7 +579,7 @@ class PeriodicShift2D(nn.Module):
         self.N = N
         self.shift1 = shift1 % M # [0,M-1]
         self.shift2 = shift2 % N # [0,N-1]
-        
+
     def forward(self, input):
         # input dim is (1,P_c,M,N,2)
         # per. shift along M and N dim by shift1 and shift2
@@ -539,7 +589,7 @@ class PeriodicShift2D(nn.Module):
         N = self.N
         shift1 = self.shift1
         shift2 = self.shift2
-        
+
         #blk11 = [[0,0],[shift1-1,shift2-1]]
         #blk22 = [[shift1,shift2],[M-1,N-1]]
         #blk12 = [[shift1,0],[M-1,shift2-1]]
@@ -549,5 +599,5 @@ class PeriodicShift2D(nn.Module):
         output[:,:,0:M-shift1,N-shift2:N,:] = input[:,:,shift1:M,0:shift2,:]
         output[:,:,M-shift1:M,0:N-shift2,:] = input[:,:,0:shift1,shift2:N,:]
         output[:,:,M-shift1:M,N-shift2:N,:] = input[:,:,0:shift1,0:shift2,:]
-        
+
         return output
