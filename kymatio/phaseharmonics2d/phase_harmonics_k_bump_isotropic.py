@@ -26,7 +26,7 @@ class PhaseHarmonics2d(object):
         self.dk = delta_k #
         self.K = 2**self.dj + self.dk + 1
         #print(K)
-        self.k = torch.arange(0, self.K).type(torch.float)
+        self.k = torch.arange(0, self.K).type(torch.float) # vector between [0,..,K-1]
         self.nb_chunks = nb_chunks # number of chunks to cut whp cov
         self.chunk_id = chunk_id
         assert( self.chunk_id <= self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
@@ -110,8 +110,7 @@ class PhaseHarmonics2d(object):
             if idxc == chunk_id:
                 this_wph['la1'] = self.idx_wph['la1'][offset:offset+nb_cov_chunk[idxc]]
                 this_wph['la2'] = self.idx_wph['la2'][offset:offset+nb_cov_chunk[idxc]]
-                # this_wph['k1'] = self.idx_wph['k1'][:,offset:offset+nb_cov_chunk[idxc],:,:]
-                # this_wph['k2'] = self.idx_wph['k2'][:,offset:offset+nb_cov_chunk[idxc],:,:]
+      
             offset = offset + nb_cov_chunk[idxc]
 
         return this_wph
@@ -182,9 +181,7 @@ class PhaseHarmonics2d(object):
 
         idx_wph = dict()
         idx_wph['la1'] = torch.tensor(idx_la1).type(torch.long)
-#        idx_wph['k1'] = torch.tensor(idx_k1).type(torch.long).float().unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
         idx_wph['la2'] = torch.tensor(idx_la2).type(torch.long)
-#        idx_wph['k2'] = torch.tensor(idx_k2).type(torch.long).float().unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
 
         return idx_wph
 
@@ -262,12 +259,12 @@ class PhaseHarmonics2d(object):
                     xpsi_bc = xpsi_bc.unsqueeze(-2)  # (J,L2,M,N,1,2)
                     xpsi_ph_bc = self.phase_harmonics(xpsi_bc, k)  # (J,L2,M,N,K,2)
                     # permute to put angle 2nd to last
-                    xpsi_ph_bc = xpsi_ph_bc.permute(0,4,2,3,1,5)
+                    xpsi_ph_bc = xpsi_ph_bc.permute(0,4,2,3,1,5) # (J,K,M,N,L2,2)
                     # fft in angles
-                    xpsi_iso_bc = torch.fft(xpsi_ph_bc, 1, normalized=True)  # (J,Q,M,N,K,2)
+                    xpsi_iso_bc = torch.fft(xpsi_ph_bc, 1, normalized=True)  # (J,K,M,N,Q,2)
         #            print(xpsi_iso_bc.size())
                     # permute again
-                    xpsi_iso_bc = xpsi_iso_bc.permute(0,4,1,2,3,5)  #(J,Q,K,M,N,2)
+                    xpsi_iso_bc = xpsi_iso_bc.permute(0,4,1,2,3,5)  # (J,Q,K,M,N,2)
                     # sub spatial mean for Q = 0
                     xpsi_iso_bc = self.subinitmean(xpsi_iso_bc)
         #            print(xpsi_iso_bc.size())
