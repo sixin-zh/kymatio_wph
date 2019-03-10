@@ -1,4 +1,4 @@
-# isotropic case, implement basic phase harmonics
+# linear increasing k
 
 __all__ = ['PhaseHarmonics2d']
 
@@ -14,49 +14,33 @@ from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 
 class PhaseHarmonics2d(object):
-    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id):
+    def __init__(self, M, N, J, L, delta_j, kmax, nb_chunks, chunk_id):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         self.dj = delta_j # max scale interactions
-        self.dl = delta_l # max angular interactions
-        self.dk = delta_k #
-        self.K = 2**self.dj + self.dk + 1
-        #print(K)
+        #self.dk = delta_k #
+        self.K = kmax + 1 # 2**self.dj + self.dk + 1 # maxk + 1
         self.k = torch.arange(0, self.K).type(torch.float) # vector between [0,..,K-1]
         self.nb_chunks = nb_chunks # number of chunks to cut whp cov
         self.chunk_id = chunk_id
         assert( self.chunk_id <= self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
-        if self.dl != self.L:
-            raise (ValueError('delta_l must be = L'))
-
+        #if self.dl != self.L:
+        #    raise (ValueError('delta_l must be = L'))
+        print('init PhaseHarmonics2d with dj=',self.dj, ' K=', self.K) 
         self.pre_pad = False # no padding
         self.cache = False # cache filter bank
         self.build()
 
     def build(self):
         check_for_nan = False # True
-        #self.meta = None
         self.modulus = Modulus()
         self.pad = Pad(0, pre_pad = self.pre_pad)
-        #self.subsample_fourier = SubsampleFourier()
-        #self.phaseexp = StablePhaseExp.apply
-
-        #self.phase_exp = PhaseExpSk(keep_k_dim=True,check_for_nan=False)
         self.phase_harmonics = PhaseHarmonicsIso.apply
 
         self.M_padded, self.N_padded = self.M, self.N
-
-        #filters = filter_bank(self.M_padded, self.N_padded, self.J, self.L, False, self.cache) # no Haar
-
-        #self.Psi = filters['psi']
-        #self.Phi = [filters['phi'][j] for j in range(self.J)]
         self.filters_tensor()
         if self.chunk_id < self.nb_chunks:
             self.idx_wph = self.compute_idx()
             self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
-            #print('la1',self.this_wph['la1'])
-            #print(self.this_wph['la2'])
-            #print(self.this_wph['k1'])
-            #print(self.this_wph['k2'])
             self.subinitmean = SubInitMeanIso()
         else:
             self.subinitmeanJ = SubInitSpatialMeanC()
@@ -74,7 +58,6 @@ class PhaseHarmonics2d(object):
         hatphi = np.stack((np.real(fftphi), np.imag(fftphi)), axis=-1)
 
         fftpsi = matfilters['filt_fftpsi'].astype(np.complex_)
-        #print(self.hatpsi.dtype)
         hatpsi = np.stack((np.real(fftpsi), np.imag(fftpsi)), axis=-1)
 
         self.hatpsi = torch.FloatTensor(hatpsi) # (J,L2,M,N,2)
@@ -117,64 +100,33 @@ class PhaseHarmonics2d(object):
         Q = L2
         J = self.J
         dj = self.dj
-        dl = self.dl
-        dk = self.dk
-        K = 2**dj + dk + 1
-
+        #dl = self.dl
+        #dk = self.dk
+        #K = 2**dj + dk + 1
+        K = self.K
         idx_la1 = []
         idx_la2 = []
-        # idx_k1 = []
-        # idx_k2 = []
-
-        # j1=j2, k1=1, k2=0 or 1
+        
+        # j1=j2, q1=q2, k1,k2=0..K-1
         for j1 in range(J):
             for q1 in range(Q):
-                k1 = 1
-                j2 = j1
-                q2 = q1
-                k2 = 0
-                idx_la1.append(K*Q*j1 + K*q1 + k1)
-                idx_la2.append(K*Q*j2 + K*q2 + k2)
-                k2 = 1
-                idx_la1.append(K*Q*j1 + K*q1 + k1)
-                idx_la2.append(K*Q*j2 + K*q2 + k2)
-
-        # k1 = 0
-        # k2 = 0
-        # j1 = j2
+                for k1 in range(K):
+                    for k2 in range(K):
+                        j2 = j1
+                        q2 = q1
+                        idx_la1.append(K*Q*j1 + K*q1 + k1)
+                        idx_la2.append(K*Q*j2 + K*q2 + k2)
+        
+        # j1+1 <= j2 <= min(j1+dj,J-1), k1,k2=0..K-1
         for j1 in range(J):
-            for q1 in range(Q):
-                k1 = 0
-                j2 = j1
-                q2 = q1
-                k2 = 0
-                idx_la1.append(K*Q*j1 + K*q1 + k1)
-                idx_la2.append(K*Q*j2 + K*q2 + k2)
-
-        # k1 = 0
-        # k2 = 0,1,2
-        # j1+1 <= j2 <= min(j1+dj,J-1)
-        for j1 in range(J):
-            for q1 in range(Q):
-                k1 = 0
-                for j2 in range(j1+1, min(j1+dj+1, J)):
+            for j2 in range(j1+1, min(j1+dj+1, J)):
+                for q1 in range(Q):
                     q2 = q1
-                    for k2 in range(3):
-                        idx_la1.append(K*Q*j1 + K*q1 + k1)
-                        idx_la2.append(K*Q*j2 + K*q2 + k2)
-
-        # k1 = 1
-        # k2 = 2^(j2-j1)±dk
-        # j1+1 <= j2 <= min(j1+dj,J-1)
-        for j1 in range(J):
-            for q1 in range(Q):
-                k1 = 1
-                q2 = q1
-                for j2 in range(j1+1, min(j1+dj+1, J)):
-                    for k2 in range(max(0, 2**(j2-j1)-dk), 2**(j2-j1)+dk+1):
-                        idx_la1.append(K*Q*j1 + K*q1 + k1)
-                        idx_la2.append(K*Q*j2 + K*q2 + k2)
-
+                    for k1 in range(K):
+                        for k2 in range(K):
+                            idx_la1.append(K*Q*j1 + K*q1 + k1)
+                            idx_la2.append(K*Q*j2 + K*q2 + k2)
+        
         idx_wph = dict()
         idx_wph['la1'] = torch.tensor(idx_la1).type(torch.long)
         idx_wph['la2'] = torch.tensor(idx_la2).type(torch.long)
@@ -216,15 +168,9 @@ class PhaseHarmonics2d(object):
         N = self.N
         L2 = self.L*2
         Q = L2
-        #print(Q)
         dj = self.dj
-        dl = self.dl
-        dk = self.dk
         K = self.K
         k = self.k
-        #K = 2**dj + dk + 1
-        #print(K)
-        #k = torch.arange(0, K).type(torch.float)
         pad = self.pad
 
         # denote
@@ -245,10 +191,7 @@ class PhaseHarmonics2d(object):
             for idxb in range(nb):
                 for idxc in range(nc):
                     hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
-                    #               print('hatpsi_la is cuda?',hatpsi_la.is_cuda)
-                    #                print('hatx_bc is cuda?',hatx_bc.is_cuda)
                     hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L2,M,N,2)
-                    #print( 'hatxpsi_bc shape', hatxpsi_bc.shape )
                     xpsi_bc = ifft2_c2c(hatxpsi_bc)
                     xpsi_bc = xpsi_bc.unsqueeze(-2)  # (J,L2,M,N,1,2)
                     xpsi_ph_bc = self.phase_harmonics(xpsi_bc, k)  # (J,L2,M,N,K,2)
@@ -256,19 +199,14 @@ class PhaseHarmonics2d(object):
                     xpsi_ph_bc = xpsi_ph_bc.permute(0,4,2,3,1,5) # (J,K,M,N,L2,2)
                     # fft in angles
                     xpsi_iso_bc = torch.fft(xpsi_ph_bc, 1, normalized=True)  # (J,K,M,N,Q,2)
-        #            print(xpsi_iso_bc.size())
                     # permute again
                     xpsi_iso_bc = xpsi_iso_bc.permute(0,4,1,2,3,5)  # (J,Q,K,M,N,2)
                     # sub spatial mean for Q = 0
                     xpsi_iso_bc = self.subinitmean(xpsi_iso_bc)
-        #            print(xpsi_iso_bc.size())
-                    # reshape to (1,J*L,M,N,2)
                     xpsi_iso_bc = xpsi_iso_bc.view(1,J*Q*K,M,N,2)
-
                     # select la1, et la2, P_c = number of |la1| in this chunk
                     xpsi_bc_la1 = torch.index_select(xpsi_iso_bc, 1, self.this_wph['la1']) # (1,P_c,M,N,2)
                     xpsi_bc_la2 = torch.index_select(xpsi_iso_bc, 1, self.this_wph['la2']) # (1,P_c,M,N,2)
-
                     # compute mean spatial
                     corr_xpsi_bc = mulcu(xpsi_bc_la1, conjugate(xpsi_bc_la2)) # (1,P_c,M,N,2)
                     corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2)
