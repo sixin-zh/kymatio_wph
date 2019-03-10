@@ -87,7 +87,7 @@ class SubInitMeanIso(object):
             minput[:, 1:, ...] = 0
             self.minput = minput
             print('sum of minput', self.minput.sum())
-
+            #print('minput shape is', self.minput.shape)
         output = input - self.minput
         return output
 

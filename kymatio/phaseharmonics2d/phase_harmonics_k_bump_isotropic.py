@@ -14,7 +14,7 @@ import numpy as np
 import scipy.io as sio
 #import torch.nn.functional as F
 from .backend import cdgmm, Modulus, fft, \
-    Pad, SubInitSpatialMeanC, SubInitMeanIso, PhaseHarmonicsIso, mul, conjugate
+    Pad, SubInitSpatialMeanC, SubInitMeanIso, PhaseHarmonicsIso, mulcu, conjugate
 from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 
@@ -30,8 +30,8 @@ class PhaseHarmonics2d(object):
         self.nb_chunks = nb_chunks # number of chunks to cut whp cov
         self.chunk_id = chunk_id
         assert( self.chunk_id <= self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
-        if self.dl > self.L:
-            raise (ValueError('delta_l must be <= L'))
+        if self.dl != self.L:
+            raise (ValueError('delta_l must be = L'))
 
         self.pre_pad = False # no padding
         self.cache = False # cache filter bank
@@ -94,7 +94,7 @@ class PhaseHarmonics2d(object):
         #print('la1 shape',self.idx_wph['la1'].shape)
 
         nb_cov = len(self.idx_wph['la1'])
-        print('nb cov is', nb_cov)
+        #print('nb cov is', nb_cov)
         max_chunk = nb_cov // nb_chunks
         nb_cov_chunk = np.zeros(nb_chunks,dtype=np.int32)
         for idxc in range(nb_chunks):
@@ -109,9 +109,10 @@ class PhaseHarmonics2d(object):
         for idxc in range(nb_chunks):
             if idxc == chunk_id:
                 this_wph['la1'] = self.idx_wph['la1'][offset:offset+nb_cov_chunk[idxc]]
-                this_wph['la2'] = self.idx_wph['la2'][offset:offset+nb_cov_chunk[idxc]]
-      
+                this_wph['la2'] = self.idx_wph['la2'][offset:offset+nb_cov_chunk[idxc]]      
             offset = offset + nb_cov_chunk[idxc]
+
+        print('this chunk', chunk_id, ' size is ', len(this_wph['la1']), ' among ', nb_cov)
 
         return this_wph
 
@@ -245,7 +246,7 @@ class PhaseHarmonics2d(object):
             assert(nb==1 and nc==1) # for submeanC
             nb_channels = self.this_wph['la1'].shape[0]
             Sout = input.new(nb, nc, nb_channels, \
-                             1, 1, 2) # (nb,nc,nb_channels,1,1,2)
+                             1, 1, 1) # (nb,nc,nb_channels,1,1,1)
             for idxb in range(nb):
                 for idxc in range(nc):
                     hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
@@ -274,9 +275,9 @@ class PhaseHarmonics2d(object):
                     xpsi_bc_la2 = torch.index_select(xpsi_iso_bc, 1, self.this_wph['la2']) # (1,P_c,M,N,2)
 
                     # compute mean spatial
-                    corr_xpsi_bc = mul(xpsi_bc_la1, conjugate(xpsi_bc_la2)) # (1,P_c,M,N,2)
+                    corr_xpsi_bc = mulcu(xpsi_bc_la1, conjugate(xpsi_bc_la2)) # (1,P_c,M,N,2)
                     corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2)
-                    Sout[idxb,idxc,:,:,:,:] = corr_bc[0,:,:,:,:]
+                    Sout[idxb,idxc,:,:,:,0] = corr_bc[0,:,:,:,0] # only keep real part
 
         else:
             # ADD 1 chennel for spatial phiJ
@@ -286,7 +287,7 @@ class PhaseHarmonics2d(object):
             # submean from spatial M N
             xpsi0_c = self.subinitmeanJ(xpsi_c)
             xpsi0_mod = self.modulus(xpsi0_c) # (nb,nc,M,N,2)
-            xpsi0_mod2 = mul(xpsi0_mod,xpsi0_mod) # (nb,nc,M,N,2)
+            xpsi0_mod2 = mulcu(xpsi0_mod,xpsi0_mod) # (nb,nc,M,N,2)
             nb = hatx_c.shape[0]
             nc = hatx_c.shape[1]
             Sout = input.new(nb, nc, 1, \
