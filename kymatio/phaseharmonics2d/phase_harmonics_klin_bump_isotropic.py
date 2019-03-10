@@ -106,24 +106,27 @@ class PhaseHarmonics2d(object):
         K = self.K
         idx_la1 = []
         idx_la2 = []
-        
+
         # j1=j2, q1=q2, k1,k2=0..K-1
         for j1 in range(J):
+            kmax_j1 = 2**j1 # anti-aliasing
+            j2 = j1
             for q1 in range(Q):
-                for k1 in range(K):
-                    for k2 in range(K):
-                        j2 = j1
-                        q2 = q1
+                q2 = q1
+                for k1 in range(min(K,kmax_j1+1)):
+                    for k2 in range(min(K,kmax_j1+1)):
                         idx_la1.append(K*Q*j1 + K*q1 + k1)
                         idx_la2.append(K*Q*j2 + K*q2 + k2)
         
         # j1+1 <= j2 <= min(j1+dj,J-1), k1,k2=0..K-1
         for j1 in range(J):
+            kmax_j1 = 2**j1 # anti-aliasing
             for j2 in range(j1+1, min(j1+dj+1, J)):
+                kmax_j2 = 2**j2 # anti-aliasing
                 for q1 in range(Q):
                     q2 = q1
-                    for k1 in range(K):
-                        for k2 in range(K):
+                    for k1 in range(min(K,kmax_j1+1)):
+                        for k2 in range(min(K,kmax_j2+1)):
                             idx_la1.append(K*Q*j1 + K*q1 + k1)
                             idx_la2.append(K*Q*j2 + K*q2 + k2)
         
