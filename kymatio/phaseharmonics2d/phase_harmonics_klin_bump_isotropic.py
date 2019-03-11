@@ -187,10 +187,9 @@ class PhaseHarmonics2d(object):
             nb = hatx_c.shape[0]
             nc = hatx_c.shape[1]
             hatpsi_la = self.hatpsi # (J,L2,M,N,2)
-            assert(nb==1 and nc==1) # for submeanC
+            assert(nb==1 and nc==1) # for submean
             nb_channels = self.this_wph['la1'].shape[0]
-            Sout = input.new(nb, nc, nb_channels, \
-                             1, 1, 1) # (nb,nc,nb_channels,1,1,1)
+            Sout = input.new(nb, nc, nb_channels, 1, 1, 2)
             for idxb in range(nb):
                 for idxc in range(nc):
                     hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
@@ -213,7 +212,7 @@ class PhaseHarmonics2d(object):
                     # compute mean spatial
                     corr_xpsi_bc = mulcu(xpsi_bc_la1, conjugate(xpsi_bc_la2)) # (1,P_c,M,N,2)
                     corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2)
-                    Sout[idxb,idxc,:,:,:,0] = corr_bc[0,:,:,:,0] # only keep real part
+                    Sout[idxb,idxc,:,:,:,:] = corr_bc[0,:,:,:,:] # keep real and imag part
 
         else:
             # ADD 1 chennel for spatial phiJ
@@ -228,7 +227,7 @@ class PhaseHarmonics2d(object):
             nc = hatx_c.shape[1]
             Sout = input.new(nb, nc, 1, 1, 1, 2)
             Sout[:,:,0,:,:,:] = torch.mean(torch.mean(xpsi0_mod2,-2,True),-3,True)
-            Sout = Sout[:,:,:,:,:,0] # only keep real part
+            #Sout = Sout[:,:,:,:,:,0] # only keep real part
 
         return Sout
 
