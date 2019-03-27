@@ -52,8 +52,8 @@ class WaveletCovPerShift2d(object):
             self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
             self.this_wph_size = torch.numel(self.this_wph['la1'])
             self.preselect_filters()
-            self.subinitmean1 = SubInitSpatialMeanC()
-            self.subinitmean2 = SubInitSpatialMeanC()
+            #self.subinitmean1 = SubInitSpatialMeanC()
+            #self.subinitmean2 = SubInitSpatialMeanC()
         else:
             self.subinitmeanJ = SubInitSpatialMeanC()
         self.pershifts = []
@@ -143,7 +143,7 @@ class WaveletCovPerShift2d(object):
         L2 = L*2
         J = self.J
         dl = self.dl
-             
+        
         hit_nb1 = dict() # hat Ix counts, true zero is not counted
         hit_nb2 = dict() # hat Cx counts, complex value is counted twice
         
@@ -176,7 +176,7 @@ class WaveletCovPerShift2d(object):
         idx_k1 = []
         idx_k2 = []
 
-        # j1=j2, k1=1, k2=0 1
+        # j1=j2, k1=1, k2=1
         for j1 in range(J):
             j2 = j1
             for ell1 in range(L2):
@@ -202,12 +202,12 @@ class WaveletCovPerShift2d(object):
             if self.chunk_id < self.nb_chunks:
                 self.hatpsi_pre = self.hatpsi_pre.type(_type)
             else:
-                self.hatphi = self.hatphi.to(devid)
+                self.hatphi = self.hatphi.type(_type)
         else:
             if self.chunk_id < self.nb_chunks:
                 self.hatpsi_pre = self.hatpsi_pre.to(devid)
             else:
-                self.hatphi = self.hatphi.type(_type)
+                self.hatphi = self.hatphi.to(devid)
         self.pad.padding_module.type(_type)
         return self
 
