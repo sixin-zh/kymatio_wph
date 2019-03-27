@@ -60,11 +60,12 @@ class WaveletCovPerShift2d(object):
         self.pershifts = []
         dn = self.dn
         dn_mode = self.dn_mode
+        j = self.chunk_id
         if dn_mode==1:
-            dn_step = 2**self.chunk_id #2 ^j
+            dn_step = 2**j #2 ^j
         else:
             dn_step = 1
-        print('this pershift2d ', chunk_id, ' has step ', dn_step)
+        print('this pershift2d ', j, ' has step ', dn_step)
         for dn1 in range(0,dn+1):
             for dn2 in range(-dn,dn+1):
                 if dn1**2+dn2**2 <= self.dn**2 and (dn1!=0 or dn2!=0):
