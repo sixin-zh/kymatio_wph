@@ -25,7 +25,8 @@ class WaveletCovScaleInter2d(object):
         self.filid = filid
         self.haspsi0 = False
         
-        assert( self.chunk_id < self.nb_chunks ) # chunk_id = 0..nb_chunks-1
+        assert( self.chunk_id <= self.nb_chunks )
+        # chunk_id = 0..nb_chunks-1, are the cov of wavelets, chunk_id=nb_chunks is cov of phiJ
         if self.dl > self.L:
             raise (ValueError('delta_l must be <= L'))
         
@@ -46,6 +47,8 @@ class WaveletCovScaleInter2d(object):
             self.preselect_filters()
             self.subinitmean1 = SubInitSpatialMeanC()
             self.subinitmean2 = SubInitSpatialMeanC()
+        else:
+            self.subinitmeanJ = SubInitSpatialMeanC()
             
     def preselect_filters(self):
         # only use thoses filters in the this_wph list
@@ -253,9 +256,9 @@ class WaveletCovScaleInter2d(object):
         x_c = pad(input) # add zeros to imag part -> (nb,nc,M,N,2)
         hatx_c = fft2_c2c(x_c) # fft2 -> (nb,nc,M,N,2)
         #print('nbchannels',nb_channels)
+        nb = hatx_c.shape[0]
+        nc = hatx_c.shape[1]
         if self.chunk_id < self.nb_chunks:
-            nb = hatx_c.shape[0]
-            nc = hatx_c.shape[1]
             hatpsi_pre = self.hatpsi_pre # hatpsi_la[:,self.min_la:self.max_la+1,:,:,:] # Pa = max_la-min_la+1, (1,Pa,M,N,2)
             assert(nb==1 and nc==1) # for submeanC
             nb_channels = self.this_wph['la1_pre'].shape[0]
@@ -277,7 +280,15 @@ class WaveletCovScaleInter2d(object):
                     corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2), better numerical presision?!
                     Sout[idxb,idxc,:,:,:,:] = corr_bc[0,:,:,:,:]
         else:
-            assert false
+            # ADD 1 chennel for spatial phiJ
+            # add l2 phiJ to last channel
+            hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
+            xphi_c = ifft2_c2c(hatxphi_c)
+            # submean from spatial M N
+            xphi0_c = self.subinitmeanJ(xphi_c)
+            xphi0_mod = self.modulus(xphi0_c) # (nb,nc,M,N,2)
+            xphi0_mod2 = mulcu(xphi0_mod,xphi0_mod) # (nb,nc,M,N,2)
+            Sout = torch.mean(torch.mean(xphi0_mod2,-2,True),-3,True)
         return Sout
         
     def __call__(self, input):
