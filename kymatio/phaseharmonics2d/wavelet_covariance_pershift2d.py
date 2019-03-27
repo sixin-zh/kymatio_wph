@@ -139,7 +139,7 @@ class WaveletCovPerShift2d(object):
                 this_wph['la2'] = self.idx_wph['la2'][offset:offset+nb_cov_chunk[idxc]]
                 this_wph['k1'] = self.idx_wph['k1'][:,offset:offset+nb_cov_chunk[idxc],:,:]
                 this_wph['k2'] = self.idx_wph['k2'][:,offset:offset+nb_cov_chunk[idxc],:,:]
-9            offset = offset + nb_cov_chunk[idxc]
+            offset = offset + nb_cov_chunk[idxc]
 
         print('this chunk', chunk_id, ' size is ', len(this_wph['la1']), ' among ', nb_cov)
         return this_wph
