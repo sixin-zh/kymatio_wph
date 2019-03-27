@@ -45,8 +45,8 @@ class WaveletCovScaleInter2d(object):
             self.idx_wph = self.compute_idx()
             self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
             self.preselect_filters()
-            self.subinitmean1 = SubInitSpatialMeanC()
-            self.subinitmean2 = SubInitSpatialMeanC()
+            #self.subinitmean1 = SubInitSpatialMeanC()
+            #self.subinitmean2 = SubInitSpatialMeanC()
         else:
             self.subinitmeanJ = SubInitSpatialMeanC()
             
