@@ -18,12 +18,13 @@ from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 class WaveletCovPerShift2d(object):
     # nb_chunks = J, so that each dn can be applied to each chunk with the same shift,
     # chunk_id is the scale parameter j
-    def __init__(self, M, N, J, L, delta_n, delta_l, nb_chunks, chunk_id, devid=0, filname='bumpsteerableg', filid=1):
+    def __init__(self, M, N, J, L, delta_n, delta_mode, nb_chunks, chunk_id, devid=0, filname='bumpsteerableg', filid=1):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         #Qself.dn1 = dn1 # shift dn1 at scale j along x
         #self.dn2 = dn2 # shift dn2 at scale j along y
         self.dn = delta_n # shift 
-        self.dl = delta_l # max angular interactions
+        self.dl = 0 # delta_l # max angular interactions
+        self.dn_mode = delta_mode # 0 for n' = n + dn, 1 for n' = n + 2^j * dn 
         assert(nb_chunks == J)
         self.nb_chunks = nb_chunks # number of chunks to cut cov matrix
         self.chunk_id = chunk_id
@@ -57,12 +58,18 @@ class WaveletCovPerShift2d(object):
         else:
             self.subinitmeanJ = SubInitSpatialMeanC()
         self.pershifts = []
-        delta_n = self.dn
-        for dn1 in range(0,delta_n+1):
-            for dn2 in range(-delta_n,delta_n+1):
+        dn = self.dn
+        dn_mode = self.dn_mode
+        if dn_mode==1:
+            dn_step = 2^self.chunk_id #2 ^j
+        else:
+            dn_step = 1
+        print('this pershift2d ', chunk_id, ' has step ', dn_step)
+        for dn1 in range(0,dn+1):
+            for dn2 in range(-dn,dn+1):
                 if dn1**2+dn2**2 <= self.dn**2 and (dn1!=0 or dn2!=0):
-                    self.pershifts.append(PeriodicShift2D(self.M,self.N,dn1,dn2))
-            
+                    self.pershifts.append(PeriodicShift2D(self.M,self.N,dn_step*dn1,dn_step*dn2))
+        
     def preselect_filters(self):
         # only use thoses filters in the this_wph list
         M = self.M
@@ -132,7 +139,7 @@ class WaveletCovPerShift2d(object):
                 this_wph['la2'] = self.idx_wph['la2'][offset:offset+nb_cov_chunk[idxc]]
                 this_wph['k1'] = self.idx_wph['k1'][:,offset:offset+nb_cov_chunk[idxc],:,:]
                 this_wph['k2'] = self.idx_wph['k2'][:,offset:offset+nb_cov_chunk[idxc],:,:]
-            offset = offset + nb_cov_chunk[idxc]
+9            offset = offset + nb_cov_chunk[idxc]
 
         print('this chunk', chunk_id, ' size is ', len(this_wph['la1']), ' among ', nb_cov)
         return this_wph
@@ -239,7 +246,7 @@ class WaveletCovPerShift2d(object):
         L2 = self.L*2
         dl = self.dl
         pad = self.pad
-        delta_n = self.dn
+        dn = self.dn
         # denote
         # nb=batch number
         # nc=number of color channels
