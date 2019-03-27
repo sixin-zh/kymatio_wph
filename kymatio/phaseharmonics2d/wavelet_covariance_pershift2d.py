@@ -257,42 +257,48 @@ class WaveletCovPerShift2d(object):
             nb_channels = len(self.pershifts)
         Sout = input.new(nb, nc, nb_channels, 1, 1, 2) # (nb,nc,nb_channels,1,1,2)
         pid=0
-        for dn1 in range(0,delta_n+1):
-            for dn2 in range(-delta_n,delta_n+1):
-                if dn1**2+dn2**2 <= self.dn**2 and (dn1!=0 or dn2!=0):
-                    pershift = self.pershifts[pid]
-                    y_c = pershift(x_c)
-                    haty_c = fft2_c2c(y_c)
-                    if self.chunk_id < self.nb_chunks:
-                        nbc = self.this_wph['la1_pre'].shape[0]
-                        hatpsi_pre = self.hatpsi_pre
-                        for idxb in range(nb):
-                            for idxc in range(nc):
-                                hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
-                                hatxpsi_bc = cdgmm(hatpsi_pre, hatx_bc) # (1,Pa,M,N,2)
-                                xpsi_bc = ifft2_c2c(hatxpsi_bc) # (1,Pa,M,N,2)
-                                haty_bc = haty_c[idxb,idxc,:,:,:]
-                                hatypsi_bc = cdgmm(hatpsi_pre, haty_bc) # (1,Pa,M,N,2)
-                                ypsi_bc = ifft2_c2c(hatypsi_bc) # (1,Pa,M,N,2)
-                                # select la1, et la2, P_c = number of |la1| in this chunk = self.this_wph_size
-                                xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1_pre']) # (1,P_c,M,N,2)
-                                ypsi_bc_la2 = torch.index_select(ypsi_bc, 1, self.this_wph['la2_pre']) # (1,P_c,M,N,2)
-                                # compute empirical cov
-                                corr_xpsi_bc = mulcu(xpsi_bc_la1,conjugate(ypsi_bc_la2)) # (1,P_c,M,N,2)
-                                corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2)
-                                Sout[idxb,idxc,pid*nbc:(pid+1)*nbc,:,:,:] = corr_bc[0,:,:,:,:]
-                    else:
-                        # ADD 1 chennel for spatial phiJ
-                        hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
-                        xphi_c = ifft2_c2c(hatxphi_c)
-                        xphi0_c = self.subinitmeanJ(xphi_c) # submean from spatial M N
+        if self.chunk_id < self.nb_chunks:
+             nbc = self.this_wph['la1_pre'].shape[0]
+             hatpsi_pre = self.hatpsi_pre
+             for idxb in range(nb):
+                 for idxc in range(nc):
+                     hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
+                     hatxpsi_bc = cdgmm(hatpsi_pre, hatx_bc) # (1,Pa,M,N,2)
+                     xpsi_bc = ifft2_c2c(hatxpsi_bc) # (1,Pa,M,N,2)
+                     for dn1 in range(0,delta_n+1):
+                         for dn2 in range(-delta_n,delta_n+1):
+                             if dn1**2+dn2**2 <= self.dn**2 and (dn1!=0 or dn2!=0):
+                                 pershift = self.pershifts[pid]
+                                 y_c = pershift(x_c)
+                                 haty_c = fft2_c2c(y_c)
+                                 haty_bc = haty_c[idxb,idxc,:,:,:]
+                                 hatypsi_bc = cdgmm(hatpsi_pre, haty_bc) # (1,Pa,M,N,2)
+                                 ypsi_bc = ifft2_c2c(hatypsi_bc) # (1,Pa,M,N,2)
+                                 # select la1, et la2, P_c = number of |la1| in this chunk = self.this_wph_size
+                                 xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1_pre']) # (1,P_c,M,N,2)
+                                 ypsi_bc_la2 = torch.index_select(ypsi_bc, 1, self.this_wph['la2_pre']) # (1,P_c,M,N,2)
+                                 # compute empirical cov
+                                 corr_xpsi_bc = mulcu(xpsi_bc_la1,conjugate(ypsi_bc_la2)) # (1,P_c,M,N,2)
+                                 corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2)
+                                 Sout[idxb,idxc,pid*nbc:(pid+1)*nbc,:,:,:] = corr_bc[0,:,:,:,:]
+                                 pid+=1
+        else:
+            # ADD 1 chennel for spatial phiJ
+            hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
+            xphi_c = ifft2_c2c(hatxphi_c)
+            xphi0_c = self.subinitmeanJ(xphi_c) # submean from spatial M N
+            for dn1 in range(0,delta_n+1):
+                for dn2 in range(-delta_n,delta_n+1):
+                    if dn1**2+dn2**2 <= self.dn**2 and (dn1!=0 or dn2!=0):
+                        pershift = self.pershifts[pid]
+                        y_c = pershift(x_c)
+                        haty_c = fft2_c2c(y_c)
                         hatyphi_c = cdgmm(haty_c, self.hatphi)
                         yphi_c = ifft2_c2c(hatyphi_c)
                         yphi0_c = self.subinitmeanJ(yphi_c) # SAME mean as xphi_c
                         xyphi0_c = mulcu(xphi0_c,yphi0_c) # (nb,nc,M,N,2)
                         Sout[:,:,pid,:,:,:] = torch.mean(torch.mean(xyphi0_c,-2,True),-3,True)
-
-                    pid+=1
+                        pid+=1
             
         return Sout
         
