@@ -9,7 +9,7 @@ import torch
 import numpy as np
 import scipy.io as sio
 from .backend import cdgmm, Modulus, fft, \
-    Pad, SubInitSpatialMeanC, PhaseHarmonics2, mulcu
+    Pad, SubInitSpatialMeanC, PhaseHarmonics2, mulcu, conjugate
 from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 
@@ -133,26 +133,25 @@ class WaveletCovScaleInter2d(object):
         J = self.J
         dj = self.dj
         dl = self.dl
-        dk = self.dk
-        
+               
         hit_nb1 = dict() # hash table
         hit_nb2 = dict() # value counts either real or complex numbers
         
         # k1 = 1
         # k2 = 1
-        # j1+1 <= j2 <= min(j1+dj,J-1)
+        # j1 <= j2 <= min(j1+dj,J-1)
         # TOCHECK skip nb1 counted in pershift
         for j1 in range(J):
             for ell1 in range(L2):
                 k1 = 1
-                for j2 in range(j1+1,min(j1+dj+1,J)):
+                for j2 in range(j1,min(j1+dj+1,J)):
                      for ell2 in range(L2):
                          if periodic_dis(ell1, ell2, L2) <= dl:
                              #hit_nb1[(j1,k1,ell1)]=0
                              k2 = 1
                              #hit_nb1[(j2,k2,ell2)]=0
                              hit_nb2[(j1,k1,ell1,j2,k2,ell2)]=2
-                              
+                             
         #print('hit nb1 values',list(hit_nb1.values()))
         nb1 = np.array(list(hit_nb1.values()), dtype=int).sum()
         nb2 = np.array(list(hit_nb2.values()), dtype=int).sum()
@@ -171,8 +170,7 @@ class WaveletCovScaleInter2d(object):
         J = self.J
         dj = self.dj
         dl = self.dl
-        dk = self.dk
-
+        
         idx_la1 = []
         idx_la2 = []
         idx_k1 = []
@@ -180,11 +178,11 @@ class WaveletCovScaleInter2d(object):
 
         # k1 = 1
         # k2 = 1
-        # j1+1 <= j2 <= min(j1+dj,J-1)
+        # j1 <= j2 <= min(j1+dj,J-1)
         for j1 in range(J):
             for ell1 in range(L2):
                 k1 = 1
-                for j2 in range(j1+1,min(j1+dj+1,J)):
+                for j2 in range(j1,min(j1+dj+1,J)):
                     for ell2 in range(L2):
                         if periodic_dis(ell1, ell2, L2) <= dl:
                             k2 = 1
@@ -272,17 +270,14 @@ class WaveletCovScaleInter2d(object):
                     xpsi_bc = ifft2_c2c(hatxpsi_bc)
                     # reshape to (1,J*L,M,N,2)
                     # select la1, et la2, P_c = number of |la1| in this chunk
-                    xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1_pre']) #  - self.min_la) # (1,P_c,M,N,2)
-                    xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2_pre']) #- self.min_la) # (1,P_c,M,N,2)
-                    # print('xpsi la1 shape', xpsi_bc_la1.shape)
-                    # print('xpsi la2 shape', xpsi_bc_la2.shape)
-                    k1 = self.this_wph['k1']
-                    k2 = self.this_wph['k2']
-                    # compute mean spatial
-                    corr_xpsi_bc = mulcu(xpsi_bc_la1,conjugate(ypsi_bc_la2)) # (1,P_c,M,N,2)
+                    xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1_pre']) # (1,P_c,M,N,2)
+                    xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2_pre']) # (1,P_c,M,N,2)
+                    # compute empirical cov
+                    corr_xpsi_bc = mulcu(xpsi_bc_la1,conjugate(xpsi_bc_la2)) # (1,P_c,M,N,2)
                     corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2), better numerical presision?!
                     Sout[idxb,idxc,:,:,:,:] = corr_bc[0,:,:,:,:]
-
+        else:
+            assert false
         return Sout
         
     def __call__(self, input):

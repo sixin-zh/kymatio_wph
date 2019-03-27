@@ -25,7 +25,6 @@ im = data['imgs']
 im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
 
 # Parameters for transforms
-
 J = 8
 L = 8
 M, N = im.shape[-2], im.shape[-1]

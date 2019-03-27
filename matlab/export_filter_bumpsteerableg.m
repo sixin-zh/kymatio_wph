@@ -6,7 +6,7 @@ addpath_scatnet;
 
 %% get data and estimate spectral
 N=256;
-J=5;
+J=6;
 L=8;
 filtopts = struct();
 filtopts.J=J;
