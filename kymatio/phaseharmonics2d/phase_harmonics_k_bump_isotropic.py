@@ -291,58 +291,5 @@ class PhaseHarmonics2d(object):
 
         return Sout
 
-    def compute_mean(self, input):
-        J = self.J
-        M = self.M
-        N = self.N
-        L2 = self.L*2
-        dj = self.dj
-        dl = self.dl
-        pad = self.pad
-
-        x_c = pad(input) # add zeros to imag part -> (nb,nc,M,N,2)
-        hatx_c = fft2_c2c(x_c) # fft2 -> (nb,nc,M,N,2)
-        #print('nbchannels',nb_channels)
-        if self.chunk_id < self.nb_chunks:
-            nb = hatx_c.shape[0]
-            nc = hatx_c.shape[1]
-            hatpsi_la = self.hatpsi # (J,L2,M,N,2)
-            assert(nb==1 and nc==1) # for submeanC
-            nb_channels = self.this_wph['la1'].shape[0]
-            Sout1 = input.new(nb, nc, nb_channels, \
-                              1, 1, 2) # (nb,nc,nb_channels,1,1,2)
-            Sout2 = input.new(nb, nc, nb_channels, \
-                              1, 1, 2) # (nb,nc,nb_channels,1,1,2)
-            for idxb in range(nb):
-                for idxc in range(nc):
-                    hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
-                    # print('hatx_bc is cuda?',hatx_bc.is_cuda)
-                    hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L2,M,N,2)
-                    # print( 'hatxpsi_bc shape', hatxpsi_bc.shape )
-                    xpsi_bc = ifft2_c2c(hatxpsi_bc)
-                    # reshape to (1,J*L,M,N,2)
-                    xpsi_bc = xpsi_bc.view(1,J*L2,M,N,2)
-
-                    # select la1, et la2, P_c = number of |la1| in this chunk
-                    xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1']) # (1,P_c,M,N,2)
-                    xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2']) # (1,P_c,M,N,2)
-                    #print('xpsi la1 shape', xpsi_bc_la1.shape)
-                    #print('xpsi la2 shape', xpsi_bc_la2.shape)
-                    k1 = self.this_wph['k1']
-                    k2 = self.this_wph['k2']
-                    xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,P_c,M,N,2)
-                    xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2, -k2) # (1,P_c,M,N,2)
-                    mean1_bc = torch.mean(torch.mean(xpsi_bc_la1k1,-2,True),-3,True) # (1,P_c,1,1,2)
-                    mean2_bc = torch.mean(torch.mean(xpsi_bc_la2k2,-2,True),-3,True) # (1,P_c,1,1,2)
-                    Sout1[idxb,idxc,:,:,:,:] = mean1_bc[0,:,:,:,:]
-                    Sout2[idxb,idxc,:,:,:,:] = mean2_bc[0,:,:,:,:]
-            Sout = torch.stack((Sout1,Sout2),dim=0)
-        else:
-            hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
-            xpsi_c = ifft2_c2c(hatxphi_c) # (nb,nc,M,N,2)
-            Sout = torch.mean(torch.mean(xpsi_c,-2,True),-3,True) # (nb,nc,1,1,2)
-
-        return Sout
-
     def __call__(self, input):
         return self.forward(input)
