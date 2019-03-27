@@ -61,7 +61,7 @@ class WaveletCovPerShift2d(object):
         dn = self.dn
         dn_mode = self.dn_mode
         if dn_mode==1:
-            dn_step = 2^self.chunk_id #2 ^j
+            dn_step = 2**self.chunk_id #2 ^j
         else:
             dn_step = 1
         print('this pershift2d ', chunk_id, ' has step ', dn_step)
