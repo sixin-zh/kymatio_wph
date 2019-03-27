@@ -241,7 +241,7 @@ class WaveletCovPerShift2d(object):
         L2 = self.L*2
         dl = self.dl
         pad = self.pad
-        
+        delta_n = self.dn
         # denote
         # nb=batch number
         # nc=number of color channels
