@@ -270,6 +270,7 @@ class WaveletCovPerShift2d(object):
                      hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
                      hatxpsi_bc = cdgmm(hatpsi_pre, hatx_bc) # (1,Pa,M,N,2)
                      xpsi_bc = ifft2_c2c(hatxpsi_bc) # (1,Pa,M,N,2)
+                     xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1_pre']) # (1,P_c,M,N,2)
                      for pid in range(len(self.pershifts)):
                          pershift = self.pershifts[pid]
                          y_c = pershift(x_c)
@@ -278,7 +279,6 @@ class WaveletCovPerShift2d(object):
                          hatypsi_bc = cdgmm(hatpsi_pre, haty_bc) # (1,Pa,M,N,2)
                          ypsi_bc = ifft2_c2c(hatypsi_bc) # (1,Pa,M,N,2)
                          # select la1, et la2, P_c = number of |la1| in this chunk = self.this_wph_size
-                         xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1_pre']) # (1,P_c,M,N,2)
                          ypsi_bc_la2 = torch.index_select(ypsi_bc, 1, self.this_wph['la2_pre']) # (1,P_c,M,N,2)
                          # compute empirical cov
                          corr_xpsi_bc = mulcu(xpsi_bc_la1,conjugate(ypsi_bc_la2)) # (1,P_c,M,N,2)
