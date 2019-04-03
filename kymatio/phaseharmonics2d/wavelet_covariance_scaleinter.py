@@ -41,12 +41,12 @@ class WaveletCovScaleInter2d(object):
         self.phase_harmonics = PhaseHarmonics2.apply
         self.M_padded, self.N_padded = self.M, self.N
         self.filters_tensor()
-        self.preselect_filters()
         if self.chunk_id < self.nb_chunks:
             self.idx_wph = self.compute_idx()
             self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
         else:
             self.subinitmeanJ = SubInitSpatialMeanC()
+        self.preselect_filters()
             
     def preselect_filters(self):
         # only use thoses filters in the this_wph list
