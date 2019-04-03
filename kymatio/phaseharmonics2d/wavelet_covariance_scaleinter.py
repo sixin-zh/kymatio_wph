@@ -57,18 +57,22 @@ class WaveletCovScaleInter2d(object):
         J = self.J
         L = self.L
         L2 = L*2
-        min_la1 = self.this_wph['la1'].min()
-        max_la1 = self.this_wph['la1'].max()
-        min_la2 = self.this_wph['la2'].min()
-        max_la2 = self.this_wph['la2'].max()
-        min_la = min(min_la1,min_la2)
-        max_la = max(max_la1,max_la2)
-        print('this la range',min_la,max_la)
-        hatpsi_la = self.hatpsi.view(1,J*L2,M,N,2) # (J,L2,M,N,2) -> (1,J*L2,M,N,2)
-        self.hatpsi_pre = hatpsi_la[:,min_la:max_la+1,:,:,:] # Pa = max_la-min_la+1, (1,Pa,M,N,2)
-        self.this_wph['la1_pre'] = self.this_wph['la1'] - min_la
-        self.this_wph['la2_pre'] = self.this_wph['la2'] - min_la
-    
+        if self.chunk_id < self.nb_chunks:
+            min_la1 = self.this_wph['la1'].min()
+            max_la1 = self.this_wph['la1'].max()
+            min_la2 = self.this_wph['la2'].min()
+            max_la2 = self.this_wph['la2'].max()
+            min_la = min(min_la1,min_la2)
+            max_la = max(max_la1,max_la2)
+            print('this la range',min_la,max_la)
+            hatpsi_la = self.hatpsi.view(1,J*L2,M,N,2) # (J,L2,M,N,2) -> (1,J*L2,M,N,2)
+            self.hatpsi_pre = hatpsi_la[:,min_la:max_la+1,:,:,:] # Pa = max_la-min_la+1, (1,Pa,M,N,2)
+            self.this_wph['la1_pre'] = self.this_wph['la1'] - min_la
+            self.this_wph['la2_pre'] = self.this_wph['la2'] - min_la
+        else:
+            hatpsi_ = self.hatpsi[0:self.dj,0:L,:,:,:]
+            self.hatpsi_pre = hatpsi.view(1,self.dj*L,M,N,2)
+            
     def filters_tensor(self):
         J = self.J
         L = self.L
@@ -129,44 +133,6 @@ class WaveletCovScaleInter2d(object):
         print('this chunk', chunk_id, ' size is ', len(this_wph['la1']), ' among ', nb_cov)
 
         return this_wph
-
-    def compute_ncoeff(self):
-        # return number of mean (nb1) and cov (nb2) of all idx
-        L = self.L
-        L2 = L*2
-        J = self.J
-        dj = self.dj
-        dl = self.dl
-               
-        hit_nb1 = dict() # hash table
-        hit_nb2 = dict() # value counts either real or complex numbers
-        
-        # k1 = 1
-        # k2 = 1
-        # j1 <= j2 <= min(j1+dj,J-1)
-        # TOCHECK skip nb1 counted in pershift
-        for j1 in range(J):
-            for ell1 in range(L2):
-                k1 = 1
-                for j2 in range(j1,min(j1+dj+1,J)):
-                     for ell2 in range(L2):
-                         if periodic_dis(ell1, ell2, L2) <= dl:
-                             #hit_nb1[(j1,k1,ell1)]=0
-                             k2 = 1
-                             #hit_nb1[(j2,k2,ell2)]=0
-                             hit_nb2[(j1,k1,ell1,j2,k2,ell2)]=2
-                             
-        #print('hit nb1 values',list(hit_nb1.values()))
-        nb1 = np.array(list(hit_nb1.values()), dtype=int).sum()
-        nb2 = np.array(list(hit_nb2.values()), dtype=int).sum()
-
-        # plus last phiJ channel
-        nb1 += 1
-        nb2 += 1
-        if self.haspsi0:
-            nb2 += 1 # plus psi0 channel
-        
-        return nb1, nb2
     
     def compute_idx(self):
         L = self.L
@@ -208,6 +174,8 @@ class WaveletCovScaleInter2d(object):
             if self.chunk_id < self.nb_chunks:
                 self.hatpsi_pre = self.hatpsi_pre.to(devid)
             else:
+                self.hatpsi_pre = self.hatpsi_pre.to(devid)
+                #self.hatpsi = self.hatpsi.to(devid)
                 self.hatphi = self.hatphi.to(devid)
                 if self.haspsi0:
                     self.hatpsi0 = self.hatpsi0.to(devid)
@@ -215,6 +183,8 @@ class WaveletCovScaleInter2d(object):
             if self.chunk_id < self.nb_chunks:
                 self.hatpsi_pre = self.hatpsi_pre.type(_type)
             else:
+                self.hatpsi_pre = self.hatpsi_pre.type(_type)
+                #self.hatpsi = self.hatpsi.type(_type)
                 self.hatphi = self.hatphi.type(_type)
                 if self.haspsi0:
                     self.hatpsi0 = self.hatpsi0.type(_type)
@@ -290,13 +260,23 @@ class WaveletCovScaleInter2d(object):
             xphi0_mod = self.modulus(xphi0_c) # (nb,nc,M,N,2)
             xphi0_mod2 = mulcu(xphi0_mod,xphi0_mod) # (nb,nc,M,N,2)
             if self.haspsi0:
-                Sout = input.new(nb, nc, 2, 1, 1, 2)
+                Sout = input.new(nb, nc, 2+self.dj*self.L, 1, 1, 2) # no need for another half angles since psi0 is real-valued
                 Sout[:,:,0,:,:,:] = torch.mean(torch.mean(xphi0_mod2,-2,True),-3,True)
                 hatxpsi00_c = cdgmm(hatx_c, self.hatpsi0)
                 xpsi00_c = ifft2_c2c(hatxpsi00_c)
                 xpsi00_mod = self.modulus(xpsi00_c) # (nb,nc,M,N,2)
                 xpsi00_mod2 = mulcu(xpsi00_mod,xpsi00_mod) # (nb,nc,M,N,2)
                 Sout[:,:,1,:,:,:] = torch.mean(torch.mean(xpsi00_mod2,-2,True),-3,True)
+                # add scale interactions with other scales
+                for idxb in range(nb):
+                    for idxc in range(nc):
+                        hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
+                        hatxpsi_bc = cdgmm(self.hatpsi_pre, hatx_bc) # (1,Pa,M,N,2)
+                        xpsi_bc_la1 = ifft2_c2c(hatxpsi_bc)
+                        xpsi_bc_la2 = xpsi00_c 
+                        corr_xpsi_bc = mulcu(xpsi_bc_la1,xpsi_bc_la2) # (1,Pa,M,N,2)
+                        corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,Pa,1,1,2)
+                        Sout[idxb,idxc,2:,:,:,:] = corr_bc[0,:,:,:,:]
             else:
                 Sout = torch.mean(torch.mean(xphi0_mod2,-2,True),-3,True)
         return Sout
