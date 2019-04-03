@@ -69,7 +69,7 @@ class WaveletCovScaleInter2d(object):
             self.this_wph['la2_pre'] = self.this_wph['la2'] - min_la
         else:
             hatpsi_ = self.hatpsi[0:self.dj,0:L,:,:,:]
-            self.hatpsi_pre = hatpsi.view(1,self.dj*L,M,N,2)
+            self.hatpsi_pre = hatpsi_.view(1,self.dj*L,M,N,2)
             
     def filters_tensor(self):
         J = self.J
