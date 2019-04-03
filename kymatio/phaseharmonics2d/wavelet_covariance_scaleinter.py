@@ -271,7 +271,7 @@ class WaveletCovScaleInter2d(object):
                         hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
                         hatxpsi_bc = cdgmm(self.hatpsi_pre, hatx_bc) # (1,Pa,M,N,2)
                         xpsi_bc_la1 = ifft2_c2c(hatxpsi_bc)
-                        xpsi_bc_la2 = xpsi00_c 
+                        xpsi_bc_la2 = xpsi00_c[idxb,idxc,:,:,:]..expand_as(xpsi_bc_la1)
                         corr_xpsi_bc = mulcu(xpsi_bc_la1,xpsi_bc_la2) # (1,Pa,M,N,2)
                         corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,Pa,1,1,2)
                         Sout[idxb,idxc,2:,:,:,:] = corr_bc[0,:,:,:,:]
