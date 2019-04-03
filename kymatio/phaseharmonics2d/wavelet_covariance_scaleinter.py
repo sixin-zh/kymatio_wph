@@ -88,6 +88,7 @@ class WaveletCovScaleInter2d(object):
             hatpsi0 = np.stack((np.real(fftpsi0), np.imag(fftpsi0)), axis=-1)
             self.hatpsi0 = torch.FloatTensor(hatpsi0) # (M,N,2)
             self.haspsi0 = True
+            print('compute psi0')
         
         fftpsi = matfilters['filt_fftpsi'].astype(np.complex_)
         #print(self.hatpsi.dtype)
@@ -288,7 +289,16 @@ class WaveletCovScaleInter2d(object):
             xphi0_c = self.subinitmeanJ(xphi_c)
             xphi0_mod = self.modulus(xphi0_c) # (nb,nc,M,N,2)
             xphi0_mod2 = mulcu(xphi0_mod,xphi0_mod) # (nb,nc,M,N,2)
-            Sout = torch.mean(torch.mean(xphi0_mod2,-2,True),-3,True)
+            if self.haspsi0:
+                Sout = input.new(nb, nc, 2, 1, 1, 2)
+                Sout[:,:,0,:,:,:] = torch.mean(torch.mean(xphi0_mod2,-2,True),-3,True)
+                hatxpsi00_c = cdgmm(hatx_c, self.hatpsi0)
+                xpsi00_c = ifft2_c2c(hatxpsi00_c)
+                xpsi00_mod = self.modulus(xpsi00_c) # (nb,nc,M,N,2)
+                xpsi00_mod2 = mulcu(xpsi00_mod,xpsi00_mod) # (nb,nc,M,N,2)
+                Sout[:,:,1,:,:,:] = torch.mean(torch.mean(xpsi00_mod2,-2,True),-3,True)
+            else:
+                Sout = torch.mean(torch.mean(xphi0_mod2,-2,True),-3,True)
         return Sout
         
     def __call__(self, input):
