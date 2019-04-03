@@ -41,12 +41,10 @@ class WaveletCovScaleInter2d(object):
         self.phase_harmonics = PhaseHarmonics2.apply
         self.M_padded, self.N_padded = self.M, self.N
         self.filters_tensor()
+        self.preselect_filters()
         if self.chunk_id < self.nb_chunks:
             self.idx_wph = self.compute_idx()
             self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
-            self.preselect_filters()
-            #self.subinitmean1 = SubInitSpatialMeanC()
-            #self.subinitmean2 = SubInitSpatialMeanC()
         else:
             self.subinitmeanJ = SubInitSpatialMeanC()
             
@@ -229,9 +227,9 @@ class WaveletCovScaleInter2d(object):
         #print('nbchannels',nb_channels)
         nb = hatx_c.shape[0]
         nc = hatx_c.shape[1]
+        hatpsi_pre = self.hatpsi_pre # Pa = max_la-min_la+1, (1,Pa,M,N,2)
+        assert(nb==1 and nc==1) # for submeanC
         if self.chunk_id < self.nb_chunks:
-            hatpsi_pre = self.hatpsi_pre # hatpsi_la[:,self.min_la:self.max_la+1,:,:,:] # Pa = max_la-min_la+1, (1,Pa,M,N,2)
-            assert(nb==1 and nc==1) # for submeanC
             nb_channels = self.this_wph['la1_pre'].shape[0]
             Sout = input.new(nb, nc, nb_channels, 1, 1, 2) # (nb,nc,nb_channels,1,1,2)
             for idxb in range(nb):
@@ -252,7 +250,6 @@ class WaveletCovScaleInter2d(object):
                     Sout[idxb,idxc,:,:,:,:] = corr_bc[0,:,:,:,:]
         else:
             # ADD 1 chennel for spatial phiJ
-            # add l2 phiJ to last channel
             hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
             xphi_c = ifft2_c2c(hatxphi_c)
             # submean from spatial M N
@@ -260,7 +257,8 @@ class WaveletCovScaleInter2d(object):
             xphi0_mod = self.modulus(xphi0_c) # (nb,nc,M,N,2)
             xphi0_mod2 = mulcu(xphi0_mod,xphi0_mod) # (nb,nc,M,N,2)
             if self.haspsi0:
-                Sout = input.new(nb, nc, 2+self.dj*self.L, 1, 1, 2) # no need for another half angles since psi0 is real-valued
+                # no need for another half angles since psi0 is real-valued
+                Sout = input.new(nb, nc, 2+self.dj*self.L, 1, 1, 2)
                 Sout[:,:,0,:,:,:] = torch.mean(torch.mean(xphi0_mod2,-2,True),-3,True)
                 hatxpsi00_c = cdgmm(hatx_c, self.hatpsi0)
                 xpsi00_c = ifft2_c2c(hatxpsi00_c)
