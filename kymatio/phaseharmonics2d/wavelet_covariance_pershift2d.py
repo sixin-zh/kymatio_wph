@@ -98,9 +98,12 @@ class WaveletCovPerShift2d(object):
         print('filter loaded:', filpath)
         
         if 'filt_fftpsi0' in matfilters:
-            print('skip psi0 since no need')
-            self.haspsi0 = False
-                        
+            fftpsi0 = matfilters['filt_fftpsi0'].astype(np.complex_)
+            hatpsi0 = np.stack((np.real(fftpsi0), np.imag(fftpsi0)), axis=-1)
+            self.hatpsi0 = torch.FloatTensor(hatpsi0) # (M,N,2)
+            self.haspsi0 = True
+            print('compute psi0')
+                                    
         fftphi = matfilters['filt_fftphi'].astype(np.complex_)
         hatphi = np.stack((np.real(fftphi), np.imag(fftphi)), axis=-1)
 
@@ -206,11 +209,15 @@ class WaveletCovPerShift2d(object):
                 self.hatpsi_pre = self.hatpsi_pre.type(_type)
             else:
                 self.hatphi = self.hatphi.type(_type)
+                if self.haspsi0:
+                    self.hatpsi0 = self.hatpsi0.type(_type)
         else:
             if self.chunk_id < self.nb_chunks:
                 self.hatpsi_pre = self.hatpsi_pre.to(devid)
             else:
                 self.hatphi = self.hatphi.to(devid)
+                if self.haspsi0:
+                    self.hatpsi0 = self.hatpsi0.to(devid)
         self.pad.padding_module.type(_type)
         return self
 
@@ -256,6 +263,8 @@ class WaveletCovPerShift2d(object):
             nb_channels = self.this_wph['la1_pre'].shape[0] * len(self.pershifts)
         else:
             nb_channels = len(self.pershifts)
+            if self.haspsi0:
+                nb_channels += len(self.pershifts)
         Sout = input.new(nb, nc, nb_channels, 1, 1, 2) # (nb,nc,nb_channels,1,1,2)
         if self.chunk_id < self.nb_chunks:
             nbc = self.this_wph['la1_pre'].shape[0]
@@ -289,8 +298,16 @@ class WaveletCovPerShift2d(object):
                 yphi0_c = pershift(xphi0_c) # self.subinitmeanJ(yphi_c) # SAME mean as xphi_c
                 xyphi0_c = mulcu(xphi0_c,yphi0_c) # (nb,nc,M,N,2)
                 Sout[:,:,pid,:,:,:] = torch.mean(torch.mean(xyphi0_c,-2,True),-3,True)
-                pid+=1
-            
+
+            if self.haspsi0:
+                hatxpsi00_c = cdgmm(hatx_c, self.hatpsi0)
+                xpsi00_c = ifft2_c2c(hatxpsi00_c)
+                for pid in range(len(self.pershifts)):
+                    pershift = self.pershifts[pid]
+                    ypsi00_c = pershift(xpsi00_c) # self.subinitmeanJ(yphi_c) # SAME mean as xphi_c
+                    xypsi00_c = mulcu(xpsi00_c,ypsi00_c) # (nb,nc,M,N,2)
+                    Sout[:,:,pid+len(self.pershifts),:,:,:] = torch.mean(torch.mean(xypsi00_c,-2,True),-3,True)
+                
         return Sout
         
     def __call__(self, input):

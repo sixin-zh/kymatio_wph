@@ -47,7 +47,7 @@ class WaveletCovScaleInter2d(object):
         else:
             self.subinitmeanJ = SubInitSpatialMeanC()
         self.preselect_filters()
-            
+    
     def preselect_filters(self):
         # only use thoses filters in the this_wph list
         M = self.M
