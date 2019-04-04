@@ -91,6 +91,22 @@ class SubInitMeanIso(object):
         output = input - self.minput
         return output
 
+class SubInitSpatialMeanCinFFT(object):
+    def __init__(self):
+        self.minput = None
+
+    def __call__(self, input):
+        if self.minput is None:
+            minput = input.clone().detach()
+            minput = input[...,0,0,:] # zero-freq. value torch.mean(minput, -2, True)
+            #minput = torch.mean(minput, -3, True)
+            self.minput = minput
+            print('sum of minput',self.minput.sum())
+
+        output = input
+        output[...,0,0,:] = input[...,0,0,:] - self.minput
+        return output
+
 class SubsampleFourier(object):
     """
         Subsampling of a 2D image performed in the Fourier domain
