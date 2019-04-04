@@ -298,7 +298,7 @@ class WaveletCovFFTShift2d(object):
             #for pid in range(len(self.dn_loc)):
             #    Sout[0,0,pid,0,0,:] = corrphi0_c_[self.dn_loc[pid],:]
 
-            if self.hatpsi0:
+            if self.haspsi0:
                 hatxpsi00_c = cdgmm(hatx_c, self.hatpsi0)
                 hatpsicorr00_c = mulcu(hatxpsi00_c,conjugate(hatxpsi00_c))
                 corrpsi00_c = ifft2_c2c(hatpsicorr00_c)/(M*N) # (nb,nc,M,N,2)
