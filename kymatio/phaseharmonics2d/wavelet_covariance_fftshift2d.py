@@ -303,7 +303,8 @@ class WaveletCovFFTShift2d(object):
                 corrpsi00_c = ifft2_c2c(hatpsicorr00_c)/(M*N) # (nb,nc,M,N,2)
                 corrpsi00_c_ = corrpsi00_c.view(M*N,2)
                 Sout[0,0,len(self.dn_loc):,0,0,:] = torch.index_select(corrpsi00_c_,0,self.dn_loc).view(len(self.dn_loc),2)
-       return Sout
+                
+        return Sout
         
     def __call__(self, input):
         return self.forward(input)

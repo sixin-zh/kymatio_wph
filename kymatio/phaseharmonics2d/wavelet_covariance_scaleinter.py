@@ -287,7 +287,7 @@ class WaveletCovScaleInter2d(object):
                 Sout = input.new(nb, nc, 1, 1, 1, 2)
                 Sout[:,:,0,:,:,:] = torch.mean(torch.mean(xphi0_mod2,-2,True),-3,True)
                 #Sout[:,:,1,:,:,:] = torch.mean(torch.mean(xphi_mod2,-2,True),-3,True)
-             
+                
         return Sout
         
     def __call__(self, input):
