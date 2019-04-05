@@ -257,18 +257,20 @@ class WaveletCovScaleInter2d(object):
             xphi0_mod = self.modulus(xphi0_c) # (nb,nc,M,N,2)
             xphi0_mod2 = mulcu(xphi0_mod,xphi0_mod) # (nb,nc,M,N,2)
             # add one more moment with no spatial submean
-            xphi_mod = self.modulus(xphi_c)
-            xphi_mod2 = mulcu(xphi_mod, xphi_mod)
+            #xphi_mod = self.modulus(xphi_c)
+            #xphi_mod2 = mulcu(xphi_mod, xphi_mod)
             if self.haspsi0:
                 # no need for another half angles since psi0 is real-valued
-                Sout = input.new(nb, nc, 3+self.dj*self.L, 1, 1, 2)
+                #Sout = input.new(nb, nc, 3+self.dj*self.L, 1, 1, 2)
+                Sout = input.new(nb, nc, 2+self.dj*self.L, 1, 1, 2)
                 Sout[:,:,0,:,:,:] = torch.mean(torch.mean(xphi0_mod2,-2,True),-3,True)
-                Sout[:,:,1,:,:,:] = torch.mean(torch.mean(xphi_mod2,-2,True),-3,True)
+                #Sout[:,:,1,:,:,:] = torch.mean(torch.mean(xphi_mod2,-2,True),-3,True)
                 hatxpsi00_c = cdgmm(hatx_c, self.hatpsi0)
                 xpsi00_c = ifft2_c2c(hatxpsi00_c)
                 xpsi00_mod = self.modulus(xpsi00_c) # (nb,nc,M,N,2)
                 xpsi00_mod2 = mulcu(xpsi00_mod,xpsi00_mod) # (nb,nc,M,N,2)
-                Sout[:,:,2,:,:,:] = torch.mean(torch.mean(xpsi00_mod2,-2,True),-3,True)
+                Sout[:,:,1,:,:,:] = torch.mean(torch.mean(xpsi00_mod2,-2,True),-3,True)
+                #Sout[:,:,2,:,:,:] = torch.mean(torch.mean(xpsi00_mod2,-2,True),-3,True)
                 # add scale interactions with other scales
                 idxb = 0
                 idxc = 0
@@ -278,11 +280,13 @@ class WaveletCovScaleInter2d(object):
                 xpsi_bc_la2 = xpsi00_c[idxb,idxc,:,:,:].expand_as(xpsi_bc_la1)
                 corr_xpsi_bc = mulcu(xpsi_bc_la1,xpsi_bc_la2) # (1,Pa,M,N,2)
                 corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,Pa,1,1,2)
-                Sout[idxb,idxc,3:,:,:,:] = corr_bc[0,:,:,:,:]
+                #Sout[idxb,idxc,3:,:,:,:] = corr_bc[0,:,:,:,:]
+                Sout[idxb,idxc,2:,:,:,:] = corr_bc[0,:,:,:,:]
             else:
-                Sout = input.new(nb, nc, 2, 1, 1, 2)
+                #Sout = input.new(nb, nc, 2, 1, 1, 2)
+                Sout = input.new(nb, nc, 1, 1, 1, 2)
                 Sout[:,:,0,:,:,:] = torch.mean(torch.mean(xphi0_mod2,-2,True),-3,True)
-                Sout[:,:,1,:,:,:] = torch.mean(torch.mean(xphi_mod2,-2,True),-3,True)
+                #Sout[:,:,1,:,:,:] = torch.mean(torch.mean(xphi_mod2,-2,True),-3,True)
              
         return Sout
         
