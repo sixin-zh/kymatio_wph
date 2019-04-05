@@ -297,30 +297,13 @@ class WaveletCovFFTShift2d(object):
             Sout[0,0,0:len(self.dn_loc),0,0,:] = torch.index_select(corrphi0_c_,0,self.dn_loc).view(len(self.dn_loc),2)
             #for pid in range(len(self.dn_loc)):
             #    Sout[0,0,pid,0,0,:] = corrphi0_c_[self.dn_loc[pid],:]
-
             if self.haspsi0:
                 hatxpsi00_c = cdgmm(hatx_c, self.hatpsi0)
                 hatpsicorr00_c = mulcu(hatxpsi00_c,conjugate(hatxpsi00_c))
                 corrpsi00_c = ifft2_c2c(hatpsicorr00_c)/(M*N) # (nb,nc,M,N,2)
                 corrpsi00_c_ = corrpsi00_c.view(M*N,2)
                 Sout[0,0,len(self.dn_loc):,0,0,:] = torch.index_select(corrpsi00_c_,0,self.dn_loc).view(len(self.dn_loc),2)
-            '''
-            for pid in range(len(self.pershifts)):
-                pershift = self.pershifts[pid]
-                yphi0_c = pershift(xphi0_c) # self.subinitmeanJ(yphi_c) # SAME mean as xphi_c
-                xyphi0_c = mulcu(xphi0_c,yphi0_c) # (nb,nc,M,N,2)
-                Sout[:,:,pid,:,:,:] = torch.mean(torch.mean(xyphi0_c,-2,True),-3,True)
-            
-            if self.haspsi0:
-                hatxpsi00_c = cdgmm(hatx_c, self.hatpsi0)
-                xpsi00_c = ifft2_c2c(hatxpsi00_c)
-                for pid in range(len(self.pershifts)):
-                    pershift = self.pershifts[pid]
-                    ypsi00_c = pershift(xpsi00_c)
-                    xypsi00_c = mulcu(xpsi00_c,ypsi00_c) # (nb,nc,M,N,2)
-                    Sout[:,:,pid+len(self.pershifts),:,:,:] = torch.mean(torch.mean(xypsi00_c,-2,True),-3,True)
-             ''' 
-        return Sout
+       return Sout
         
     def __call__(self, input):
         return self.forward(input)
