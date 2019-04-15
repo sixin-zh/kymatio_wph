@@ -75,6 +75,22 @@ class SubInitSpatialMeanC(object):
         output = input - self.minput
         return output
 
+# substract spatial mean (real valued input)
+class SubInitSpatialMeanR(object):
+    def __init__(self):
+        self.minput = None
+
+    def __call__(self, input):
+        if self.minput is None:
+            minput = input.clone().detach()
+            minput = torch.mean(minput, -1, True)
+            minput = torch.mean(minput, -2, True)
+            self.minput = minput
+            print('sum of minput',self.minput.sum())
+
+        output = input - self.minput
+        return output
+    
 class SubInitMeanIso(object):
     def __init__(self):
         self.minput = None
