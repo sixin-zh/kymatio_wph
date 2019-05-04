@@ -103,7 +103,7 @@ class SubInitMeanIso(object):
             minput[:, 1:, ...] = 0
             self.minput = minput
             print('sum of minput', self.minput.sum())
-            #print('minput shape is', self.minput.shape)
+            # print('minput shape is', self.minput.shape)
         output = input - self.minput
         return output
 
@@ -115,6 +115,7 @@ class DivInitStd(object):
     def __call__(self, input):
         if self.stdinput is None:
             stdinput = input.clone().detach()  # input size:(J,Q,K,M,N,2)
+            stdinput = torch.norm(stdinput, dim=-1, keepdim=True)
             stdinput = torch.norm(stdinput, dim=(-2, -3), keepdim=True)
             self.stdinput = stdinput
         output = input/self.stdinput
