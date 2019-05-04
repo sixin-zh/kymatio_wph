@@ -18,7 +18,7 @@ class PhaseHarmonics2d(object):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         self.dj = delta_j # max scale interactions
         self.dk = delta_k #
-        self.K = 2**self.dj + self.dk + 1
+        self.K = 2*(2**self.dj + self.dk) + 1
         self.k = torch.arange(0, self.K).type(torch.float) # vector between [0,..,K-1]
         self.nb_chunks = nb_chunks # number of chunks to cut whp cov
         self.chunk_id = chunk_id
@@ -104,11 +104,11 @@ class PhaseHarmonics2d(object):
                 j2 = j1
                 q2 = q1
                 k2 = 0
-                print('add k1=',k1,'k2=',k2)
+                #print('add k1=',k1,'k2=',k2)
                 idx_la1.append(K*Q*j1 + K*q1 + k1)
                 idx_la2.append(K*Q*j2 + K*q2 + k2)
                 k2 = 1
-                print('add k1=',k1,'k2=',k2)
+                #print('add k1=',k1,'k2=',k2)
                 idx_la1.append(K*Q*j1 + K*q1 + k1)
                 idx_la2.append(K*Q*j2 + K*q2 + k2)
 
@@ -121,7 +121,7 @@ class PhaseHarmonics2d(object):
                 j2 = j1
                 q2 = q1
                 k2 = 0
-                print('add k1=',k1,'k2=',k2)
+                #print('add k1=',k1,'k2=',k2)
                 idx_la1.append(K*Q*j1 + K*q1 + k1)
                 idx_la2.append(K*Q*j2 + K*q2 + k2)
 
@@ -134,7 +134,7 @@ class PhaseHarmonics2d(object):
                 for j2 in range(j1+1, min(j1+dj+1, J)):
                     q2 = q1
                     for k2 in range(3):
-                        print('add k1=',k1,'k2=',k2)
+                        #print('add k1=',k1,'k2=',k2)
                         idx_la1.append(K*Q*j1 + K*q1 + k1)
                         idx_la2.append(K*Q*j2 + K*q2 + k2)
 
@@ -147,7 +147,7 @@ class PhaseHarmonics2d(object):
                 q2 = q1
                 for j2 in range(j1+1, min(j1+dj+1, J)):
                     for k2 in range(max(0, 2**(j2-j1)-dk), 2**(j2-j1)+dk+1):
-                        print('add k1=',k1,'k2=',k2)
+                        #print('add k1=',k1,'k2=',k2)
                         idx_la1.append(K*Q*j1 + K*q1 + k1)
                         idx_la2.append(K*Q*j2 + K*q2 + k2)
 
@@ -163,7 +163,7 @@ class PhaseHarmonics2d(object):
                     k2max = min(2*(2**(j2-j1)+dk),self.K-1)
                     k2max = min(k2max,2**j2) # anti-aliasing
                     for k2 in range(k2min,k2max+1):
-                        print('add k1=',k1,'k2=',k2)
+                        #print('add k1=',k1,'k2=',k2)
                         idx_la1.append(K*Q*j1 + K*q1 + k1)
                         idx_la2.append(K*Q*j2 + K*q2 + k2)
                         
