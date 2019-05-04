@@ -112,7 +112,7 @@ class DivInitStd(object):
     def __init__(self):
         self.minput = None
 
-    def __call(self, input):
+    def __call__(self, input):
         if self.input is None:
             stdinput = input.clone().detach()  # input size:(J,Q,K,M,N,2)
             stdinput = torch.norm(stdinput, dim=(-2, -3), keepdim=True)
