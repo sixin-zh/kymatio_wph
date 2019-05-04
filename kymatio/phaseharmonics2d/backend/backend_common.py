@@ -110,14 +110,14 @@ class SubInitMeanIso(object):
 
 class DivInitStd(object):
     def __init__(self):
-        self.minput = None
+        self.stdinput = None
 
     def __call__(self, input):
-        if self.input is None:
+        if self.stdinput is None:
             stdinput = input.clone().detach()  # input size:(J,Q,K,M,N,2)
             stdinput = torch.norm(stdinput, dim=(-2, -3), keepdim=True)
             self.stdinput = stdinput
-        output = input/stdinput
+        output = input/self.stdinput
         return output
 
 
