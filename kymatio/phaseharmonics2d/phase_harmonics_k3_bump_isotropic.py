@@ -96,7 +96,7 @@ class PhaseHarmonics2d(object):
 
         idx_la1 = []
         idx_la2 = []
-      
+        
         # j1=j2, k1=1, k2=0 or 1
         for j1 in range(J):
             for q1 in range(Q):

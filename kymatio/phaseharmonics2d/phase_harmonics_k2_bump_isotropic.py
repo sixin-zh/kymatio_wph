@@ -124,7 +124,7 @@ class PhaseHarmonics2d(object):
                 #print('add k1=',k1,'k2=',k2)
                 idx_la1.append(K*Q*j1 + K*q1 + k1)
                 idx_la2.append(K*Q*j2 + K*q2 + k2)
-
+        
         # k1 = 0
         # k2 = 0,1,2
         # j1+1 <= j2 <= min(j1+dj,J-1)
@@ -137,7 +137,7 @@ class PhaseHarmonics2d(object):
                         #print('add k1=',k1,'k2=',k2)
                         idx_la1.append(K*Q*j1 + K*q1 + k1)
                         idx_la2.append(K*Q*j2 + K*q2 + k2)
-
+        
         # k1 = 1
         # k2 = 2^(j2-j1)±dk
         # j1+1 <= j2 <= min(j1+dj,J-1)
@@ -150,7 +150,7 @@ class PhaseHarmonics2d(object):
                         #print('add k1=',k1,'k2=',k2)
                         idx_la1.append(K*Q*j1 + K*q1 + k1)
                         idx_la2.append(K*Q*j2 + K*q2 + k2)
-
+        
         # k1 = 2
         # k2 = 2*(2^(j2-j1)±dk) , smaller than K-1
         # j1>0, j1+1 <= j2 <= min(j1+dj,J-1)
@@ -163,7 +163,7 @@ class PhaseHarmonics2d(object):
                     k2max = min(2*(2**(j2-j1)+dk),self.K-1)
                     k2max = min(k2max,2**j2) # anti-aliasing
                     for k2 in range(k2min,k2max+1):
-                        print('add k1=',k1,'k2=',k2)
+                        #print('add k1=',k1,'k2=',k2)
                         idx_la1.append(K*Q*j1 + K*q1 + k1)
                         idx_la2.append(K*Q*j2 + K*q2 + k2)
                         
