@@ -115,8 +115,8 @@ class DivInitStd(object):
     def __call__(self, input):
         if self.stdinput is None:
             stdinput = input.clone().detach()  # input size:(J,Q,K,M,N,2)
-            m = torch.mean(torch.mean(stdinput, -2, True), -3, True)
-            stdinput = stdinput - m
+            # m = torch.mean(torch.mean(stdinput, -2, True), -3, True)
+            # stdinput = stdinput - m
             stdinput = torch.norm(stdinput, dim=-1, keepdim=True)
             stdinput = torch.norm(stdinput, dim=(-2, -3), keepdim=True)
             self.stdinput = stdinput
