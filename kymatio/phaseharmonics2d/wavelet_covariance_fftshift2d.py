@@ -18,10 +18,10 @@ from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 class WaveletCovFFTShift2d(object):
     # nb_chunks = J, so that each dn can be applied to each chunk with the same shift,
     # chunk_id is the scale parameter j
-    def __init__(self, M, N, J, L, delta_n, delta_mode, nb_chunks, chunk_id, devid=0, filname='bumpsteerableg', filid=1):
+    def __init__(self, M, N, J, L, delta_n, delta_mode, nb_chunks, chunk_id, devid=0, filname='bumpsteerableg', filid=1, delta_l=0):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         self.dn = delta_n # shift along dn1 and dn2
-        self.dl = 0 # delta_l # max angular interactions
+        self.dl = delta_l # max angular interactions
         self.dn_mode = delta_mode # 0 for n' = n + dn, 1 for n' = n + 2^j * dn 
         assert(nb_chunks == J)
         self.nb_chunks = nb_chunks # number of chunks to cut cov matrix
@@ -35,7 +35,7 @@ class WaveletCovFFTShift2d(object):
         # chunk_id = 0..nb_chunks-1, are the cov of wavelets, chunk_id=nb_chunks is cov of phiJ
         if self.dl > self.L:
             raise (ValueError('delta_l must be <= L'))
-
+        
         self.pre_pad = False # no padding
         self.cache = False # cache filter bank
         self.build()
