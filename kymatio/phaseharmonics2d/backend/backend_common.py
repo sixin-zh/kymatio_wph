@@ -123,6 +123,22 @@ class DivInitStd(object):
         output = input/self.stdinput
         return output
 
+class DivInitStdQ0(object):
+    def __init__(self):
+        self.stdinput = None
+
+    def __call__(self, input):
+        if self.stdinput is None:
+            stdinput = input.clone().detach()  # input size:(J,Q,K,M,N,2)
+            stdinput = stdinput[:, 0, ...].unsqueeze(1)  # size:(J,1,K,M,N,2)
+            # m = torch.mean(torch.mean(stdinput, -2, True), -3, True)
+            # stdinput = stdinput - m
+            stdinput = torch.norm(stdinput, dim=-1, keepdim=True)
+            stdinput = torch.norm(stdinput, dim=(-2, -3), keepdim=True)
+            self.stdinput = stdinput
+        output = input/self.stdinput
+        return output
+
 
 class SubInitSpatialMeanCinFFT(object):
     def __init__(self):
