@@ -23,7 +23,7 @@ class PhaseHarmonics2d(object):
         self.k = torch.arange(0, self.K).type(torch.float) # vector between [0,..,K-1]
         self.nb_chunks = nb_chunks # number of chunks to cut whp cov
         self.chunk_id = chunk_id
-        assert( self.chunk_id <= self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
+        assert( self.chunk_id < self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
         if self.dl > self.L:
             raise (ValueError('delta_l must be <= L'))
         
@@ -38,12 +38,11 @@ class PhaseHarmonics2d(object):
         self.phase_harmonics = PhaseHarmonicsIso.apply
         self.M_padded, self.N_padded = self.M, self.N
         self.filters_tensor()
-        if self.chunk_id < self.nb_chunks:
-            self.idx_wph = self.compute_idx()
-            self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
-            self.subinitmean = SubInitSpatialMeanC()
-        else:
-            self.subinitmeanJ = SubInitSpatialMeanC()
+        #if self.chunk_id < self.nb_chunks:
+        self.idx_wph = self.compute_idx()
+        self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
+        self.subinitmean = SubInitSpatialMeanC()
+        self.subinitmeanJ = SubInitSpatialMeanC()
 
     def filters_tensor(self):
         # TODO load bump steerable wavelets
@@ -217,7 +216,10 @@ class PhaseHarmonics2d(object):
             hatpsi_la = self.hatpsi # (J,L2,M,N,2)
             assert(nb==1 and nc==1) # otherwise fix submeanC
             nb_channels = self.this_wph['la1'].shape[0]
-            Sout = input.new(nb, nc, nb_channels, 1, 1, 2)
+            if self.chunk_id < self.nb_chunks-1:
+                Sout = input.new(nb, nc, nb_channels, 1, 1, 2)
+            else:
+                Sout = input.new(nb, nc, nb_channels+1, 1, 1, 2)
             idxb = 0 # since nb=1
             idxc = 0 # since nc=1, otherwise use loop
             hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
@@ -239,21 +241,23 @@ class PhaseHarmonics2d(object):
             # compute mean spatial
             corr_xpsi_bc = mulcu(xpsi_bc_la1, conjugate(xpsi_bc_la2)) # (1,P_c,M,N,2)
             corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2)
-            Sout[idxb,idxc,:,:,:,:] = corr_bc[0,:,:,:,:] # only keep real part
+            Sout[idxb,idxc,0:nb_channels,:,:,:] = corr_bc[0,:,:,:,:] # only keep real part
+            if self.chunk_id==self.nb_chunks-1:
+                # ADD 1 chennel for spatial phiJ
+                #print('add l2 phiJ to last channel')
+                hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
+                xphi_c = ifft2_c2c(hatxphi_c)
+                # submean from spatial M N
+                xphi0_c = self.subinitmeanJ(xphi_c)
+                xphi0_mod = self.modulus(xphi0_c) # (nb,nc,M,N,2)
+                xphi0_mod2 = mulcu(xphi0_mod,xphi0_mod) # (nb,nc,M,N,2)
+                #nb = hatx_c.shape[0]
+                #nc = hatx_c.shape[1]
+                #Sout = input.new(1, 1, 1, 1, 1, 2)
+                Sout[:,:,-1,:,:,:] = torch.mean(torch.mean(xphi0_mod2,-2,True),-3,True)
         else:
-            # ADD 1 chennel for spatial phiJ
-            # add l2 phiJ to last channel
-            hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
-            xpsi_c = ifft2_c2c(hatxphi_c)
-            # submean from spatial M N
-            xpsi0_c = self.subinitmeanJ(xpsi_c)
-            xpsi0_mod = self.modulus(xpsi0_c) # (nb,nc,M,N,2)
-            xpsi0_mod2 = mulcu(xpsi0_mod,xpsi0_mod) # (nb,nc,M,N,2)
-            nb = hatx_c.shape[0]
-            nc = hatx_c.shape[1]
-            Sout = input.new(nb, nc, 1, 1, 1, 2)
-            Sout[:,:,0,:,:,:] = torch.mean(torch.mean(xpsi0_mod2,-2,True),-3,True)
-
+            assert(false)
+            
         return Sout
 
     def __call__(self, input):
