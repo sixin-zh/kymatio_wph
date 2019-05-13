@@ -133,8 +133,9 @@ class DivInitStdQ0(object):
             stdinput = stdinput[:, 0, ...].unsqueeze(1)  # size:(J,1,K,M,N,2)
             # m = torch.mean(torch.mean(stdinput, -2, True), -3, True)
             # stdinput = stdinput - m
+            d = input.shape[-2]*input.shape[-3] 
             stdinput = torch.norm(stdinput, dim=-1, keepdim=True)
-            stdinput = torch.norm(stdinput, dim=(-2, -3), keepdim=True)
+            stdinput = torch.norm(stdinput, dim=(-2, -3), keepdim=True) / np.sqrt(d)
             self.stdinput = stdinput
         output = input/self.stdinput
         return output
