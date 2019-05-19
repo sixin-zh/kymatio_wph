@@ -14,7 +14,7 @@ from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 
 class PhaseHarmonics2d(object):
-    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, devid=0):
+    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, devid=0, submean=1):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         self.dj = delta_j # max scale interactions
         self.dl = delta_l # max angular interactions
@@ -23,6 +23,7 @@ class PhaseHarmonics2d(object):
         self.k = torch.arange(0, self.K).type(torch.float) # vector between [0,..,K-1]
         self.nb_chunks = nb_chunks # number of chunks to cut whp cov
         self.chunk_id = chunk_id
+        self.submean = submean
         assert( self.chunk_id < self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
         if self.dl > self.L:
             raise (ValueError('delta_l must be <= L'))
@@ -41,8 +42,9 @@ class PhaseHarmonics2d(object):
         #if self.chunk_id < self.nb_chunks:
         self.idx_wph = self.compute_idx()
         self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
-        self.subinitmean = SubInitSpatialMeanC()
-        self.subinitmeanJ = SubInitSpatialMeanC()
+        if self.submean == 1:
+            self.subinitmean = SubInitSpatialMeanC()
+            self.subinitmeanJ = SubInitSpatialMeanC()
 
     def filters_tensor(self):
         # TODO load bump steerable wavelets
@@ -232,7 +234,10 @@ class PhaseHarmonics2d(object):
             xpsi_wph_bc = xpsi_ph_bc.permute(0,1,4,2,3,5).contiguous() # (J,L2,K,M,N,2)
             #print('xpsi_wph_bc',xpsi_wph_bc.shape)
             # sub spatial mean for all channels
-            xpsi_wph_bc0 = self.subinitmean(xpsi_wph_bc)
+            if self.submean==1:
+                xpsi_wph_bc0 = self.subinitmean(xpsi_wph_bc)
+            else:
+                xpsi_wph_bc0 = xpsi_wph_bc
             # reshape to (1,J*L2*K,M,N,2)
             xpsi_wph_bc0_ = xpsi_wph_bc0.view(1,J*L2*K,M,N,2)
             # select la1, et la2, P_c = number of |la1| in this chunk
@@ -248,7 +253,10 @@ class PhaseHarmonics2d(object):
                 hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
                 xphi_c = ifft2_c2c(hatxphi_c)
                 # submean from spatial M N
-                xphi0_c = self.subinitmeanJ(xphi_c)
+                if self.submean==1:
+                    xphi0_c = self.subinitmeanJ(xphi_c)
+                else:
+                    xphi0_c = xphi_c
                 xphi0_mod = self.modulus(xphi0_c) # (nb,nc,M,N,2)
                 xphi0_mod2 = mulcu(xphi0_mod,xphi0_mod) # (nb,nc,M,N,2)
                 #nb = hatx_c.shape[0]
