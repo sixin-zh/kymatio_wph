@@ -385,8 +385,6 @@ class PhaseHarmonics2d(object):
                 xpsi0_c = self.divinitstdJ(xpsi0_c)
             xpsi0_mod = self.modulus(xpsi0_c) # (nb,nc,M,N,2)
             xpsi0_mod2 = mulcu(xpsi0_mod,xpsi0_mod) # (nb,nc,M,N,2)
-            nb = hatx_c.shape[0]
-            nc = hatx_c.shape[1]
             Sout[:,:,-1,:,:,:] = torch.mean(torch.mean(xpsi0_mod2,-2,True),-3,True)
 
         return Sout
