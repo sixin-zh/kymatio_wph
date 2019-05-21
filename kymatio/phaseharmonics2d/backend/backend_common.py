@@ -137,6 +137,7 @@ class DivInitStdQ0(object):
             stdinput = torch.norm(stdinput, dim=-1, keepdim=True)
             stdinput = torch.norm(stdinput, dim=(-2, -3), keepdim=True) / np.sqrt(d)
             self.stdinput = stdinput
+            print('stdinput max,min:',self.stdinput.max(),self.stdinput.min())
         output = input/self.stdinput
         return output
 

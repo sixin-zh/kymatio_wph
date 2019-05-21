@@ -23,6 +23,7 @@ class PhaseHarmonics2d(object):
         self.k = torch.arange(0, self.K).type(torch.float) # vector between [0,..,K-1]
         self.nb_chunks = nb_chunks # number of chunks to cut whp cov
         self.chunk_id = chunk_id
+        self.devid = devid
         self.submean = submean
         assert( self.chunk_id < self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
         if self.dl > self.L:
@@ -44,7 +45,7 @@ class PhaseHarmonics2d(object):
         self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
         if self.submean == 1:
             self.subinitmean = SubInitSpatialMeanC()
-            self.subinitmeanJ = SubInitSpatialMeanC()
+        self.subinitmeanJ = SubInitSpatialMeanC()
 
     def filters_tensor(self):
         # TODO load bump steerable wavelets
@@ -166,18 +167,22 @@ class PhaseHarmonics2d(object):
     def _type(self, _type, devid=None):
         self.hatpsi = self.hatpsi.type(_type)
         self.hatphi = self.hatphi.type(_type)
+        self.k = self.k.type(_type)
         if devid is not None:
             self.hatpsi = self.hatpsi.to(devid)
             self.hatphi = self.hatphi.to(devid)
+            self.k = self.k.to(devid)
         self.pad.padding_module.type(_type)
-        self.k = self.k.type(_type)
+        
         return self
 
-    def cuda(self, devid=0):
+    def cuda(self):
         """
             Moves tensors to the GPU
         """
-        print('call cuda')
+        devid = self.devid
+        print('call cuda with devid=', devid)
+        assert(devid>=0)
         if self.chunk_id < self.nb_chunks:
             self.this_wph['la1'] = self.this_wph['la1'].type(torch.cuda.LongTensor).to(devid)
             self.this_wph['la2'] = self.this_wph['la2'].type(torch.cuda.LongTensor).to(devid)
@@ -249,19 +254,13 @@ class PhaseHarmonics2d(object):
             Sout[idxb,idxc,0:nb_channels,:,:,:] = corr_bc[0,:,:,:,:] # only keep real part
             if self.chunk_id==self.nb_chunks-1:
                 # ADD 1 chennel for spatial phiJ
-                #print('add l2 phiJ to last channel')
+                # print('add l2 phiJ to last channel')
                 hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
                 xphi_c = ifft2_c2c(hatxphi_c)
                 # submean from spatial M N
-                if self.submean==1:
-                    xphi0_c = self.subinitmeanJ(xphi_c)
-                else:
-                    xphi0_c = xphi_c
+                xphi0_c = self.subinitmeanJ(xphi_c)
                 xphi0_mod = self.modulus(xphi0_c) # (nb,nc,M,N,2)
                 xphi0_mod2 = mulcu(xphi0_mod,xphi0_mod) # (nb,nc,M,N,2)
-                #nb = hatx_c.shape[0]
-                #nc = hatx_c.shape[1]
-                #Sout = input.new(1, 1, 1, 1, 1, 2)
                 Sout[:,:,-1,:,:,:] = torch.mean(torch.mean(xphi0_mod2,-2,True),-3,True)
         else:
             assert(false)
