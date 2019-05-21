@@ -28,7 +28,7 @@ class PhaseHarmonics2d(object):
         self.chunk_id = chunk_id
         self.devid = devid # gpu id
         self.submean = submean
-        assert( self.chunk_id <= self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
+        assert( self.chunk_id < self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
         if self.dl > self.L:
             raise (ValueError('delta_l must be <= L'))
 
@@ -52,8 +52,8 @@ class PhaseHarmonics2d(object):
             if self.submean == 1:
                 self.subinitmean1 = SubInitSpatialMeanC()
                 self.subinitmean2 = SubInitSpatialMeanC()
-        else:
-            self.subinitmeanJ = SubInitSpatialMeanC()
+            if self.chunk_id == self.nb_chunks-1:
+                self.subinitmeanJ = SubInitSpatialMeanC()
 
     def filters_tensor(self):
         J = self.J
@@ -327,42 +327,43 @@ class PhaseHarmonics2d(object):
         # input: (nb,nc,M,N)
         x_c = pad(input) # add zeros to imag part -> (nb,nc,M,N,2)
         hatx_c = fft2_c2c(x_c) # fft2 -> (nb,nc,M,N,2)
-        #print('nbchannels',nb_channels)
-        if self.chunk_id < self.nb_chunks:
-            nb = hatx_c.shape[0]
-            nc = hatx_c.shape[1]
-            hatpsi_la = self.hatpsi # (J,L2,M,N,2)
-            assert(nb==1 and nc==1) # for submeanC
-            nb_channels = self.this_wph['la1'].shape[0]
+        nb = hatx_c.shape[0]
+        nc = hatx_c.shape[1]
+        hatpsi_la = self.hatpsi # (J,L2,M,N,2)
+        assert(nb==1 and nc==1) # for submeanC
+        nb_channels = self.this_wph['la1'].shape[0]
+        if self.chunk_id < self.nb_chunks-1:
             Sout = input.new(nb, nc, nb_channels, \
                              1, 1, 2) # (nb,nc,nb_channels,1,1,2)
-            for idxb in range(nb):
-                for idxc in range(nc):
-                    hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
-                    hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L2,M,N,2)
-                    xpsi_bc = ifft2_c2c(hatxpsi_bc)
-                    # reshape to (1,J*L,M,N,2)
-                    xpsi_bc = xpsi_bc.view(1,J*L2,M,N,2)
-                    # select la1, et la2, P_c = number of |la1| in this chunk
-                    xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1']) # (1,P_c,M,N,2)
-                    xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2']) # (1,P_c,M,N,2)
-                    k1 = self.this_wph['k1']
-                    k2 = self.this_wph['k2']
-                    xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,P_c,M,N,2)
-                    xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2, -k2) # (1,P_c,M,N,2)
-                    if self.submean==1:
-                        # sub spatial mean along M and N
-                        xpsi0_bc_la1k1 = self.subinitmean1(xpsi_bc_la1k1) # (1,P_c,M,N,2)
-                        xpsi0_bc_la2k2 = self.subinitmean2(xpsi_bc_la2k2) # (1,P_c,M,N,2)
-                    else:
-                        xpsi0_bc_la1k1 = xpsi_bc_la1k1
-                        xpsi0_bc_la2k2 = xpsi_bc_la2k2
-                    # compute mean spatial
-                    corr_xpsi_bc = mulcu(xpsi0_bc_la1k1,xpsi0_bc_la2k2) # (1,P_c,M,N,2)
-                    corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2)
-                    Sout[idxb,idxc,:,:,:,:] = corr_bc[0,:,:,:,:]
-
         else:
+            Sout = input.new(nb, nc, nb_channels+1, \
+                             1, 1, 2) # (nb,nc,nb_channels,1,1,2)
+        idxb=0
+        idxc=0
+        hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
+        hatxpsi_bc = cdgmm(hatpsi_la, hatx_bc) # (J,L2,M,N,2)
+        xpsi_bc = ifft2_c2c(hatxpsi_bc)
+        # reshape to (1,J*L,M,N,2)
+        xpsi_bc = xpsi_bc.view(1,J*L2,M,N,2)
+        # select la1, et la2, P_c = number of |la1| in this chunk
+        xpsi_bc_la1 = torch.index_select(xpsi_bc, 1, self.this_wph['la1']) # (1,P_c,M,N,2)
+        xpsi_bc_la2 = torch.index_select(xpsi_bc, 1, self.this_wph['la2']) # (1,P_c,M,N,2)
+        k1 = self.this_wph['k1']
+        k2 = self.this_wph['k2']
+        xpsi_bc_la1k1 = self.phase_harmonics(xpsi_bc_la1, k1) # (1,P_c,M,N,2)
+        xpsi_bc_la2k2 = self.phase_harmonics(xpsi_bc_la2, -k2) # (1,P_c,M,N,2)
+        if self.submean==1:
+            # sub spatial mean along M and N
+            xpsi0_bc_la1k1 = self.subinitmean1(xpsi_bc_la1k1) # (1,P_c,M,N,2)
+            xpsi0_bc_la2k2 = self.subinitmean2(xpsi_bc_la2k2) # (1,P_c,M,N,2)
+        else:
+            xpsi0_bc_la1k1 = xpsi_bc_la1k1
+            xpsi0_bc_la2k2 = xpsi_bc_la2k2
+        # compute mean spatial
+        corr_xpsi_bc = mulcu(xpsi0_bc_la1k1,xpsi0_bc_la2k2) # (1,P_c,M,N,2)
+        corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2)
+        Sout[idxb,idxc,0:nb_channels,:,:,:] = corr_bc[0,:,:,:,:]
+        if self.chunk_id == self.nb_chunks-1:
             # ADD 1 chennel for spatial phiJ
             # add l2 phiJ to last channel
             hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
@@ -373,9 +374,8 @@ class PhaseHarmonics2d(object):
             xpsi0_mod2 = mulcu(xpsi0_mod,xpsi0_mod) # (nb,nc,M,N,2)
             nb = hatx_c.shape[0]
             nc = hatx_c.shape[1]
-            Sout = input.new(nb, nc, 1, \
-                             1, 1, 2)
-            Sout[:,:,0,:,:,:] = torch.mean(torch.mean(xpsi0_mod2,-2,True),-3,True)
+            Sout = input.new(nb, nc, 1, 1, 1, 2)
+            Sout[:,:,-1,:,:,:] = torch.mean(torch.mean(xpsi0_mod2,-2,True),-3,True)
 
         return Sout
         
