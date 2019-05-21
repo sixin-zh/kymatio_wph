@@ -107,36 +107,38 @@ class SubInitMeanIso(object):
         output = input - self.minput
         return output
 
-
 class DivInitStd(object):
     def __init__(self):
         self.stdinput = None
+        self.eps = 1e-16
 
     def __call__(self, input):
         if self.stdinput is None:
             stdinput = input.clone().detach()  # input size:(J,Q,K,M,N,2)
             # m = torch.mean(torch.mean(stdinput, -2, True), -3, True)
             # stdinput = stdinput - m
+            d = input.shape[-2]*input.shape[-3] 
             stdinput = torch.norm(stdinput, dim=-1, keepdim=True)
             stdinput = torch.norm(stdinput, dim=(-2, -3), keepdim=True)
-            self.stdinput = stdinput
+            self.stdinput = (stdinput + self.eps)  / np.sqrt(d)
+            print('stdinput max,min:',self.stdinput.max(),self.stdinput.min())
+
         output = input/self.stdinput
         return output
 
 class DivInitStdQ0(object):
     def __init__(self):
         self.stdinput = None
-
+        self.eps = 1e-16
+        
     def __call__(self, input):
         if self.stdinput is None:
             stdinput = input.clone().detach()  # input size:(J,Q,K,M,N,2)
             stdinput = stdinput[:, 0, ...].unsqueeze(1)  # size:(J,1,K,M,N,2)
-            # m = torch.mean(torch.mean(stdinput, -2, True), -3, True)
-            # stdinput = stdinput - m
             d = input.shape[-2]*input.shape[-3] 
             stdinput = torch.norm(stdinput, dim=-1, keepdim=True)
             stdinput = torch.norm(stdinput, dim=(-2, -3), keepdim=True) / np.sqrt(d)
-            self.stdinput = stdinput
+            self.stdinput = stdinput + self.eps
             print('stdinput max,min:',self.stdinput.max(),self.stdinput.min())
         output = input/self.stdinput
         return output

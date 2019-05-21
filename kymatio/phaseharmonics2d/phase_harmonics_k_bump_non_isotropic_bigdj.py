@@ -14,12 +14,12 @@ import numpy as np
 import scipy.io as sio
 #import torch.nn.functional as F
 from .backend import cdgmm, Modulus, fft, \
-    Pad, SubInitSpatialMeanC, PhaseHarmonics2, mulcu
+    Pad, SubInitSpatialMeanC, PhaseHarmonics2, mulcu, DivInitStd
 from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 
 class PhaseHarmonics2d(object):
-    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, devid=0, submean=1):
+    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, devid=0, submean=1, stdnorm=0):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         self.dj = delta_j # max scale interactions
         self.dl = delta_l # max angular interactions
@@ -28,6 +28,7 @@ class PhaseHarmonics2d(object):
         self.chunk_id = chunk_id
         self.devid = devid # gpu id
         self.submean = submean
+        self.stdnorm = stdnorm
         assert( self.chunk_id < self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
         if self.dl > self.L:
             raise (ValueError('delta_l must be <= L'))
@@ -50,11 +51,19 @@ class PhaseHarmonics2d(object):
             self.idx_wph = self.compute_idx()
             self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
             if self.submean == 1:
+                print('submean is on')
                 self.subinitmean1 = SubInitSpatialMeanC()
                 self.subinitmean2 = SubInitSpatialMeanC()
+                if self.stdnorm == 1:
+                    print('stdnorm is on')
+                    self.divinitstd1 = DivInitStd()
+                    self.divinitstd2 = DivInitStd()
+                    
             if self.chunk_id == self.nb_chunks-1:
                 self.subinitmeanJ = SubInitSpatialMeanC()
-
+                if self.stdnorm == 1:
+                    self.divinitstdJ = DivInitStd()
+    
     def filters_tensor(self):
         J = self.J
         L = self.L
@@ -285,7 +294,6 @@ class PhaseHarmonics2d(object):
         if devid is not None:
             self.hatpsi = self.hatpsi.to(devid)
             self.hatphi = self.hatphi.to(devid)
-        #print('in _type',type(self.hatpsi))
         self.pad.padding_module.type(_type)
         return self
 
@@ -312,7 +320,6 @@ class PhaseHarmonics2d(object):
         return self._type(torch.FloatTensor)
 
     def forward(self, input):
-          
         J = self.J
         M = self.M
         N = self.N
@@ -359,6 +366,10 @@ class PhaseHarmonics2d(object):
         else:
             xpsi0_bc_la1k1 = xpsi_bc_la1k1
             xpsi0_bc_la2k2 = xpsi_bc_la2k2
+        if self.stdnorm==1:
+            xpsi0_bc_la1k1 = self.divinitstd1(xpsi0_bc_la1k1)
+            xpsi0_bc_la2k2 = self.divinitstd2(xpsi0_bc_la2k2)
+        
         # compute mean spatial
         corr_xpsi_bc = mulcu(xpsi0_bc_la1k1,xpsi0_bc_la2k2) # (1,P_c,M,N,2)
         corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2)
@@ -370,11 +381,12 @@ class PhaseHarmonics2d(object):
             xpsi_c = ifft2_c2c(hatxphi_c)
             # submean from spatial M N
             xpsi0_c = self.subinitmeanJ(xpsi_c)
+            if self.stdnorm==1:
+                xpsi0_c = self.divinitstdJ(xpsi0_c)
             xpsi0_mod = self.modulus(xpsi0_c) # (nb,nc,M,N,2)
             xpsi0_mod2 = mulcu(xpsi0_mod,xpsi0_mod) # (nb,nc,M,N,2)
             nb = hatx_c.shape[0]
             nc = hatx_c.shape[1]
-            Sout = input.new(nb, nc, 1, 1, 1, 2)
             Sout[:,:,-1,:,:,:] = torch.mean(torch.mean(xpsi0_mod2,-2,True),-3,True)
 
         return Sout
