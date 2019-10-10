@@ -2,6 +2,7 @@
 import torch
 import torch.nn as nn
 from torch.nn import ReflectionPad2d
+from torch.nn import ZeroPad2d
 from torch.autograd import Function
 import numpy as np
 
@@ -108,10 +109,11 @@ class SubInitMeanIso(object):
         return output
 
 class DivInitStd(object):
-    def __init__(self):
+    def __init__(self,stdcut=0):
         self.stdinput = None
-        self.eps = 1e-16
-
+        self.eps = stdcut
+        print('DivInitStd:stdcut',stdcut)
+    
     def __call__(self, input):
         if self.stdinput is None:
             stdinput = input.clone().detach()  # input size:(J,Q,K,M,N,2)
@@ -120,7 +122,8 @@ class DivInitStd(object):
             d = input.shape[-2]*input.shape[-3] 
             stdinput = torch.norm(stdinput, dim=-1, keepdim=True)
             stdinput = torch.norm(stdinput, dim=(-2, -3), keepdim=True)
-            self.stdinput = (stdinput + self.eps)  / np.sqrt(d)
+            self.stdinput = stdinput  / np.sqrt(d)
+            self.stdinput = self.stdinput + self.eps
             print('stdinput max,min:',self.stdinput.max(),self.stdinput.min())
 
         output = input/self.stdinput
@@ -143,6 +146,44 @@ class DivInitStdQ0(object):
         output = input/self.stdinput
         return output
 
+# substract spatial mean (complex valued input), average over ell
+class SubInitSpatialMeanCL(object):
+    def __init__(self):
+        self.minput = None
+
+    def __call__(self, input): # input: (J,L2,M,N,K,2)
+        if self.minput is None:
+            minput = input.clone().detach()
+            minput = torch.mean(minput, dim=1, keepdim=True)
+            minput = torch.mean(minput, dim=2, keepdim=True)
+            minput = torch.mean(minput, dim=3, keepdim=True)
+            self.minput = minput # .expand_as(input)
+            print('minput size',self.minput.shape)
+            print('sum of minput',self.minput.sum())
+
+        output = input - self.minput
+        return output
+    
+# divide by std, average over ell
+class DivInitStdL(object):
+    def __init__(self):
+        self.stdinput = None
+
+    def __call__(self, input): # input: (J,L2,M,N,K,2)
+        if self.stdinput is None:
+            stdinput = input.clone().detach()
+            #dl = input.shape[1]*input.shape[2]*input.shape[3] 
+            stdinput = torch.norm(stdinput, dim=-1, keepdim=True) # (J,L2,M,N,K,1)
+            stdinput = torch.mul(stdinput,stdinput)
+            stdinput = torch.mean(stdinput, dim=1, keepdim=True)
+            stdinput = torch.mean(stdinput, dim=2, keepdim=True)
+            stdinput = torch.mean(stdinput, dim=3, keepdim=True)
+            self.stdinput = torch.sqrt(stdinput) # .expand_as(input) #  / dl)
+            print('stdinput size',self.stdinput.shape)
+            print('stdinput max,min:',self.stdinput.max(),self.stdinput.min())
+        
+        output = input/self.stdinput
+        return output
 
 class SubInitSpatialMeanCinFFT(object):
     def __init__(self):
@@ -216,7 +257,7 @@ class SubInitMean(object):
         return output
 
 class Pad(object):
-    def __init__(self, pad_size, pre_pad=False):
+    def __init__(self, pad_size, pre_pad=False, pad_mode='zero'):
         """
             Padding which allows to simultaneously pad in a reflection fashion
             and map to complex.
@@ -229,7 +270,12 @@ class Pad(object):
                 if set to true, then there is no padding, one simply adds the imaginarty part.
         """
         self.pre_pad = pre_pad
-        self.padding_module = ReflectionPad2d(pad_size)
+        if pad_mode == 'Reflect':
+            print('use reflect pad')
+            self.padding_module = ReflectionPad2d(pad_size)
+        else:
+            print('use zero pad')
+            self.padding_module = ZeroPad2d(pad_size)
 
     def __call__(self, input):
         if(self.pre_pad):
