@@ -1,4 +1,4 @@
-# isotropic case, implement basic phase harmonics
+# non-isotropic case, implement basic phase harmonics
 
 __all__ = ['PhaseHarmonics2d']
 
@@ -9,12 +9,13 @@ import numpy as np
 import scipy.io as sio
 #import torch.nn.functional as F
 from .backend import cdgmm, Modulus, fft, \
-    Pad, SubInitSpatialMeanC, PhaseHarmonicsIso, mulcu, conjugate
+    Pad, SubInitSpatialMeanC, PhaseHarmonicsIso, \
+    mulcu, conjugate, DivInitStd
 from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 
 class PhaseHarmonics2d(object):
-    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, devid=0, submean=1):
+    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, devid=0, submean=1, stdnorm=0, outmode=0):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         self.dj = delta_j # max scale interactions
         self.dl = delta_l # max angular interactions
@@ -25,10 +26,11 @@ class PhaseHarmonics2d(object):
         self.chunk_id = chunk_id
         self.devid = devid
         self.submean = submean
+        self.stdnorm = stdnorm
         assert( self.chunk_id < self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
         if self.dl > self.L:
             raise (ValueError('delta_l must be <= L'))
-        
+        self.outmode = outmode # 0 means rec, 1 means evaluation
         self.pre_pad = False # no padding
         self.cache = False # cache filter bank
         self.build()
@@ -45,7 +47,10 @@ class PhaseHarmonics2d(object):
         self.this_wph = self.get_this_chunk(self.nb_chunks, self.chunk_id)
         if self.submean == 1:
             self.subinitmean = SubInitSpatialMeanC()
-        self.subinitmeanJ = SubInitSpatialMeanC()
+            self.subinitmeanJ = SubInitSpatialMeanC()
+            if self.stdnorm == 1:
+                self.divinitstd = DivInitStd()
+                self.divinitstdJ = DivInitStd()
 
     def filters_tensor(self):
         # TODO load bump steerable wavelets
@@ -124,7 +129,7 @@ class PhaseHarmonics2d(object):
         # j1 = j2
         for j1 in range(J):
             for ell1 in range(L2):
-                k1=0
+                k1 = 0
                 j2 = j1
                 for ell2 in range(L2):
                     if periodic_dis(ell1, ell2, L2) <= dl:
@@ -223,8 +228,15 @@ class PhaseHarmonics2d(object):
         nb_channels = self.this_wph['la1'].shape[0]
         if self.chunk_id < self.nb_chunks-1:
             Sout = input.new(nb, nc, nb_channels, 1, 1, 2)
+            if self.outmode == 1:
+                Sout1 = input.new(nb, nc, nb_channels, 1, 1, 2)
+                Sout2 = input.new(nb, nc, nb_channels, 1, 1, 2)    
         else:
             Sout = input.new(nb, nc, nb_channels+1, 1, 1, 2)
+            if self.outmode == 1:
+                Sout1 = input.new(nb, nc, nb_channels+1, 1, 1, 2)
+                Sout2 = input.new(nb, nc, nb_channels+1, 1, 1, 2)
+        
         idxb = 0 # since nb=1
         idxc = 0 # since nc=1, otherwise use loop
         hatx_bc = hatx_c[idxb,idxc,:,:,:] # (M,N,2)
@@ -238,6 +250,8 @@ class PhaseHarmonics2d(object):
         # sub spatial mean for all channels
         if self.submean==1:
             xpsi_wph_bc0 = self.subinitmean(xpsi_wph_bc)
+            if self.stdnorm==1:
+                xpsi_wph_bc0 = self.divinitstd(xpsi_wph_bc0)
         else:
             xpsi_wph_bc0 = xpsi_wph_bc
         # reshape to (1,J*L2*K,M,N,2)
@@ -245,6 +259,9 @@ class PhaseHarmonics2d(object):
         # select la1, et la2, P_c = number of |la1| in this chunk
         xpsi_bc_la1 = torch.index_select(xpsi_wph_bc0_, 1, self.this_wph['la1']) # (1,P_c,M,N,2)
         xpsi_bc_la2 = torch.index_select(xpsi_wph_bc0_, 1, self.this_wph['la2']) # (1,P_c,M,N,2)
+        if self.outmode == 1:
+            Sout1[idxb,idxc,0:nb_channels,:,:,:] = torch.mean(torch.mean(xpsi_bc_la1,-2,True),-3,True)
+            Sout2[idxb,idxc,0:nb_channels,:,:,:] = torch.mean(torch.mean(xpsi_bc_la2,-2,True),-3,True)
         # compute mean spatial
         corr_xpsi_bc = mulcu(xpsi_bc_la1, conjugate(xpsi_bc_la2)) # (1,P_c,M,N,2)
         corr_bc = torch.mean(torch.mean(corr_xpsi_bc,-2,True),-3,True) # (1,P_c,1,1,2)
@@ -254,12 +271,21 @@ class PhaseHarmonics2d(object):
             hatxphi_c = cdgmm(hatx_c, self.hatphi) # (nb,nc,M,N,2)
             xphi_c = ifft2_c2c(hatxphi_c)
             # submean from spatial M N
-            xphi0_c = self.subinitmeanJ(xphi_c)
+            if self.submean==1:
+                xphi0_c = self.subinitmeanJ(xphi_c)
+                if self.stdnorm==1:
+                    xphi0_c = self.divinitstdJ(xphi0_c)
             xphi0_mod = self.modulus(xphi0_c) # (nb,nc,M,N,2)
             xphi0_mod2 = mulcu(xphi0_mod,xphi0_mod) # (nb,nc,M,N,2)
             Sout[:,:,-1,:,:,:] = torch.mean(torch.mean(xphi0_mod2,-2,True),-3,True)
-            
-        return Sout
+            if self.outmode == 1:
+                Sout1[:,:,-1,:,:,:] = torch.mean(torch.mean(xphi_c,-2,True),-3,True)
+                Sout2[:,:,-1,:,:,:] = torch.mean(torch.mean(xphi_c,-2,True),-3,True)
+                
+        if self.outmode == 1:
+            return Sout, Sout1, Sout2
+        else:
+            return Sout
 
     def __call__(self, input):
         return self.forward(input)
