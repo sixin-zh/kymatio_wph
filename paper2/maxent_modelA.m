@@ -17,13 +17,13 @@ tkt = sprintf('pwregress_maxent_bumps2d_dj0_nor_Delta%d_%s_J%d_L%d_K%d_m%d',Delt
 %% get data and estimate spectral
 switch name
     case 'tur2a'
-        load('../data/kymatio_wph_data/ns_randn4_train_N256.mat')
+        load('../data/ns_randn4_train_N256.mat')
     case 'anisotur2a'
-        load('../data/kymatio_wph_data/ns_randn4_aniso_train_N256.mat')
+        load('../data/ns_randn4_aniso_train_N256.mat')
     case 'mrw2dd'
-        load('../data/kymatio_wph_data/demo_mrw2dd_train_N256.mat')        
+        load('../data/demo_mrw2dd_train_N256.mat')        
     case 'bubbles'
-        load('../data/kymatio_wph_data/demo_brDuD111_N256.mat')
+        load('../data/demo_brDuD111_N256.mat')
 end
 
 N = size(imgs,1);
