@@ -4,7 +4,7 @@ addpath_scatnet;
 addpath ../minFunc_2012/minFunc
 addpath ../minFunc_2012/minFunc/compiled
 
-name = 'tur2a';
+name = 'mrw2dd';
 Ktrain = 10;
 Kbins = 1; % each bin contains Kbins samples to estimate the beta
 Delta = 2;
