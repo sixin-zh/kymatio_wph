@@ -1,16 +1,15 @@
-name = 'tur2a';
+name = 'mrw2dd';
 
 switch name
     case 'anisotur2a'
         droot = './out2';
-        %tkt = 'pwregress_maxent_bumps2d_dj0_nor_Delta2_anisotur2a_J5_L8_K10_m1';
+        tkt = 'pwregress_maxent_bumps2d_dj0_nor_Delta2_anisotur2a_J5_L8_K10_m1';
     case 'tur2a'
         droot = './out2';
-        tkt = 'pwregress_maxent_bumps2d_dj0_nor_Delta2_tur2a_J5_L8_K10_m1'; % pwregress_maxent_bumps2d_dj0_nor_Delta2_tur2a_J5_L8_K10_m1';
+        tkt = 'pwregress_maxent_bumps2d_dj0_nor_Delta2_tur2a_J5_L8_K10_m1';
     case 'mrw2dd'
         droot = './out2';
-        %tkt = 'pwregress_maxent_bumps2d_dj0_nor_Delta2_mrw2dd_J5_L8_K10_m1';
-        % TODO export kb=2:10 for high-order moments and long range spatial
+        tkt = 'pwregress_maxent_bumps2d_dj0_nor_Delta2_mrw2dd_J5_L8_K10_m1';
     case 'bubbles'
         droot = './out2';
         %tkt = 'pwregress_maxent_bumps2d_dj0_nor_Delta2_bubbles_J5_L8_K1_m1';

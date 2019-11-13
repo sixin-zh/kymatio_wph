@@ -4,8 +4,8 @@ addpath_scatnet;
 addpath ../minFunc_2012/minFunc
 addpath ../minFunc_2012/minFunc/compiled
 
-name = 'mrw2dd';
-Ktrain = 10;
+name = 'bubbles';
+Ktrain = 1;  % 10;
 Kbins = 1; % each bin contains Kbins samples to estimate the beta
 Delta = 2;
 J = 5;

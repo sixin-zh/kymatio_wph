@@ -8,11 +8,10 @@ import traceback
 import scipy
 import scipy.io as sio
 
-def getori_mat(fname):
+def getori_mat(fname,froot0='./data/kymatio_wph_data/'):
     print('getori matlab fname=',fname)
     # get original img
-    froot0 = './data/kymatio_wph_data/'
-    froot1 = './data/kymatio_wph_data/'
+    froot1 = froot0
     if not os.path.isfile(froot1+fname+'.mat'):
         # cache it
         assert os.path.isfile(froot0+fname+'.mat') , 'file not found'
@@ -22,7 +21,7 @@ def getori_mat(fname):
     imgs = np.transpose(data['imgs'],(2,0,1)) # np.transpose(data['imgs'],(2,1,0))
     return imgs
     
-def evalcovfoveal_test(eng,datalabel,ktest,Ksel,J,L,Delta,kmin,kmax,jmin,ext='matlab',cache=1,mode=0):
+def evalcovfoveal_test(eng,froot0,datalabel,ktest,Ksel,J,L,Delta,kmin,kmax,jmin,ext='matlab',cache=1,mode=0):
     psdfile = datalabel + '_k' + str(ktest) + '_' + str(Ksel) + '_evalcovfoveal' + str(mode) +\
             '_test_' + str(J)+str(L)+str(Delta)+str(kmin)+str(kmax)+str(jmin) + '.mat'
     fol = str(hash_str2int2(psdfile))
@@ -37,7 +36,7 @@ def evalcovfoveal_test(eng,datalabel,ktest,Ksel,J,L,Delta,kmin,kmax,jmin,ext='ma
         covmean_im = dic['covmean_im']
     else:
         if ext=='matlab':
-            imgs = getori_mat(datalabel)
+            imgs = getori_mat(datalabel,froot0)
         else:
             assert(0)
         if imgs.shape[0]>=ktest+Ksel:
