@@ -7,8 +7,9 @@ import os.path, time
 import traceback
 import scipy
 import scipy.io as sio
+import matplotlib.pyplot as plt
 
-def getori_mat(fname,froot0='./data/kymatio_wph_data/'):
+def getori_mat(fname,froot0='./data/kymatio_wph_data/',permute=1):
     print('getori matlab fname=',fname)
     # get original img
     froot1 = froot0
@@ -18,10 +19,46 @@ def getori_mat(fname,froot0='./data/kymatio_wph_data/'):
         shutil.copyfile(froot0+fname+'.mat',froot1+fname+'.mat')
     print('load cached data: ' + froot1 + fname)
     data = sio.loadmat(froot1 + fname + '.mat')
-    imgs = np.transpose(data['imgs'],(2,0,1)) # np.transpose(data['imgs'],(2,1,0))
+    if permute==1:
+        imgs = np.transpose(data['imgs'],(2,0,1))
+    else:
+        imgs = data['imgs']
     return imgs
-    
-def evalcovfoveal_test(eng,froot0,datalabel,ktest,Ksel,J,L,Delta,kmin,kmax,jmin,ext='matlab',cache=1,mode=0):
+
+def get_kymatio_pt(droot1,hRUNFOL,hptfile,N,kstart,maxKrec,Ksel,start0=0,nbstart=0):
+    print('in get_kymatio_pt')
+    assert(kstart>=1)
+    if nbstart>0:
+        RUNFOL = droot1 + '/' + hRUNFOL + '_ks' + str(kstart-1) + 'ns' + str(nbstart)
+    else:
+        RUNFOL = droot1 + '/' + hRUNFOL + '_ks' + str(kstart-1)
+    loss_ks = np.zeros(maxKrec)
+    imrec_ks = []
+    recs = np.zeros((min(maxKrec,Ksel),N,N))
+    for krec in range(maxKrec):
+        ptfile = hptfile + '_krec' + str(krec) + '_start' + str(start0) + '.pt'
+        print('get ptfile',ptfile)
+        saved_result = torch.load(RUNFOL + '/' + ptfile)
+        im_opt = saved_result['tensor_opt'].numpy()
+        loss = saved_result['normalized_loss']
+        loss_ks[krec] = loss
+        imrec_ks.append(im_opt[0,0,:,:])
+        indrec=np.argsort(loss_ks)
+    for krec_s in range(Ksel):
+        # sort the loss
+        print('sel loss',loss_ks[indrec[krec_s]])
+        imrec = imrec_ks[indrec[krec_s]]
+        recs[krec_s,:,:] = imrec
+    return recs
+
+def mat2np(pos):
+    #pos_a=np.asarray(pos,order='F')
+    assert len(pos.size)==2, 'len of pos should be 2'
+    pos_a = np.array(pos._data.tolist())
+    pos_a = pos_a.reshape(pos.size).transpose()
+    return pos_a
+
+def evalcovfoveal_test(eng,froot0,datalabel,ktest,Ksel,J,L,Delta,kmin,kmax,jmin,ext='matlab',cache=1,mode=0,permute=1):
     psdfile = datalabel + '_k' + str(ktest) + '_' + str(Ksel) + '_evalcovfoveal' + str(mode) +\
             '_test_' + str(J)+str(L)+str(Delta)+str(kmin)+str(kmax)+str(jmin) + '.mat'
     fol = str(hash_str2int2(psdfile))
@@ -36,7 +73,7 @@ def evalcovfoveal_test(eng,froot0,datalabel,ktest,Ksel,J,L,Delta,kmin,kmax,jmin,
         covmean_im = dic['covmean_im']
     else:
         if ext=='matlab':
-            imgs = getori_mat(datalabel,froot0)
+            imgs = getori_mat(datalabel,froot0,permute)
         else:
             assert(0)
         if imgs.shape[0]>=ktest+Ksel:
@@ -99,7 +136,18 @@ def eval_bumpcovfoveal3(eng,imgs,J,L,Delta,kmin,kmax):
     covest_b = mat2np(covest_im)
     return covest_a,covest_b
 
-def evaluate_corr(fol_test_cov1,fol_model_cov1=None):
+def cov2corr_diagmat(cov,diag): # faster if using diag as matrix 
+    # normalize cov by a common diag matrix
+    nb = cov.shape[0]
+    assert(cov.shape[1]==nb)
+    print(cov.shape)
+    invdiaghalf = np.diag(np.sqrt(1/np.abs(diag)))
+    print('invdiaghalf shape',invdiaghalf.shape)
+    #corr = np.zeros((nb,nb), dtype=np.complex64)
+    corr = np.matmul(np.matmul(invdiaghalf,cov),invdiaghalf)
+    return corr
+
+def evaluate_corr(fol_test_cov1,fol_model_cov1=None,toplot=-1):
     fol_test_corr1 = []
     fol_model_corr1 = []
     
@@ -122,6 +170,26 @@ def evaluate_corr(fol_test_cov1,fol_model_cov1=None):
         for fol in range(folds_model):  
             model_corr1 = cov2corr_diagmat(fol_model_cov1[fol],corr_diag)
             fol_model_corr1.append(model_corr1)
+
+            if toplot == fol:
+                vmin = 0
+                vmax = 1
+
+                plt.figure()
+                plt.imshow(np.abs(test_corr1),vmin=vmin,vmax=vmax)
+                plt.colorbar()
+                plt.title('test')
+
+                if fol_model_cov1 is not None:
+                    plt.figure()
+                    plt.imshow(np.abs(model_corr1),vmin=vmin,vmax=vmax)
+                    plt.colorbar()
+                    plt.title('model')
+
+                    plt.figure()
+                    plt.imshow(np.abs(test_corr1-model_corr1),vmin=vmin,vmax=0.2*vmax)
+                    plt.colorbar()
+                    plt.title('test-model')            
         
     return fol_test_corr1,fol_model_corr1
 
