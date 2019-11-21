@@ -109,7 +109,7 @@ def evalcovfoveal_pttkt(eng,droot1,hRUNFOL,hptfile,N,kstart,maxKrec,Ksel,J,L,Del
         dic=sio.loadmat(cachefile)
         covmean_re = dic['covmean_re']
         covmean_im = dic['covmean_im']
-	print('loaded')
+        print('loaded')
     else:
         print('to call get_kymatio_pt')
         imgs_pt=get_kymatio_pt(droot1,hRUNFOL,hptfile,N,kstart,maxKrec,Ksel,start0=start0,nbstart=nbstart)
