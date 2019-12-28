@@ -1,3 +1,4 @@
+
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
@@ -29,11 +30,11 @@ hatphi = np.stack((np.real(fftphi), np.imag(fftphi)), axis=-1)
 fftpsi = matfilters['filt_fftpsi'].astype(np.complex_)
 hatpsi = np.stack((np.real(fftpsi), np.imag(fftpsi)), axis=-1)
 
-hatpsi = torch.FloatTensor(hatpsi) # (J,L2,M,N,2)
-hatphi = torch.FloatTensor(hatphi) # (M,N,2)
+hatpsi = torch.FloatTensor(hatpsi).cuda() # (J,L2,M,N,2)
+hatphi = torch.FloatTensor(hatphi).cuda() # (M,N,2)
 
 j = 2
-psi_test = hatpsi[j, 2, ...]; psi_test2 = hatpsi[j, 6, ...]  # filter ###################
+psi_test = hatpsi[j, 2, ...]; psi_test2 = hatpsi[j, 6, ...]
 
 
 pi = np.pi
@@ -119,100 +120,128 @@ imm = pos_to_im3(pos, res, gpu, sigma).type(torch.float)
 
 
 def shift2(im_, u):
+    """
+    Takes as input a batch of images and a tensor of coordinates for shift,
+    and returns a tensor of size (1, P_c, m, N, N, 2) of the images in the
+    batch shifted.
+
+    """
+
     # u: (1, P_c ,m, 2)
-    # im: (1, P_c, N, N)
-    u = u.type(torch.float)
-    im = torch.stack((im_, torch.zeros(im_.size())), dim=-1)  # (1, P_c, N, N, 2)
+    # im_: (1, P_c, N, N)
+    size = im_.size(-2)
+    u = u.type(torch.float).cuda()
+    im = torch.stack((im_, torch.zeros(im_.size()).type(torch.cuda.FloatTensor)), dim=-1)  # (1, P_c, N, N, 2)
     im_fft = torch.fft(im, 2)  # (1, P_c, N, N, 2)
-    map = torch.arange(size).repeat(tuple(u.size()[:3])+(1,)).type(torch.float)  # (1, P_c, m, N)
-    z = torch.matmul(map.unsqueeze(-1), u.unsqueeze(-2)).type(torch.float)  # (1, P_c, m, N, 1), (1, P_c, m, 1, 2)->(1, P_c, m, N, 2)
+    map = torch.arange(size).repeat(tuple(u.size()[:3])+(1,)).type(torch.float).cuda()  # (1, P_c, m, N)
+    z = torch.matmul(map.unsqueeze(-1), u.unsqueeze(-2)).type(torch.float).cuda()  # (1, P_c, m, N, 1), (1, P_c, m, 1, 2)->(1, P_c, m, N, 2)
     sp = z[..., 0].unsqueeze(-1).repeat(1,1,1,1,size) + z[..., 1].unsqueeze(-2).repeat(1,1,1,size,1)  # (1, P_c, m, N, N)
-    # compute e^(-iw.u0)
+    del(z)
     fft_shift = torch.stack((torch.cos(2*np.pi*sp/size), torch.sin(2*np.pi*sp/size)), dim=-1)  # (1, P_c, m, N, N, 2)
     im_shift_fft = complex_mul(fft_shift, im_fft.unsqueeze(2).repeat(1,1,u.size(2), 1, 1, 1))  # (1, P_c, m, N, N, 2)
+    del(fft_shift); del(sp); del(im_fft)
     im_shift = torch.ifft(im_shift_fft, 2)  # (1, P_c, m, N, N, 2)
-#    plt.imshow(im_shift[0, ..., 0]); plt.show()
     return im_shift
 
 
 def unshift2(ims, u):
+    """
+    Same as shift2, but the images are already of size (1, P_c, m, N, N, 2),
+    and we shift by the opposite coordinates.
+    """
+
+    size = ims.size(-2)
     u = u.type(torch.float)
     ims_fft = torch.fft(ims, 2)  # (1, P_c, m, N, N, 2)
-    map = torch.arange(size).repeat(tuple(u.size()[:3])+(1,)).type(torch.float)  # (1, P_c, m, N)
+    map = torch.arange(size).repeat(tuple(u.size()[:3])+(1,)).type(torch.cuda.FloatTensor)  # (1, P_c, m, N)
     u_back = -u  # (1, P_c, m, 2)
     z = torch.matmul(map.unsqueeze(-1), u_back.unsqueeze(-2))  # (1, P_c, m, N, 1), (1, P_c, m, 1, 2)->(1, P_c, m, N, 2)
+    print(z.size())
     sp = z[..., 0].unsqueeze(-1).repeat(1,1,1,1,size) + z[..., 1].unsqueeze(-2).repeat(1,1,1,size,1)  # (1, P_c, m, N, N)
     # compute e^(-iw.u0)
     fft_shift = torch.stack((torch.cos(2*np.pi*sp/size), torch.sin(2*np.pi*sp/size)), dim=-1)  # (1, P_c, m, N, N, 2)
     im_shift_fft = complex_mul(ims_fft, fft_shift)  # (1, P_c, m, N, N, 2)
+    del(fft_shift); del(sp); del(ims_fft)
     im_shift = torch.ifft(im_shift_fft, 2)[..., 0]  # (1, P_c, m, N, N)
     return im_shift
 
 
 def indices_unpad(im, indices, pad):
+    """
+    The indices given by the maxpool function are the ones of the periodicly padded image,
+    so this function gets back the actual indices of the image, according to the padding size.
+    """
+
+    size = im.size(-2)
     indices = indices.view(tuple(im.size()[:2])+(-1,))
-    indices_col = (indices % (size+2*pad)).type(torch.LongTensor)
+    indices_col = (indices % (size+2*pad)).type(torch.LongTensor).cuda()
     indices_col = (indices_col - pad)%size
-    indices_row = ((indices )//(size+2*pad)).type(torch.LongTensor)
+    indices_row = ((indices )//(size+2*pad)).type(torch.LongTensor).cuda()
     indices_row = (indices_row - pad)%size
 
     indices = size*indices_row + indices_col
     return indices, indices_row, indices_col
 
 
-def local_max_indices(im):
+def local_max_indices(im, number_of_centers):
+    """
+    Given a batch of (modulus) images, and a fixed integer 'number_of_centers', this function
+    returns the 'number_of_centers' first local maxima, sorted by amplitude
+    of the maxima.
+    """
     #  im: (1, P_c, N, N)
+    size = im.size(-1)
     mp1 = torch.nn.MaxPool2d(5, stride=torch.Size([1,1]), return_indices=True)
-    mp2 = torch.nn.MaxPool2d(7, stride=torch.Size([1,1]), return_indices=True)
 
     im_pad1 = F.pad(im, (2, 2, 2, 2), mode='circular')
-    im_pad2 = F.pad(im, (3, 3, 3, 3), mode='circular')
 
-    maxed1 = mp1(im_pad1)[1]
-    maxed2 = mp2(im_pad2)[1]
+    maxed1 = mp1(im_pad1)
 
-    maxed1 = indices_unpad(im, maxed1, 2)
-    maxed2 = indices_unpad(im, maxed2, 3)
-    eq = torch.eq(maxed1[0], maxed2[0]).type(torch.LongTensor)  # (1, P_c, N*N)
-    T = -(1 - eq)*3*size*size + eq * maxed1[0]  # (1, P_c, N*N)
+    maxed1_ = indices_unpad(im, maxed1[1], 2)
 
-    which = torch.arange(im.size(1)).unsqueeze(0).unsqueeze(-1).repeat(1, 1, size*size)  # (1, P_c, N*N)
-    T = torch.stack((T, which), dim=1)  # (1, 2, P_c, N*N)
-    T = T.view(2, -1)  # (2, P_c*N*N)
-    T = T.unique(sorted=False, dim=-1)  # (2, m_sum)
-    T = T.unsqueeze(0).repeat(im.size(1), 1, 1)  # (P_c, 2, m_sum)
-    z = torch.arange(im.size(1)).unsqueeze(1).repeat(1, T.size(-1))  # (P_c, m_sum)
-    affect = torch.eq(T[:, 1, :], z).type(torch.float)  # (P_c, m_sum)
-    T_ = (T[:, 0, :]*affect - 3*size*size*(1-affect)).unsqueeze(0)  # (1, P_c, m_sum)
+    z = torch.arange(size**2).unsqueeze(0).unsqueeze(0)
+    z = z.repeat(im.size(0), im.size(1), 1).type(torch.cuda.FloatTensor)
 
-    maxima = torch.max(T_, dim=-1)[0].unsqueeze(-1).repeat(1, 1, z.size(-1))  # (1, P_c, m_sum)
-    threshold = torch.gt(T_,  maxima/10).type(torch.float)
-    T_ = T_*threshold + 3*size*size*(1-threshold)  # (1, P_c, m_sum)
+    eq = torch.eq(maxed1_[0], z).type(torch.cuda.FloatTensor)  # (1, P_c, N*N)
 
-    return T_, torch.stack((T_//size, T_%size), dim=-1)
+    imx = maxed1[0].view(im.size(0), im.size(1), -1)*eq  # (1, P_c, N*N)
+    zero_count = (imx == 0).sum(dim=-1).max()
+    top = torch.topk(imx, min(number_of_centers, size*size-zero_count))[1]  # (1, P_c, number_of_centers)
+
+
+    del(eq); del(maxed1); #del(maxed2)
+
+    return top, torch.stack((top//size, top%size), dim=-1)
 
 
 def orth_phase(im2, loc):
+    """
+    Given a batch of images and a tensor of local maxima, this function returns
+    a tuple consisting of the phase and the orthogonal phase centered at the local
+    minima.
+    """
     #im2 (1, P_c, N, N, 2)
     phase = torch.atan2(im2[...,1], im2[...,0])  # (1, P_c, N, N)
     shifted_phase = shift2(phase, loc)  # (1, P_c, m, N, N, 2)
     t_s_phase = torch.transpose(shifted_phase, -2, -3)  # (1, P_c, m, N, N, 2)
+    del(shifted_phase)
     t_s_phase = torch.flip(t_s_phase.unsqueeze(-3), [-3,-4]).squeeze()  # (1, P_c, m, N, N, 2)
     orth_ph = unshift2(t_s_phase, loc)  # (1, P_c, m, N, N)
+    del(t_s_phase)
     return phase, orth_ph
+
 
 
 def shifted_phase(im2, loc, theta):
     """
-    theta: list of length P_c
+    theta: tensor of size (P_c)
+    Given a batch of images, a tensor of local maxima, and a tensor of rotation angles,
+    this funtion returns the rotated phases for every angle and local maximum.
     """
-    theta_ = torch.Tensor(theta)
-    theta_ = theta_.unsqueeze(0).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
-    print(theta_.size())
-    print(loc.size())
+    size = im2.size(-2)
+    theta_ = theta.unsqueeze(0).unsqueeze(-1).unsqueeze(-1).unsqueeze(-1)
     theta_ = theta_.repeat(1, 1, loc.size(2), size, size)  # (1, P_c, m, N, N)
     phase, orth_ph = orth_phase(im2, loc)  # (1, P_c, N, N), (1, P_c, m, N, N)
-    print(theta_.size(), phase.unsqueeze(2).repeat(1, 1, loc.size(2), 1, 1).size())
     return torch.cos(theta_)*phase.unsqueeze(2).repeat(1, 1, loc.size(2), 1, 1) - torch.sin(theta_)*orth_ph  # (1, P_c, m, N, N)
 
 
@@ -221,31 +250,48 @@ def periodic_distance(x, y, N):
     return torch.min(torch.abs(x-y), torch.abs(x-y+N)).min(torch.abs(x-y-N))
 
 
-def dist_to_max(u):
-    z = torch.arange(size).repeat(tuple(u.size()[:3])+(1,)).type(torch.float)  # (1, P_c, m, N)
+def dist_to_max(u, size):
+    """
+    Given a tensor of local maxima indices and a map of size 'size',
+    this function returns a tensor of maps indicators of the Voronoi cells
+    of the maxima.
+    """
+    z = torch.arange(size).repeat(tuple(u.size()[:3])+(1,)).type(torch.cuda.FloatTensor)  # (1, P_c, m, N)
     z1 = periodic_distance(z, u[..., 0].unsqueeze(3).repeat(1, 1, 1, size), size).unsqueeze(-1).repeat(1, 1, 1, 1, size)  # (1, P_c, m, N, N)
     z2 = periodic_distance(z, u[..., 1].unsqueeze(3).repeat(1, 1, 1, size), size).unsqueeze(-2).repeat(1, 1, 1, size, 1)  # (1, P_c, m, N, N)
     z1 = z1**2
     z2 = z2**2
     z = torch.sqrt(z1 + z2)  # (1, P_c, m, N, N)
     z_min = torch.min(z, dim=2)[0].unsqueeze(2).repeat(1, 1, u.size(2), 1, 1)  # (1, P_c, m, N, N)
-    return torch.eq(z, z_min).type(torch.float)
+    vors = torch.eq(z, z_min).type(torch.float).cuda()
+    del(z); del(z_min); del(z1); del(z2)
+    return vors
 
-
-def new_phase(im1, im2, theta):
+def new_phase(im1, im2, theta, nb_centers, k1, k2):
+    """
+    This function returns the new phase of im2.
+    """
     # im1 and im2 (1, P_c, N, N, 2)
+    k1 = torch.tensor(k1)
+    k2 = torch.tensor(k2)
+    k = (1-k1.eq(0))*(1-k2.eq(0))  # P_c
+    k = k.unsqueeze(0).unsqueeze(-1).unsqueeze(-1).repeat(1, 1, im1.size(-2), im1.size(-2))  # (1, P_c, N, N)
     im = im1.norm(p=2, dim=-1)*im2.norm(p=2, dim=-1)  # (1, P_c, N, N)
-    loc = local_max_indices(im)[1]  # (1, P_c, m, 2)
+    loc = local_max_indices(im, nb_centers)[1]  # (1, P_c, m, 2)
+    del(im)
     shifted_ph = shifted_phase(im2, loc, theta)  # (1, P_c, m, N, N)
-    vor = dist_to_max(loc).type(torch.float)  # (1, P_c, m, N, N)
-    return (shifted_ph*vor).sum(dim=2)
+    vor = dist_to_max(loc, im1.size(-2)).type(torch.float).cuda()  # (1, P_c, m, N, N)
+    n_ph = (shifted_ph*vor).sum(dim=2) * k + torch.atan2(im2[...,1], im2[...,0]) * (1-k)
+    return n_ph
 
 
-def phase_rot(im1, im2, theta):
+def phase_rot(im1, im2, theta, nb_centers, k1, k2):
+    """
+    This function returns the phase rotated version of im2.
+    """
     z = im2.norm(p=2, dim=-1)
-    ph_rot = new_phase(im1, im2, theta)
+    ph_rot = new_phase(im1, im2, theta, nb_centers, k1, k2)
     return torch.stack((z*torch.cos(ph_rot), z*torch.sin(ph_rot)), dim=-1)
-
 
 im_test = torch.zeros(256, 256)
 
@@ -255,46 +301,45 @@ im_test[i, j] = 1
 
 im_test[200,76] = 1
 
-im_test = im_test.unsqueeze(0).unsqueeze(0)
-im_test = torch.stack((im_test, torch.zeros(im_test.size())), dim=-1)
+im_test = im_test.unsqueeze(0).unsqueeze(0).cuda()
+im_test = torch.stack((im_test, torch.zeros(im_test.size()).cuda()), dim=-1)
 im_fft = torch.fft(im_test, 2)
-im_fft = torch.fft(torch.stack((imm, torch.zeros(imm.size())), -1), 2)
+#im_fft = torch.fft(torch.stack((imm, torch.zeros(imm.size()).cuda()), -1), 2)
 fft_prod1 = cdgmm(im_fft, psi_test)
 fft_prod2 = cdgmm(im_fft, psi_test2)
 conv1 = torch.ifft(fft_prod1, 2)
-#plt.imshow(conv1.squeeze()[...,1]); plt.show()
+#plt.imshow(conv1.cpu().squeeze()[...,1]); plt.show()
 conv2 = torch.ifft(fft_prod2, 2)
 #plt.imshow(conv2.squeeze()[...,1]); plt.show()
-T = local_max_indices(conv1.norm(p=2, dim=-1)**2)
+#T = local_max_indices(conv1.norm(p=2, dim=-1)**2)
 #print(T[1].size())
 
 
-M = phase_rot(conv1, conv2, [-np.pi/2])
-print(M.size())
-plt.imshow(M[0,0,...,0]); plt.show()
+#M = phase_rot(conv1, conv2, torch.tensor([-np.pi/4]).cuda(), 2)
+#plt.imshow(M[0,0,...,1].cpu()); plt.show()
 
 
 def conjugate(z):
     return torch.stack((z[..., 0], -z[..., 1]), dim=-1)
 
 
-corr1 = complex_mul(conv1-conv1.mean((2,3)), conjugate(conv2-conv2.mean((2,3)))).mean((2,3))
-corr2 = complex_mul(conv1-conv1.mean((2,3)), conjugate(M - M.mean((2,3)))).mean((2,3))
-corr3 = complex_mul(conv2-conv2.mean((2,3)), conjugate(conv2-conv2.mean((2,3)))).mean((2,3))
+#corr1 = complex_mul(conv1-conv1.mean((2,3)), conjugate(conv2-conv2.mean((2,3)))).mean((2,3))[0,0,:]
+#corr2 = complex_mul(conv1-conv1.mean((2,3)), conjugate(M - M.mean((2,3)))).mean((2,3))[0,0,:]
+#corr3 = complex_mul(conv2-conv2.mean((2,3)), conjugate(conv2-conv2.mean((2,3)))).mean((2,3))[0,0,:]
 
 #print(corr1, corr2, corr3)
 
 
 filename6 = './results/poissonvor_400_100_pos_s256_J5dj3_4ms.pt'
 pos6 = res*torch.load(filename6)
-im6 = pos_to_im3(pos6, res, gpu, sigma)
-im6 = torch.stack((im6,  torch.zeros(im6.size())),dim=-1)
+im6 = pos_to_im3(pos6, res, gpu, sigma).cuda()
+im6 = torch.stack((im6,  torch.zeros(im6.size()).cuda()),dim=-1)
 im6_fft = torch.fft(im6, 2)
 fft_prod61 = cdgmm(im6_fft, psi_test)
 fft_prod62 = cdgmm(im6_fft, psi_test2)
 conv61 = torch.ifft(fft_prod61, 2)
 conv62 = torch.ifft(fft_prod62, 2)
-M6 = phase_rot(conv61, conv62, [-np.pi/2])
+M6 = phase_rot(conv61, conv62, torch.tensor([-np.pi/2]).cuda(), 40)
 
 print(conv61.size())
 corr61 = complex_mul(conv61-conv61.mean((2,3)), conjugate(conv62-conv62.mean((2,3)))).mean((2,3))
