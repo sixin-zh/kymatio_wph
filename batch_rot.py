@@ -4,9 +4,10 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
 import scipy.io as sio
+"""
 import sys
 sys.path.append('/users/trec/brochard/kymatio_wph')
-
+"""
 
 res = 256
 J = 6
@@ -110,13 +111,13 @@ def complex_mul(a, b):
 
     return torch.stack((real, imag), dim=-1)
 
-
+"""
 filename = '/users/trec/brochard/kymatio_wph/data/poissonvor_150_100.txt'
 pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
 nb_points = pos.shape[0]
 pos = torch.from_numpy(pos).type(torch.float)
 imm = pos_to_im3(pos, res, gpu, sigma).type(torch.float)
-
+"""
 
 
 def shift2(im_, u):
@@ -156,7 +157,6 @@ def unshift2(ims, u):
     map = torch.arange(size).repeat(tuple(u.size()[:3])+(1,)).type(torch.cuda.FloatTensor)  # (1, P_c, m, N)
     u_back = -u  # (1, P_c, m, 2)
     z = torch.matmul(map.unsqueeze(-1), u_back.unsqueeze(-2))  # (1, P_c, m, N, 1), (1, P_c, m, 1, 2)->(1, P_c, m, N, 2)
-    print(z.size())
     sp = z[..., 0].unsqueeze(-1).repeat(1,1,1,1,size) + z[..., 1].unsqueeze(-2).repeat(1,1,1,size,1)  # (1, P_c, m, N, N)
     # compute e^(-iw.u0)
     fft_shift = torch.stack((torch.cos(2*np.pi*sp/size), torch.sin(2*np.pi*sp/size)), dim=-1)  # (1, P_c, m, N, N, 2)
@@ -274,8 +274,8 @@ def new_phase(im1, im2, theta, nb_centers, k1, k2):
     # im1 and im2 (1, P_c, N, N, 2)
     k1 = torch.tensor(k1)
     k2 = torch.tensor(k2)
-    k = (1-k1.eq(0))*(1-k2.eq(0))  # P_c
-    k = k.unsqueeze(0).unsqueeze(-1).unsqueeze(-1).repeat(1, 1, im1.size(-2), im1.size(-2))  # (1, P_c, N, N)
+    k = (1-k1.eq(0).type(torch.cuda.FloatTensor))*(1-k2.eq(0).type(torch.cuda.FloatTensor))  # (1, P_c, 1, 1)
+    k = k.unsqueeze(0).unsqueeze(-1).repeat(1, 1, im1.size(-2), im1.size(-2))  # (1, P_c, N, N)
     im = im1.norm(p=2, dim=-1)*im2.norm(p=2, dim=-1)  # (1, P_c, N, N)
     loc = local_max_indices(im, nb_centers)[1]  # (1, P_c, m, 2)
     del(im)
@@ -293,14 +293,14 @@ def phase_rot(im1, im2, theta, nb_centers, k1, k2):
     ph_rot = new_phase(im1, im2, theta, nb_centers, k1, k2)
     return torch.stack((z*torch.cos(ph_rot), z*torch.sin(ph_rot)), dim=-1)
 
+
+
+# Test on an image consisting of two Diracs
+
 im_test = torch.zeros(256, 256)
-
 i, j = 104, 130
-
 im_test[i, j] = 1
-
 im_test[200,76] = 1
-
 im_test = im_test.unsqueeze(0).unsqueeze(0).cuda()
 im_test = torch.stack((im_test, torch.zeros(im_test.size()).cuda()), dim=-1)
 im_fft = torch.fft(im_test, 2)
@@ -308,28 +308,24 @@ im_fft = torch.fft(im_test, 2)
 fft_prod1 = cdgmm(im_fft, psi_test)
 fft_prod2 = cdgmm(im_fft, psi_test2)
 conv1 = torch.ifft(fft_prod1, 2)
-#plt.imshow(conv1.cpu().squeeze()[...,1]); plt.show()
 conv2 = torch.ifft(fft_prod2, 2)
-#plt.imshow(conv2.squeeze()[...,1]); plt.show()
-#T = local_max_indices(conv1.norm(p=2, dim=-1)**2)
-#print(T[1].size())
 
 
-#M = phase_rot(conv1, conv2, torch.tensor([-np.pi/4]).cuda(), 2)
-#plt.imshow(M[0,0,...,1].cpu()); plt.show()
+M = phase_rot(conv1, conv2, torch.tensor([-np.pi/4]).cuda(), 2)
+plt.imshow(M[0,0,...,1].cpu()); plt.show()
 
 
 def conjugate(z):
     return torch.stack((z[..., 0], -z[..., 1]), dim=-1)
 
 
-#corr1 = complex_mul(conv1-conv1.mean((2,3)), conjugate(conv2-conv2.mean((2,3)))).mean((2,3))[0,0,:]
-#corr2 = complex_mul(conv1-conv1.mean((2,3)), conjugate(M - M.mean((2,3)))).mean((2,3))[0,0,:]
-#corr3 = complex_mul(conv2-conv2.mean((2,3)), conjugate(conv2-conv2.mean((2,3)))).mean((2,3))[0,0,:]
+corr1 = complex_mul(conv1-conv1.mean((2,3)), conjugate(conv2-conv2.mean((2,3)))).mean((2,3))[0,0,:]
+corr2 = complex_mul(conv1-conv1.mean((2,3)), conjugate(M - M.mean((2,3)))).mean((2,3))[0,0,:]
+corr3 = complex_mul(conv2-conv2.mean((2,3)), conjugate(conv2-conv2.mean((2,3)))).mean((2,3))[0,0,:]
 
-#print(corr1, corr2, corr3)
+print(corr1, corr2, corr3)
 
-
+"""
 filename6 = './results/poissonvor_400_100_pos_s256_J5dj3_4ms.pt'
 pos6 = res*torch.load(filename6)
 im6 = pos_to_im3(pos6, res, gpu, sigma).cuda()
@@ -347,4 +343,4 @@ corr62 = complex_mul(conv61-conv61.mean((2,3)), conjugate(M6 - M6.mean((2,3)))).
 corr63 = complex_mul(conv62-conv62.mean((2,3)), conjugate(conv62-conv62.mean((2,3)))).mean((2,3))
 print(corr61, corr62, corr63)
 
-
+"""
