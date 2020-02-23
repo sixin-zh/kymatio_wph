@@ -5,7 +5,7 @@ addpath ../minFunc_2012/minFunc
 addpath ../minFunc_2012/minFunc/compiled
 
 name = 'bubbles';
-Ktrain = 1;  % 10;
+Ktrain = 1; % 10;
 Kbins = 1; % each bin contains Kbins samples to estimate the beta
 Delta = 2;
 J = 5;
@@ -27,7 +27,7 @@ switch name
 end
 
 N = size(imgs,1);
-K = Ktrain; % size(imgs,3);
+K = Ktrain;
 assert(Ktrain<=K)
 
 spImgs = zeros(N,N,K);
@@ -48,10 +48,14 @@ filtopts.gamma1=1;
 % compute filters's power spectrum (transfer function)
 pwfilters = {};
 
+% nbcov: count (la,la') and (la',la) only once when la!=la'.
+nbcov = 0;
 % add low pass
 fil = filnew.phi.filter.coefft{1};
 filJ = fil / sqrt(sum(sum(spImgs(:,:,1).*(fil.*fil))));
 pwfilters{end+1}=filJ.^2;
+nbcov = nbcov + 1;
+
 % add high pass
 filid = 1;
 fftpsi = cell(J,2*L);
@@ -61,8 +65,10 @@ for j=1:J
         fftpsi{j,q} = fil / sqrt(sum(sum(spImgs(:,:,1).*(fil.*fil))));    
         pwfilters{end+1}=fftpsi{j,q}.^2;
         filid = filid + 1;
+        nbcov = nbcov + 1;
     end
 end
+
 assert(length(filnew.psi.filter)==filid-1);
 
 % delta_n = Delta
@@ -72,6 +78,7 @@ fil = filJ;
 for dn1 = -Delta:Delta
     for dn2 = 0:Delta
         if dn1~=0 || dn2~=0
+            nbcov = nbcov + 1;
             pwfilters{end+1} = (fil.^2) .* ...
                 cos(2^(j-1)*(Omega1*dn1+Omega2*dn2)); % no need for sin since Phi_J is real
         end
@@ -84,6 +91,7 @@ for j=1:J
         for dn1 = -Delta:Delta
             for dn2 = 0:Delta
                 if dn1~=0 || dn2~=0
+                    nbcov = nbcov + 2;
                     pwfilters{end+1} = (fil.^2) .* ...
                         cos(2^(j-1)*(Omega1*dn1+Omega2*dn2));
                     pwfilters{end+1} = (fil.^2) .* ...

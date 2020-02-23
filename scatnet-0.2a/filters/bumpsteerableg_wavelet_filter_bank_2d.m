@@ -45,7 +45,6 @@ function [filters,littlewood_final] = bumpsteerableg_wavelet_filter_bank_2d(size
 	M = size_filter(2);
 
     % Compute low-pass filters phi
-%     scale = 2^(J-1);
     extent=1;
     hatphiJ = real(fft2(gabor_2d_period(N, M, sigma_phiJ, 1, 0, 0, [0,0], 'double', extent)));
 	phi.filter = cast(hatphiJ);

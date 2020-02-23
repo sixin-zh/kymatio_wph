@@ -1,4 +1,4 @@
-addpath scatnet-0.2a
+addpath ../scatnet-0.2a
 addpath_scatnet
 addpath ./altmany-export_fig-4703a84
 
@@ -6,16 +6,16 @@ for j = 1:3
     for k = 0:1
 
 J=5; L=8; N=256;
-name = 'tur2a';
+name = 'mrw2dd';
 switch name
     case 'tur2a'
-        datamat = './data/kymatio_wph_data/ns_randn4_test_N256.mat';
-        modelAmat = 'maxent/synthesis/maxent_synthesis_tur2a';
-        modelDmat = 'mats/tur2a_dj1_isonoref_J5_L8_export';
+        datamat = './data/ns_randn4_test_N256.mat';
+        modelAmat = './cerfeuil_synthesis/maxent_synthesis_tur2a';
+        modelDmat = './cerfeuil_synthesis/tur2a_modelD_synthesis';
     case 'mrw2dd'
-        datamat = './data/kymatio_wph_data/demo_mrw2dd_test_N256.mat';
-        modelAmat = 'maxent/synthesis/maxent_synthesis_mrw2dd';
-        modelDmat = 'mats/mrw2dd_dj1_isonoref_J5_L8_export';
+        datamat = './data/demo_mrw2dd_test_N256.mat';
+        modelAmat = './cerfeuil_synthesis/maxent_synthesis_mrw2dd';
+        modelDmat = './cerfeuil_synthesis/mrw2dd_modelD_synthesis';
 end
 
 load (datamat)
@@ -82,9 +82,9 @@ set(gca, 'FontSize',24)
 title(sprintf('k=%d,j=%d',k,j), 'FontSize',26,'FontWeight','bold')
 axis tight
 if strcmp(name,'tur2a')==1
-    axis([0 12 0 1])
+    axis([0 12 0 1.1])
 else
-    axis([0 20 0 1])
+    axis([0 20 0 1.1])
 end
 proot = 'curves';
 export_fig(sprintf('%s/%s_Ca_j%d_k%d.pdf',proot,name,j,k),'-pdf','-transparent')
