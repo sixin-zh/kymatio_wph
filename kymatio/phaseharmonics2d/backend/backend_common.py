@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 from torch.nn import ReflectionPad2d
@@ -206,7 +205,6 @@ class SubsampleFourier(object):
         Subsampling of a 2D image performed in the Fourier domain
         Subsampling in the spatial domain amounts to periodization
         in the Fourier domain, hence the formula.
-
         Parameters
         ----------
         x : tensor_like
@@ -215,7 +213,6 @@ class SubsampleFourier(object):
             Ideally, the last dimension should be a power of 2 to avoid errors.
         k : int
             integer such that x is subsampled by 2**k along the spatial variables.
-
         Returns
         -------
         res : tensor_like
@@ -261,7 +258,6 @@ class Pad(object):
         """
             Padding which allows to simultaneously pad in a reflection fashion
             and map to complex.
-
             Parameters
             ----------
             pad_size : int
@@ -290,12 +286,10 @@ class Pad(object):
 def unpad(in_):
     """
         Slices the input tensor at indices between 1::-1
-
         Parameters
         ----------
         in_ : tensor_like
             input tensor
-
         Returns
         -------
         in_[..., 1:-1, 1:-1]
@@ -305,16 +299,13 @@ def unpad(in_):
 class Modulus(object):
     """
         This class implements a modulus transform for complex numbers.
-
         Usage
         -----
         modulus = Modulus()
         x_mod = modulus(x)
-
         Parameters
         ---------
         x: input tensor, with last dimension = 2 for complex numbers
-
         Returns
         -------
         output: a tensor with imaginary part set to 0, real part set equal to
@@ -340,12 +331,10 @@ def modulus(z):
 def fft(input, direction='C2C', inverse=False):
     """
         Interface with torch FFT routines for 2D signals.
-
         Example
         -------
         x = torch.randn(128, 32, 32, 2)
         x_fft = fft(x, inverse=True)
-
         Parameters
         ----------
         input : tensor
