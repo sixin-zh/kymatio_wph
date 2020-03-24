@@ -49,8 +49,8 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
                 print('save to',datname)
 
             if start==0:
-                x = x0.cuda()
-            elif x_opt is None:
+                x = x0.cuda().requires_grad_(True)
+            elif x is None:
                 # load from previous saved file
                 prename = FOLOUT + '/' + labelname + '_krec' + str(krec) + '_start' + str(start-1) + '.pt'
                 print('load x_opt from',prename)
@@ -58,9 +58,8 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
                 im_opt = saved_result['tensor_opt'] # .numpy()
                 #x = im_opt.reshape(size**2)
                 #x = x.cuda().requires_grad_(True)
-                x = im_opt.cuda()
+                x = im_opt.cuda().requires_grad_(True)
 
-            x.requires_grad_(True)
             optimizer = optim.LBFGS({x}, max_iter=maxite, line_search_fn='strong_wolfe',\
                                     tolerance_grad = gtol, tolerance_change = ftol,\
                                     history_size = maxcor)
