@@ -9,8 +9,8 @@ def obj_fun(x,wph_ops,factr_ops,Sims,op_id):
     wph_op = wph_ops[op_id]
     p = wph_op(x)
     diff = p-Sims[op_id]
-    loss = torch.mul(diff,diff).mean()
-    loss = loss*factr_ops[op_id]
+    diff = diff * factr_ops[op_id]
+    loss = torch.mul(diff,diff).sum()
     return loss
 
 def obj_func(x,wph_ops,factr_ops,Sims):
