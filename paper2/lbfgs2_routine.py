@@ -32,7 +32,7 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
             print('init normal')
             x0 = torch.Tensor(1, 1, N, N).normal_()
         elif init=='normalstdbarx':
-            stdbarx = im.std()
+            stdbarx = im.std().item()
             print('init normal with std barx ' + str(stdbarx))
             x0 = torch.Tensor(1, 1, N, N).normal_(std=stdbarx)
         else:
@@ -58,7 +58,7 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
                 im_opt = saved_result['tensor_opt'] # .numpy()
                 #x = im_opt.reshape(size**2)
                 #x = x.cuda().requires_grad_(True)
-                x_opt = x0 # np.asarray(x_opt,dtype=np.float64)
+                x_opt = im_opt # np.asarray(x_opt,dtype=np.float64)
 
             x_opt = x_opt.cuda().requires_grad_(True)
             optimizer = optim.LBFGS({x_opt}, max_iter=maxite, line_search_fn='strong_wolfe',\
