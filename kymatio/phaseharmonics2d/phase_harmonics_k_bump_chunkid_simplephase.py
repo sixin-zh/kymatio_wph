@@ -39,7 +39,7 @@ class PhaseHarmonics2d(object):
         check_for_nan = False # True
         #self.meta = None
         self.modulus = Modulus()
-        self.pad = Pad(0, pre_pad = self.pre_pad)
+        self.pad = Pad(0, pre_pad = self.pre_pad, pad_mode='Reflect') # default is zero padding
         self.phase_harmonics = PhaseHarmonics2.apply
 
         self.M_padded, self.N_padded = self.M, self.N

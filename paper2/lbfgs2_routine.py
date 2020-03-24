@@ -37,8 +37,8 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
             x0 = torch.Tensor(1, 1, N, N).normal_(std=stdbarx)
         else:
             assert(false)
-        #x = x.reshape(size**2) # make x_opt a vector
-        x = None 
+
+        x = None
         for start in range(nb_restarts+1):
             time0 = time()
             datname =  FOLOUT + '/' + labelname + '_krec' + str(krec) + '_start' + str(start) + '.pt'
@@ -65,7 +65,7 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
             optimizer = optim.LBFGS({x}, max_iter=maxite, line_search_fn='strong_wolfe',\
                                     tolerance_grad = gtol, tolerance_change = ftol,\
                                     history_size = maxcor)
-
+            
             def closure():
                 optimizer.zero_grad()
                 loss = obj_func(x,wph_ops,factr_ops,Sims)
