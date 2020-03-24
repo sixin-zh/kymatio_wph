@@ -1,7 +1,6 @@
-# assume process is both isotropic without line reflection / plain symmetry
-# removed last chunkid to make it more compact
 # isotropic case, implement basic phase harmonics
-# remove negitive freq. in q
+# assume both isotropic and stationary
+# but no line reflection / plain symmetry
 
 __all__ = ['PhaseHarmonics2d']
 
@@ -17,12 +16,17 @@ from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 
 class PhaseHarmonics2d(object):
-    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, stdnorm=0):
+    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k,
+                 nb_chunks, chunk_id, stdnorm=0, kmax=None):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         self.dj = delta_j # max scale interactions
         self.dl = delta_l # max angular interactions
         self.dk = delta_k #
-        self.K = 2**self.dj + self.dk + 1
+        if kmax is None:
+            self.K = 2**self.dj + self.dk + 1
+        else:
+            assert(kmax >= 0)
+            self.K = min(kmax+1,2**self.dj + self.dk + 1)
         self.k = torch.arange(0, self.K).type(torch.float) # vector between [0,..,K-1]
         self.nb_chunks = nb_chunks # number of chunks to cut whp cov
         self.chunk_id = chunk_id
@@ -32,12 +36,13 @@ class PhaseHarmonics2d(object):
         self.stdnorm = stdnorm
         self.pre_pad = False # no padding
         self.cache = False # cache filter bank
+        self.nbcov = 0
         self.build()
 
     def build(self):
         check_for_nan = False # True
         self.modulus = Modulus()
-        self.pad = Pad(0, pre_pad = self.pre_pad)
+        self.pad = Pad(0, pre_pad = self.pre_pad, pad_mode='Reflect') # default is zero padding
         self.phase_harmonics = PhaseHarmonicsIso.apply
         self.M_padded, self.N_padded = self.M, self.N
         self.filters_tensor()
@@ -103,7 +108,8 @@ class PhaseHarmonics2d(object):
         dl = self.dl
         dk = self.dk
         K = self.K
-
+        assert(K>=2)
+        
         idx_la1 = []
         idx_la2 = []
 
@@ -116,10 +122,16 @@ class PhaseHarmonics2d(object):
                 k2 = 0
                 idx_la1.append(K*Q*j1 + K*q1 + k1)
                 idx_la2.append(K*Q*j2 + K*q2 + k2)
+                #print('add j1='+str(j1)+'q1='+str(q1)+'k1='+\
+                #      str(k1)+'j2='+str(j2)+'q2='+str(q2)+'k2='+str(k2))
+                self.nbcov += 2
                 k2 = 1
                 idx_la1.append(K*Q*j1 + K*q1 + k1)
                 idx_la2.append(K*Q*j2 + K*q2 + k2)
-
+                #print('add j1='+str(j1)+'q1='+str(q1)+'k1='+\
+                #      str(k1)+'j2='+str(j2)+'q2='+str(q2)+'k2='+str(k2))
+                self.nbcov += 1
+                
         # k1 = 0
         # k2 = 0
         # j1 = j2
@@ -131,7 +143,10 @@ class PhaseHarmonics2d(object):
                 k2 = 0
                 idx_la1.append(K*Q*j1 + K*q1 + k1)
                 idx_la2.append(K*Q*j2 + K*q2 + k2)
-        
+                #print('add j1='+str(j1)+'q1='+str(q1)+'k1='+\
+                #      str(k1)+'j2='+str(j2)+'q2='+str(q2)+'k2='+str(k2))
+                self.nbcov += 1
+                
         # k1 = 0
         # k2 = 0,1,2
         # j1+1 <= j2 <= min(j1+dj,J-1)
@@ -140,10 +155,16 @@ class PhaseHarmonics2d(object):
                 k1 = 0
                 for j2 in range(j1+1, min(j1+dj+1, J)):
                     q2 = q1
-                    for k2 in range(3):
+                    for k2 in range(min(K,3)):
                         idx_la1.append(K*Q*j1 + K*q1 + k1)
                         idx_la2.append(K*Q*j2 + K*q2 + k2)
-        
+                        #print('add j1='+str(j1)+'q1='+str(q1)+'k1='+\
+                        #      str(k1)+'j2='+str(j2)+'q2='+str(q2)+'k2='+str(k2))
+                        if k2==0:
+                            self.nbcov += 1
+                        else:
+                            self.nbcov += 2
+                        
         # k1 = 1
         # k2 = 2^(j2-j1)±dk
         # j1+1 <= j2 <= min(j1+dj,J-1)
@@ -152,14 +173,19 @@ class PhaseHarmonics2d(object):
                 k1 = 1
                 q2 = q1
                 for j2 in range(j1+1, min(j1+dj+1, J)):
-                    for k2 in range(max(0, 2**(j2-j1)-dk), 2**(j2-j1)+dk+1):
+                    for k2 in range(max(0, 2**(j2-j1)-dk), min(K,2**(j2-j1)+dk+1)):
                         idx_la1.append(K*Q*j1 + K*q1 + k1)
                         idx_la2.append(K*Q*j2 + K*q2 + k2)
-
+                        #print('add j1='+str(j1)+'q1='+str(q1)+'k1='+\
+                        #      str(k1)+'j2='+str(j2)+'q2='+str(q2)+'k2='+str(k2))
+                        self.nbcov += 2
+        
+        self.nbcov += 1
+        
         idx_wph = dict()
         idx_wph['la1'] = torch.tensor(idx_la1).type(torch.long)
         idx_wph['la2'] = torch.tensor(idx_la2).type(torch.long)
-
+        
         return idx_wph
 
     def _type(self, _type, devid=None):
