@@ -62,7 +62,7 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
                 x_opt = x # np.asarray(x_opt,dtype=np.float64)
 
             optimizer = optim.LBFGS({x_opt}, max_iter=maxite, line_search_fn='strong_wolfe',\
-                                    tolerance_grad = gfol, tolerance_change = ftol,\
+                                    tolerance_grad = gtol, tolerance_change = ftol,\
                                     history_size = maxcor)
             
             def closure():
