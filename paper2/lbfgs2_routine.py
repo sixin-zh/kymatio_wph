@@ -5,7 +5,7 @@ import scipy.io as sio
 import torch
 import torch.optim as optim
 
-def obj_fun(x,wph_ops,factr_opts,Sims,op_id):
+def obj_fun(x,wph_ops,factr_ops,Sims,op_id):
     wph_op = wph_ops[op_id]
     p = wph_op(x)
     diff = p-Sims[op_id]
@@ -13,12 +13,12 @@ def obj_fun(x,wph_ops,factr_opts,Sims,op_id):
     loss = loss*factr_ops[op_id]
     return loss
 
-def obj_func(x,wph_ops,factr_opts,Sims):
+def obj_func(x,wph_ops,factr_ops,Sims):
     loss = 0
     if x.grad is not None:
         x.grad.data.zero_()
     for op_id in range(len(wph_ops)):
-        loss_t = obj_fun(x,wph_ops,factr_opts,Sims,op_id)
+        loss_t = obj_fun(x,wph_ops,factr_ops,Sims,op_id)
         loss_t.backward() # accumulate grad into x.grad
         loss = loss + loss_t
     return loss
@@ -67,7 +67,7 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
             
             def closure():
                 optimizer.zero_grad()
-                loss = obj_func(x_opt,wph_ops,factr_opts,Sims)
+                loss = obj_func(x_opt,wph_ops,factr_ops,Sims)
                 return loss
 
             optimizer.step(closure)
