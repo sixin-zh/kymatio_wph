@@ -53,16 +53,16 @@ os.system('mkdir -p ' + FOLOUT)
 labelname = 'eval_wph2_stdnorm' + str(stdn)
 
 # kymatio scattering
-#from kymatio.phaseharmonics2d.phase_harmonics_k_bump_non_isotropic \
-#    import PhaseHarmonics2d
-from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_simplephase \
+from kymatio.phaseharmonics2d.phase_harmonics_k_bump_non_isotropic \
     import PhaseHarmonics2d
+#from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_simplephase \
+#    import PhaseHarmonics2d
 
 Sims = []
 wph_ops = []
 factr_ops = []
 nCov = 0
-for chunk_id in range(nb_chunks+1): # +1 for simplephase !!
+for chunk_id in range(nb_chunks): # +1): # +1 for simplephase !!
     wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
     #wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, submean=1, stdnorm=stdn)
     wph_op = wph_op.cuda()
