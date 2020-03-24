@@ -37,7 +37,7 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
             x = torch.Tensor(1, 1, N, N).normal_(std=stdbarx)
         else:
             assert(false)
-        x = x.reshape(size**2) # make x_opt a vector
+        #x = x.reshape(size**2) # make x_opt a vector
         x = x.cuda().requires_grad_(True)
         x_opt = None 
         for start in range(nb_restarts+1):
@@ -57,7 +57,7 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
                 print('load x_opt from',prename)
                 saved_result = torch.load(prename)
                 im_opt = saved_result['tensor_opt'] # .numpy()
-                x = im_opt.reshape(size**2)
+                #x = im_opt.reshape(size**2)
                 x = x.cuda().requires_grad_(True)
                 x_opt = x # np.asarray(x_opt,dtype=np.float64)
 
@@ -77,8 +77,8 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
             final_loss = opt_state['prev_loss']
             print('OPT fini avec:', final_loss,niter)
             
-            im_opt = np.reshape(x_opt, (size,size))
-            tensor_opt = torch.tensor(im_opt, dtype=torch.float).unsqueeze(0).unsqueeze(0)
+            #im_opt = x_opt # np.reshape(x_opt, (size,size))
+            tensor_opt = torch.tensor(x_opt, dtype=torch.float) # .unsqueeze(0).unsqueeze(0)
             
             ret = dict()
             ret['tensor_opt'] = tensor_opt
