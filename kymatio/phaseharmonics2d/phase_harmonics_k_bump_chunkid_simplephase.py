@@ -309,7 +309,7 @@ class PhaseHarmonics2d(object):
         return self._type(torch.FloatTensor)
 
     def forward(self, input):
-          
+
         J = self.J
         M = self.M
         N = self.N

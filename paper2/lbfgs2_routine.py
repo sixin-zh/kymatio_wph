@@ -49,7 +49,8 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
                 print('save to',datname)
 
             if start==0:
-                x = x0.cuda().requires_grad_(True)
+                x = x0.cuda()
+                x.requires_grad_(True)
             elif x is None:
                 # load from previous saved file
                 prename = FOLOUT + '/' + labelname + '_krec' + str(krec) + '_start' + str(start-1) + '.pt'
@@ -58,12 +59,13 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
                 im_opt = saved_result['tensor_opt'] # .numpy()
                 #x = im_opt.reshape(size**2)
                 #x = x.cuda().requires_grad_(True)
-                x = im_opt.cuda().requires_grad_(True)
+                x = im_opt.cuda()
+                x.requires_grad_(True)
 
             optimizer = optim.LBFGS({x}, max_iter=maxite, line_search_fn='strong_wolfe',\
                                     tolerance_grad = gtol, tolerance_change = ftol,\
                                     history_size = maxcor)
-            
+
             def closure():
                 optimizer.zero_grad()
                 loss = obj_func(x,wph_ops,factr_ops,Sims)
@@ -77,7 +79,7 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
             print('OPT fini avec:', final_loss,niter)
             
             #im_opt = x_opt # np.reshape(x_opt, (size,size))
-            tensor_opt = torch.tensor(x_opt, dtype=torch.float) # .unsqueeze(0).unsqueeze(0)
+            tensor_opt = torch.tensor(x, dtype=torch.float) # .unsqueeze(0).unsqueeze(0)
             
             ret = dict()
             ret['tensor_opt'] = tensor_opt
