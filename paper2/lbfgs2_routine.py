@@ -1,3 +1,4 @@
+import os
 from time import time
 import numpy as np
 import scipy.io as sio
