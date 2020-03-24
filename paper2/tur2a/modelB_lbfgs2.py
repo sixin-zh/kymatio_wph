@@ -64,7 +64,6 @@ factr_ops = []
 nCov = 0
 for chunk_id in range(nb_chunks):
     wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id)
-
     #wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, submean=1, stdnorm=stdn)
     wph_op = wph_op.cuda()
     wph_ops.append(wph_op)
