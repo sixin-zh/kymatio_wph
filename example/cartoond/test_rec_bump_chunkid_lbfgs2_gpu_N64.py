@@ -7,7 +7,7 @@ import scipy.io as sio
 import torch
 import torch.optim as optim
 
-#---- create image ----#
+# Input data
 size=64
 data = sio.loadmat('./data/demo_toy7d_N' + str(size) + '.mat')
 im = data['imgs']
@@ -17,7 +17,7 @@ plt.show()
 
 im = torch.tensor(im, dtype=torch.float).unsqueeze(0).unsqueeze(0).cuda()
 
-# Parameters
+# Parameter
 J = 6
 L = 8
 M, N = im.shape[-2], im.shape[-1]
@@ -81,7 +81,7 @@ def closure():
 
 optimizer.step(closure)
 
-# output
+# Plot the synthesis
 im_opt = np.reshape(x.detach().cpu().numpy(), (size,size))
 plt.imshow(im_opt)
 plt.show()
