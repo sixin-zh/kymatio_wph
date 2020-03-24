@@ -79,7 +79,7 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
             print('OPT fini avec:', final_loss,niter)
             
             #im_opt = x_opt # np.reshape(x_opt, (size,size))
-            tensor_opt = torch.tensor(x, dtype=torch.float) # .unsqueeze(0).unsqueeze(0)
+            tensor_opt = x.detach().cpu()
             
             ret = dict()
             ret['tensor_opt'] = tensor_opt
