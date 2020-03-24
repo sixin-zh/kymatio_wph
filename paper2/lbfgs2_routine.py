@@ -30,15 +30,14 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
     for krec in range(Krec):
         if init=='normal':
             print('init normal')
-            x = torch.Tensor(1, 1, N, N).normal_()
+            x0 = torch.Tensor(1, 1, N, N).normal_()
         elif init=='normalstdbarx':
             stdbarx = im.std()
             print('init normal with std barx ' + str(stdbarx))
-            x = torch.Tensor(1, 1, N, N).normal_(std=stdbarx)
+            x0 = torch.Tensor(1, 1, N, N).normal_(std=stdbarx)
         else:
             assert(false)
         #x = x.reshape(size**2) # make x_opt a vector
-        x = x.cuda().requires_grad_(True)
         x_opt = None 
         for start in range(nb_restarts+1):
             time0 = time()
@@ -50,7 +49,7 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
                 print('save to',datname)
 
             if start==0:
-                x_opt = x
+                x_opt = x0
             elif x_opt is None:
                 # load from previous saved file
                 prename = FOLOUT + '/' + labelname + '_krec' + str(krec) + '_start' + str(start-1) + '.pt'
@@ -58,9 +57,10 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
                 saved_result = torch.load(prename)
                 im_opt = saved_result['tensor_opt'] # .numpy()
                 #x = im_opt.reshape(size**2)
-                x = x.cuda().requires_grad_(True)
-                x_opt = x # np.asarray(x_opt,dtype=np.float64)
+                #x = x.cuda().requires_grad_(True)
+                x_opt = x0 # np.asarray(x_opt,dtype=np.float64)
 
+            x_opt = x_opt.cuda().requires_grad_(True)
             optimizer = optim.LBFGS({x_opt}, max_iter=maxite, line_search_fn='strong_wolfe',\
                                     tolerance_grad = gtol, tolerance_change = ftol,\
                                     history_size = maxcor)
