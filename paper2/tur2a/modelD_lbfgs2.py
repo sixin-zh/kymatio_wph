@@ -15,7 +15,7 @@ from lbfgs2_routine import *
 ks=int(sys.argv[1]) # id of input image
 
 size = 256
-Krec = 1 # 10
+Krec = 10
 
 # --- Dirac example---#
 imid = ks
