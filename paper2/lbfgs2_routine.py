@@ -5,7 +5,7 @@ import scipy.io as sio
 import torch
 import torch.optim as optim
 
-def obj_fun(x,wph_ops,factr_ops,Sims,op_id):
+def obj_func_id(x,wph_ops,factr_ops,Sims,op_id):
     wph_op = wph_ops[op_id]
     p = wph_op(x)
     diff = p-Sims[op_id]
@@ -18,7 +18,7 @@ def obj_func(x,wph_ops,factr_ops,Sims):
     if x.grad is not None:
         x.grad.data.zero_()
     for op_id in range(len(wph_ops)):
-        loss_t = obj_fun(x,wph_ops,factr_ops,Sims,op_id)
+        loss_t = obj_func_id(x,wph_ops,factr_ops,Sims,op_id)
         loss_t.backward() # accumulate grad into x.grad
         loss = loss + loss_t
     return loss
@@ -38,7 +38,7 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
         else:
             assert(false)
         #x = x.reshape(size**2) # make x_opt a vector
-        x_opt = None 
+        x = None 
         for start in range(nb_restarts+1):
             time0 = time()
             datname =  FOLOUT + '/' + labelname + '_krec' + str(krec) + '_start' + str(start) + '.pt'
@@ -49,7 +49,7 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
                 print('save to',datname)
 
             if start==0:
-                x_opt = x0
+                x = x0.clone()
             elif x_opt is None:
                 # load from previous saved file
                 prename = FOLOUT + '/' + labelname + '_krec' + str(krec) + '_start' + str(start-1) + '.pt'
@@ -58,16 +58,16 @@ def call_lbfgs2_routine(FOLOUT,labelname,im,wph_ops,Sims,N,Krec,nb_restarts,maxi
                 im_opt = saved_result['tensor_opt'] # .numpy()
                 #x = im_opt.reshape(size**2)
                 #x = x.cuda().requires_grad_(True)
-                x_opt = im_opt # np.asarray(x_opt,dtype=np.float64)
+                x = im_opt.clone() # np.asarray(x_opt,dtype=np.float64)
 
-            x_opt = x_opt.cuda().requires_grad_(True)
-            optimizer = optim.LBFGS({x_opt}, max_iter=maxite, line_search_fn='strong_wolfe',\
+            x = x.cuda().requires_grad_(True)
+            optimizer = optim.LBFGS({x}, max_iter=maxite, line_search_fn='strong_wolfe',\
                                     tolerance_grad = gtol, tolerance_change = ftol,\
                                     history_size = maxcor)
             
             def closure():
                 optimizer.zero_grad()
-                loss = obj_func(x_opt,wph_ops,factr_ops,Sims)
+                loss = obj_func(x,wph_ops,factr_ops,Sims)
                 return loss
 
             optimizer.step(closure)
