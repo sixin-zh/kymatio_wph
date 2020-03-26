@@ -1,13 +1,13 @@
 # TEST ON GPU
 import os,sys
-from time import time
+#from time import time
 
 import numpy as np
-import scipy.optimize as opt
+#import scipy.optimize as opt
 import scipy.io as sio
 
 import torch
-from torch.autograd import Variable, grad
+#from torch.autograd import Variable, grad
 
 sys.path.append(os.path.abspath(os.getcwd()))
 from lbfgs2_routine import *
