@@ -34,7 +34,7 @@ M, N = im.shape[-2], im.shape[-1]
 delta_j = 0
 delta_l = L/2
 delta_k = 0
-nb_chunks = 2
+nb_chunks = 4
 nb_restarts = 1
 nGPU = 2
 
