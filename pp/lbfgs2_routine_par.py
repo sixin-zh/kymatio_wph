@@ -9,10 +9,6 @@ from utils_gpu import pos_to_im3
 def obj_func_id(x_t,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,op_id,nGPU):
     # convert points to im on devid, using a loop
     devid = op_id % nGPU
-    #xlen = x.shape[0]
-    #ncut = int(xlen/maxpt)    
-    #avglen = maxpt
-#    offset = 0
     res_t = ress[devid]
     Mx_t = Mxs[devid]
     My_t = Mys[devid]
@@ -27,7 +23,8 @@ def obj_func_id(x_t,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,op_id
         loss = torch.mul(diff,diff).sum()
         loss = loss*factr2
         
-    return loss    
+    return loss
+
 '''    
 def obj_func_id_par2(x,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,op_id,nGPU):
     # cut points to nGPU, then compute each pieced images
@@ -117,8 +114,6 @@ def call_lbfgs2_routine(x0,sigma,res,wph_ops,wph_streams,Sims,nb_restarts,maxite
         Mxs.append(Mx_)
         Mys.append(My_)
         pis.append(pi_)
-        #devid = op_id % nGPU
-        #x_a.append(x.to(devid).requires_grad_(True))
     
     for start in range(nb_restarts+1):
         if start==0:
