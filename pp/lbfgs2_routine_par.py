@@ -1,0 +1,106 @@
+import os
+from time import time
+import numpy as np
+import scipy.io as sio
+import torch
+import torch.optim as optim
+from utils_gpu import pos_to_im3
+
+def obj_func_id(im,wph_ops,wph_streams,Sims,factr2,op_id,devid):
+    im_ = im.to(devid)
+    wph_op = wph_ops[op_id]
+    with torch.cuda.device(devid):
+        torch.cuda.stream(wph_streams[devid])
+        p = wph_op(im_)
+        diff = p-Sims[op_id]
+        loss = torch.mul(diff,diff).sum()
+        loss = loss*factr2
+    return loss
+
+def obj_func(x,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,nGPU):
+    loss = 0
+    loss_a = []
+    if x.grad is not None:
+        x.grad.data.zero_()
+        
+    # cut points to nGPU, then compute each pieced images
+    xlen = x.shape[0]
+    avglen = int(xlen/nGPU)
+    offset = 0
+    im_a = []
+    for devid in range(nGPU):
+        res_t = ress[devid]
+        Mx_t = Mxs[devid]
+        My_t = Mys[devid]
+        pi_t = pis[devid]
+        if devid < nGPU-1:
+            x_t = x.narrow(0,offset,avglen).to(devid)
+        else:
+            x_t = x.narrow(0,offset,xlen-offset).to(devid)
+        offset += avglen
+        with torch.cuda.device(devid):
+            torch.cuda.stream(wph_streams[devid])
+            im_t = pos_to_im3(x_t, res_t, Mx_t, My_t, pi_t, sigma)
+            im_a.append(im_t)
+            
+    # sum to an im on gpu 0
+    for devid in range(nGPU):        
+        if devid == 0:
+            im = im_a[devid].to(0)
+        else:
+            im += im_a[devid].to(0)
+            
+    # compute gradients with respect to x
+    for op_id in range(len(wph_ops)):
+        devid = op_id % nGPU
+        loss_t = obj_func_id(im,wph_ops,wph_streams,Sims,factr2,op_id,devid)
+        loss_t.backward(retain_graph=True) # accumulate grad into x.grad
+        loss_a.append(loss_t)
+        
+    #torch.cuda.synchronize()
+    for op_id in range(len(wph_ops)):
+        loss = loss + loss_a[op_id]
+    return loss
+
+def call_lbfgs2_routine(x0,sigma,res,wph_ops,wph_streams,Sims,nb_restarts,maxite,factr,\
+                        nGPU=2,maxcor=20,gtol=1e-14,ftol=1e-14):
+    # x0 init points (no need to be on GPU)
+    # sigma: gaussian width
+    # return x: optimal points
+    assert(nGPU >= 2)
+    ress = []
+    Mxs = []
+    Mys = []
+    pis = []
+    for devid in range(nGPU):
+        res_ = torch.tensor(res).type(torch.float).cuda().to(devid)
+        Mx_ =  torch.arange(0, res).type(torch.float).cuda().to(devid)
+        My_ = torch.arange(0, res).type(torch.float).cuda().to(devid)
+        pi_ = torch.from_numpy(np.array([np.pi])).float().cuda().to(devid)
+        ress.append(res_)
+        Mxs.append(Mx_)
+        Mys.append(My_)
+        pis.append(pi_)
+    
+    for start in range(nb_restarts+1):
+        if start==0:
+            x = x0.cuda()
+            x.requires_grad_(True)
+        time0 = time()
+        optimizer = optim.LBFGS({x}, max_iter=maxite, line_search_fn='strong_wolfe',\
+                                tolerance_grad = gtol, tolerance_change = ftol,\
+                                history_size = maxcor)
+        
+        def closure():
+            optimizer.zero_grad()
+            loss = obj_func(x,wph_ops,wph_streams,Sims,factr**2,sigma,ress,Mxs,Mys,pis,nGPU)
+            return loss
+
+        optimizer.step(closure)
+
+        opt_state = optimizer.state[optimizer._params[0]]
+        niter = opt_state['n_iter']
+        final_loss = opt_state['prev_loss']
+        print('At restart',start,'OPT fini avec:', final_loss,niter,'in',time()-time0,'sec')
+        
+    return x

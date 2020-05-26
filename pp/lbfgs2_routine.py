@@ -36,7 +36,7 @@ def call_lbfgs2_routine(x0,sigma,res,wph_ops,Sims,nb_restarts,maxite,factr,\
         if start==0:
             x = x0.cuda()
             x.requires_grad_(True)
-
+        time0 = time()
         optimizer = optim.LBFGS({x}, max_iter=maxite, line_search_fn='strong_wolfe',\
                                 tolerance_grad = gtol, tolerance_change = ftol,\
                                 history_size = maxcor)
@@ -51,7 +51,7 @@ def call_lbfgs2_routine(x0,sigma,res,wph_ops,Sims,nb_restarts,maxite,factr,\
         opt_state = optimizer.state[optimizer._params[0]]
         niter = opt_state['n_iter']
         final_loss = opt_state['prev_loss']
-        print('OPT fini avec:', final_loss,niter)
+        print('At restart',start,'OPT fini avec:', final_loss,niter,'in',time()-time0,'sec')
                 
-        return x
+    return x
     

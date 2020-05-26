@@ -41,9 +41,8 @@ M, N = im.shape[-2], im.shape[-1]
 delta_j = 0
 delta_l = L/2
 delta_k = 0
-nb_centers = 250
-nb_chunks = 10 # 40
-nb_restarts = 0
+nb_chunks = 2
+nb_restarts = 1
 
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_simplephase \
     import PhaseHarmonics2d
@@ -69,7 +68,6 @@ x0 = torch.torch.Tensor(nb_points, 2).uniform_(0,size)
 #    x_orig = x_orig.cuda()
 maxite = 300
 x_fin = call_lbfgs2_routine(x0,sigma,res,wph_ops,Sims,nb_restarts,maxite,factr)
-
 
 '''
 def obj_fun(x,chunk_id):
