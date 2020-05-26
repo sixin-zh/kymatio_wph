@@ -88,7 +88,7 @@ def obj_func(x,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,nGPU):
         
     torch.cuda.synchronize()
     
-    # sum them to grad of x   
+    # sum the loss
     for op_id in range(len(wph_ops)):
         loss = loss + loss_a[op_id]
         
