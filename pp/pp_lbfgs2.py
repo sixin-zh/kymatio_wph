@@ -21,8 +21,8 @@ from lbfgs2_routine import call_lbfgs2_routine
 #sys.path.append('/users/trec/brochard/kymatio_wph')
 # load image
 
-size = 128
-res = 128
+size = 256 # 128
+res = size # 128
 gpu = True
 sigma = 8
 
@@ -32,11 +32,11 @@ nb_points = pos.shape[0]
 pos = torch.from_numpy(pos).type(torch.float)
 im = pos_to_im3(pos, res, gpu, sigma)
 
-print('im',im.shape)
+print('nb points',nb_points)
 
 # Parameters for transforms
-J = 4
-L = 4
+J = 5 # 4
+L = 8 # 4
 M, N = im.shape[-2], im.shape[-1]
 delta_j = 0
 delta_l = L/2
@@ -66,7 +66,7 @@ x0 = torch.torch.Tensor(nb_points, 2).uniform_(0,size)
 #x_orig = x0.clone().requires_grad_(False)
 #if gpu:
 #    x_orig = x_orig.cuda()
-maxite = 300
+maxite = 30 # 300
 x_fin = call_lbfgs2_routine(x0,sigma,res,wph_ops,Sims,nb_restarts,maxite,factr)
 
 '''

@@ -9,8 +9,8 @@ import sys
 from utils_gpu import pos_to_im3
 from lbfgs2_routine_par import call_lbfgs2_routine
 
-size = 128
-res = 128
+size = 256 # 128
+res = size # 128
 sigma = 8
 
 filename = './poisson_vor_150_100.txt'
@@ -25,10 +25,11 @@ pi_ = torch.from_numpy(np.array([np.pi])).float().cuda()
 im = pos_to_im3(x_, res_, Mx_, My_, pi_, sigma)
 
 print('im',im.shape)
+print('nb points',nb_points)
 
 # Parameters for transforms
-J = 4
-L = 4
+J = 5 # 4
+L = 8 # 4
 M, N = im.shape[-2], im.shape[-1]
 delta_j = 0
 delta_l = L/2
@@ -45,7 +46,7 @@ for devid in range(nGPU):
     with torch.cuda.device(devid):
         s = torch.cuda.Stream()
         wph_streams.append(s)
-                            
+        
 Sims = []
 factr = 1e7
 wph_ops = dict()
@@ -67,5 +68,5 @@ for chunk_id in range(nb_chunks+1):
 torch.cuda.synchronize()
     
 x0 = torch.torch.Tensor(nb_points, 2).uniform_(0,size)
-maxite = 300
+maxite = 30 # 0
 x_fin = call_lbfgs2_routine(x0,sigma,res,wph_ops,wph_streams,Sims,nb_restarts,maxite,factr,nGPU)
