@@ -6,7 +6,30 @@ import torch
 import torch.optim as optim
 from utils_gpu import pos_to_im3
 
-def obj_func_id(x,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,op_id,nGPU):
+def obj_func_id(x_t,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,op_id,nGPU):
+    # convert points to im on devid, using a loop
+    devid = op_id % nGPU
+    #xlen = x.shape[0]
+    #ncut = int(xlen/maxpt)    
+    #avglen = maxpt
+#    offset = 0
+    res_t = ress[devid]
+    Mx_t = Mxs[devid]
+    My_t = Mys[devid]
+    pi_t = pis[devid]
+    with torch.cuda.device(devid):
+        torch.cuda.stream(wph_streams[devid])
+        im_t = pos_to_im3(x_t, res_t, Mx_t, My_t, pi_t, sigma)
+        # compute wph grad on devid
+        wph_op = wph_ops[op_id]
+        p = wph_op(im_t)
+        diff = p-Sims[op_id]
+        loss = torch.mul(diff,diff).sum()
+        loss = loss*factr2
+        
+    return loss    
+'''    
+def obj_func_id_par2(x,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,op_id,nGPU):
     # cut points to nGPU, then compute each pieced images
     xlen = x.shape[0]
     avglen = int(xlen/nGPU)
@@ -26,7 +49,7 @@ def obj_func_id(x,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,op_id,n
             im_t = pos_to_im3(x_t, res_t, Mx_t, My_t, pi_t, sigma)
             im_a.append(im_t)
         offset += avglen
-    torch.cuda.synchronize()
+    #torch.cuda.synchronize()
     
     # sum to an im on gpu 0
     for devid in range(nGPU):        
@@ -47,22 +70,31 @@ def obj_func_id(x,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,op_id,n
         loss = loss*factr2
     
     return loss
-
+'''
 def obj_func(x,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,nGPU):
     loss = 0
     loss_a = []
-    if x.grad is not None:
-        x.grad.data.zero_()        
-    # compute gradients with respect to x
+
+    # copy x to multiple gpus
+    x_a = []
+    for devid in range(nGPU):
+        x_t = x.to(devid)
+        x_a.append(x_t)
+        
+    # compute gradients with respect to x_a
     for op_id in range(len(wph_ops)):
         devid = op_id % nGPU
-        loss_t = obj_func_id(x,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,op_id,nGPU)
+        x_t = x_a[devid]
+        loss_t = obj_func_id(x_t,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,op_id,nGPU)
         loss_t.backward(retain_graph=False) # accumulate grad into x.grad
         loss_a.append(loss_t)
         
     torch.cuda.synchronize()
+    
+    # sum them to grad of x   
     for op_id in range(len(wph_ops)):
         loss = loss + loss_a[op_id]
+        
     return loss
 
 def call_lbfgs2_routine(x0,sigma,res,wph_ops,wph_streams,Sims,nb_restarts,maxite,factr,\
@@ -75,6 +107,7 @@ def call_lbfgs2_routine(x0,sigma,res,wph_ops,wph_streams,Sims,nb_restarts,maxite
     Mxs = []
     Mys = []
     pis = []
+    x_a = []
     for devid in range(nGPU):
         res_ = torch.tensor(res).type(torch.float).cuda().to(devid)
         Mx_ =  torch.arange(0, res).type(torch.float).cuda().to(devid)
@@ -84,6 +117,8 @@ def call_lbfgs2_routine(x0,sigma,res,wph_ops,wph_streams,Sims,nb_restarts,maxite
         Mxs.append(Mx_)
         Mys.append(My_)
         pis.append(pi_)
+        #devid = op_id % nGPU
+        #x_a.append(x.to(devid).requires_grad_(True))
     
     for start in range(nb_restarts+1):
         if start==0:
