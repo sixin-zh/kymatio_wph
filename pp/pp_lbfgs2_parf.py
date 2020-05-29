@@ -19,28 +19,13 @@ nb_points = pos.shape[0]
 
 x_ = torch.from_numpy(pos).type(torch.float).cuda()
 res_ = torch.tensor(res).type(torch.float).cuda()
-Mx_ =  torch.arange(0, res).type(torch.float).cuda()
-My_ = torch.arange(0, res).type(torch.float).cuda()
-pi_ = torch.from_numpy(np.array([np.pi])).cuda()
-
-from kymatio.phaseharmonics2d.utils import ifft2_c2r
-im = pos_to_im3(x_, res_, Mx_, My_, pi_, sigma)
+#Mx_ =  torch.arange(0, res).type(torch.float).cuda()
+#My_ = torch.arange(0, res).type(torch.float).cuda()
+#pi_ = torch.from_numpy(np.array([np.pi])).cuda()
 
 index = Mx_.unsqueeze(0)
-hf, om = get_hf_om(index,res,sigma,pi_) # hf: (1,res)
+hf, om = get_hf_om(index,res,sigma,np.pi) # hf: (1,res)
 imf = pos_to_im_fourier3(x_, hf, om) # res_, Mx_, My_, pi_, sigma)
-
-plt.figure()
-plt.imshow(im[0,0,:,:].cpu())
-
-plt.figure()
-im_ = ifft2_c2r(imf)
-plt.imshow(im_[0,0,:,:].cpu())
-
-print('im diff',torch.norm(im_ - im))
-
-plt.show()
-
 print('imf',imf.shape)
 print('nb points',nb_points)
 
