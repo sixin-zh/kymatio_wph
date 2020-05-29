@@ -24,10 +24,13 @@ from lbfgs2_routine import call_lbfgs2_routine
 size = 256 # 128
 res = size # 128
 gpu = True
-sigma = 8
+sigma = 4.0
 
-filename = './poisson_vor_150_100.txt'
-pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
+#filename = './poisson_vor_150_100.txt'
+#pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
+filename = './turb_zoom_cluster.txt' # N=256
+pos = np.loadtxt(fname=filename, delimiter=' ', skiprows=1, usecols=(1,2))
+
 nb_points = pos.shape[0]
 pos = torch.from_numpy(pos).type(torch.float)
 im = pos_to_im3(pos, res, gpu, sigma)
@@ -48,7 +51,7 @@ from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_simplephase \
     import PhaseHarmonics2d
 
 Sims = []
-factr = 1e7
+factr = 1e3 # 7
 wph_ops = dict()
 nCov = 0
 for chunk_id in range(nb_chunks+1):
@@ -66,7 +69,7 @@ x0 = torch.torch.Tensor(nb_points, 2).uniform_(0,size)
 #x_orig = x0.clone().requires_grad_(False)
 #if gpu:
 #    x_orig = x_orig.cuda()
-maxite = 30 # 300
+maxite = 10 # 300
 x_fin = call_lbfgs2_routine(x0,sigma,res,wph_ops,Sims,nb_restarts,maxite,factr)
 
 '''
