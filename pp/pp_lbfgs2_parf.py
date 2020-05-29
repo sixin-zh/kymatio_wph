@@ -1,43 +1,76 @@
 import numpy as np
 import torch
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from torch.autograd import grad
 import scipy.optimize as opt
 import torch.nn.functional as F
 
 import sys
-from utils_gpu import pos_to_im3
-from lbfgs2_routine_par import call_lbfgs2_routine
+from utils_gpu import pos_to_im_fourier3, get_hf_om, pos_to_im3
+from lbfgs2_routine_parf import call_lbfgs2_routine
 
-size = 256 # 128
+size = 128 # 256 # 128
 res = size # 128
-sigma = 8
+sigma = 0.5
 
 filename = './poisson_vor_150_100.txt'
 pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
+#print(np.min(pos),np.max(pos))
+'''
+pos = np.zeros((3,2))
+pos[0,0] = size/4
+pos[0,1] = size/2
+pos[1,0] = size/2
+pos[1,1] = size/4
+pos[2,0] = size/4
+pos[2,1] = size/4
+'''
 nb_points = pos.shape[0]
 
 x_ = torch.from_numpy(pos).type(torch.float).cuda()
 res_ = torch.tensor(res).type(torch.float).cuda()
 Mx_ =  torch.arange(0, res).type(torch.float).cuda()
 My_ = torch.arange(0, res).type(torch.float).cuda()
-pi_ = torch.from_numpy(np.array([np.pi])).float().cuda()
+pi_ = torch.from_numpy(np.array([np.pi])).cuda()
+
+from kymatio.phaseharmonics2d.utils import ifft2_c2r
 im = pos_to_im3(x_, res_, Mx_, My_, pi_, sigma)
 
-print('im',im.shape)
+index = Mx_.unsqueeze(0)
+hf, om = get_hf_om(index,res,sigma,pi_) # hf: (1,res)
+#om1 = om
+#om2 = om.clone()
+#plt.plot(hf[0,:].cpu())
+#hf2 = torch.matmul(hf.t(),hf) # -> (res,res)
+#plt.imshow(hf2.cpu())
+#plt.show()
+imf = pos_to_im_fourier3(x_, hf, om) # res_, Mx_, My_, pi_, sigma)
+
+plt.figure()
+plt.imshow(im[0,0,:,:].cpu())
+
+plt.figure()
+im_ = ifft2_c2r(imf)
+plt.imshow(im_[0,0,:,:].cpu())
+
+print('im diff',torch.norm(im_ - im))
+
+plt.show()
+
+print('imf',imf.shape)
 print('nb points',nb_points)
 
 # Parameters for transforms
-J = 5 # 4
-L = 8 # 4
-M, N = im.shape[-2], im.shape[-1]
+J = 4 # 5 # 4
+L =4 # 8 # 4
+M, N = imf.shape[2], imf.shape[3]
 delta_j = 0
 delta_l = L/2
 delta_k = 0
 nb_chunks = 2
 nb_restarts = 1
 nGPU = 2
-
+    
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_simplephase \
     import PhaseHarmonics2d
 
@@ -54,13 +87,13 @@ nCov = 0
 opid = 0
 for chunk_id in range(nb_chunks+1):
     devid = opid % nGPU
-    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, devid)
+    wph_op = PhaseHarmonics2d(M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, devid, fourier_input=1)
     wph_op = wph_op.cuda()
     wph_ops[chunk_id] = wph_op
-    im_ = im.to(devid)
+    imf_ = imf.to(devid)
     with torch.cuda.device(devid):
         torch.cuda.stream(wph_streams[devid])
-        Sim_ = wph_op(im_) # TO *factr it internally
+        Sim_ = wph_op(imf_) # TO *factr it internally
         nCov += Sim_.shape[2]
         opid += 1
         Sims.append(Sim_)

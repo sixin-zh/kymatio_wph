@@ -19,7 +19,7 @@ from .filter_bank import filter_bank
 from .utils import fft2_c2c, ifft2_c2c, periodic_dis
 
 class PhaseHarmonics2d(object):
-    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, devid=0):
+    def __init__(self, M, N, J, L, delta_j, delta_l, delta_k, nb_chunks, chunk_id, devid=0, fourier_input=0):
         self.M, self.N, self.J, self.L = M, N, J, L # size of image, max scale, number of angles [0,pi]
         self.dj = delta_j # max scale interactions
         self.dl = delta_l # max angular interactions
@@ -27,6 +27,8 @@ class PhaseHarmonics2d(object):
         self.nb_chunks = nb_chunks # number of chunks to cut whp cov
         self.chunk_id = chunk_id
         self.devid = devid # gpu id
+        self.fourier_input = fourier_input # whether input image is in Fourier domain or not
+        
         assert( self.chunk_id <= self.nb_chunks ) # chunk_id = 0..nb_chunks-1, are the wph cov
         if self.dl > self.L:
             raise (ValueError('delta_l must be <= L'))
@@ -39,11 +41,10 @@ class PhaseHarmonics2d(object):
         check_for_nan = False # True
         #self.meta = None
         self.modulus = Modulus()
-        self.pad = Pad(0, pre_pad = self.pre_pad, pad_mode='Reflect') # default is zero padding
+        if self.fourier_input == 0:
+            self.pad = Pad(0, pre_pad = self.pre_pad, pad_mode='Reflect') # default is zero padding
+            self.M_padded, self.N_padded = self.M, self.N
         self.phase_harmonics = PhaseHarmonics2.apply
-
-        self.M_padded, self.N_padded = self.M, self.N
-
         self.filters_tensor()
         if self.chunk_id < self.nb_chunks:
             self.idx_wph = self.compute_idx()
@@ -283,7 +284,8 @@ class PhaseHarmonics2d(object):
             self.hatpsi = self.hatpsi.to(devid)
             self.hatphi = self.hatphi.to(devid)
         #print('in _type',type(self.hatpsi))
-        self.pad.padding_module.type(_type)
+        if self.fourier_input == 0:
+            self.pad.padding_module.type(_type)
         return self
 
     def cuda(self):
@@ -309,21 +311,24 @@ class PhaseHarmonics2d(object):
         return self._type(torch.FloatTensor)
 
     def forward(self, input):
-
         J = self.J
         M = self.M
         N = self.N
         L2 = self.L*2
         dj = self.dj
         dl = self.dl
-        pad = self.pad
+        if self.fourier_input == 0:
+            # denote
+            # nb=batch number
+            # nc=number of color channels
+            # input: (nb,nc,M,N)
+            pad = self.pad
+            x_c = pad(input) # add zeros to imag part -> (nb,nc,M,N,2)
+            hatx_c = fft2_c2c(x_c) # fft2 -> (nb,nc,M,N,2)
+        else:
+            # input: (nb,nc,M,N,2)
+            hatx_c = input
 
-        # denote
-        # nb=batch number
-        # nc=number of color channels
-        # input: (nb,nc,M,N)
-        x_c = pad(input) # add zeros to imag part -> (nb,nc,M,N,2)
-        hatx_c = fft2_c2c(x_c) # fft2 -> (nb,nc,M,N,2)
         #print('nbchannels',nb_channels)
         if self.chunk_id < self.nb_chunks:
             nb = hatx_c.shape[0]
