@@ -11,20 +11,10 @@ from lbfgs2_routine_parf import call_lbfgs2_routine
 
 size = 128 # 256 # 128
 res = size # 128
-sigma = 0.5
+sigma = 4
 
 filename = './poisson_vor_150_100.txt'
 pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
-#print(np.min(pos),np.max(pos))
-'''
-pos = np.zeros((3,2))
-pos[0,0] = size/4
-pos[0,1] = size/2
-pos[1,0] = size/2
-pos[1,1] = size/4
-pos[2,0] = size/4
-pos[2,1] = size/4
-'''
 nb_points = pos.shape[0]
 
 x_ = torch.from_numpy(pos).type(torch.float).cuda()
@@ -38,12 +28,6 @@ im = pos_to_im3(x_, res_, Mx_, My_, pi_, sigma)
 
 index = Mx_.unsqueeze(0)
 hf, om = get_hf_om(index,res,sigma,pi_) # hf: (1,res)
-#om1 = om
-#om2 = om.clone()
-#plt.plot(hf[0,:].cpu())
-#hf2 = torch.matmul(hf.t(),hf) # -> (res,res)
-#plt.imshow(hf2.cpu())
-#plt.show()
 imf = pos_to_im_fourier3(x_, hf, om) # res_, Mx_, My_, pi_, sigma)
 
 plt.figure()
