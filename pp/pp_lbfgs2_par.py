@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from torch.autograd import grad
 import scipy.optimize as opt
 import torch.nn.functional as F
@@ -9,13 +9,16 @@ import sys
 from utils_gpu import pos_to_im3
 from lbfgs2_routine_par import call_lbfgs2_routine
 
-size = 256 # 128
-res = size # 128
-sigma = 8
+size = 256
+res = size
+sigma = 4.0
 
-filename = './poisson_vor_150_100.txt'
-pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
+#filename = './poisson_vor_150_100.txt'
+#pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
+filename = './turb_zoom_cluster.txt' # N=256
+pos = np.loadtxt(fname=filename, delimiter=' ', skiprows=1, usecols=(1,2))
 nb_points = pos.shape[0]
+#print(pos[0:10,:])
 
 x_ = torch.from_numpy(pos).type(torch.float).cuda()
 res_ = torch.tensor(res).type(torch.float).cuda()
@@ -26,6 +29,9 @@ im = pos_to_im3(x_, res_, Mx_, My_, pi_, sigma)
 
 print('im',im.shape)
 print('nb points',nb_points)
+
+plt.imshow(im[0,0,:,:].cpu())
+plt.show()
 
 # Parameters for transforms
 J = 5 # 4
@@ -48,7 +54,7 @@ for devid in range(nGPU):
         wph_streams.append(s)
         
 Sims = []
-factr = 1e7
+factr = 1e3 # 7
 wph_ops = dict()
 nCov = 0
 opid = 0
@@ -68,5 +74,5 @@ for chunk_id in range(nb_chunks+1):
 torch.cuda.synchronize()
     
 x0 = torch.torch.Tensor(nb_points, 2).uniform_(0,size)
-maxite = 30 # 0
+maxite = 10 # 0 # 0
 x_fin = call_lbfgs2_routine(x0,sigma,res,wph_ops,wph_streams,Sims,nb_restarts,maxite,factr,nGPU)
