@@ -85,10 +85,14 @@ def pos_to_im_fourier3b(pt, hf, om, K=1, loop=10):
                     l_pos_y = pos_y[offset:-1,:,:]
                 offset += perloop
                 pom = l_pos_x*om1+l_pos_y*om2 # (perloop,res,res)
-                if lid == 0:
+                if lid == 0: #  and k1 ==0 and k2 == 0:
+#                    cospom = hf[k1].t().expand((res,res)) * torch.cos(pom).sum(0) * hf[k2].expand((res,res))
+#                    sinpom = hf[k1].t().expand((res,res)) * torch.sin(-pom).sum(0) * hf[k2].expand((res,res))
                     cospom = torch.cos(pom).sum(0)
-                    sinpom = torch.sin(-pom).sum(0)
+                    sinpom = torch.sin(-pom).sum(0)                                  
                 else:
+#                    cospom += hf[k1].t().expand((res,res)) * torch.cos(pom).sum(0) * hf[k2].expand((res,res))
+#                    sinpom += hf[k1].t().expand((res,res)) * torch.sin(-pom).sum(0) * hf[k2].expand((res,res))
                     cospom += torch.cos(pom).sum(0)
                     sinpom += torch.sin(-pom).sum(0)                                  
                 #print(k1,k2,lid,pom.shape)
@@ -100,5 +104,6 @@ def pos_to_im_fourier3b(pt, hf, om, K=1, loop=10):
                 M_real += hf[k1].t().expand((res,res)) * cospom * hf[k2].expand((res,res))
                 M_imag += hf[k1].t().expand((res,res)) * sinpom * hf[k2].expand((res,res))
 
+    #M = torch.stack([cospom,sinpom],axis=2) # -> (res,res,2)
     M = torch.stack([M_real,M_imag],axis=2) # -> (res,res,2)
     return M.unsqueeze(0).unsqueeze(0) # -> (1,1,res,res,2)

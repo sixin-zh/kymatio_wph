@@ -14,7 +14,7 @@ def obj_func_id(x_t,wph_ops,wph_streams,Sims,factr2,hfs,oms,op_id,nGPU):
     om = oms[devid]
     with torch.cuda.device(devid):
         torch.cuda.stream(wph_streams[devid])
-        imf_t = pos_to_im_fourier3(x_t, hf, om)
+        imf_t = pos_to_im_fourier3b(x_t, hf, om)
         # compute wph grad on devid
         wph_op = wph_ops[op_id]
         p = wph_op(imf_t)

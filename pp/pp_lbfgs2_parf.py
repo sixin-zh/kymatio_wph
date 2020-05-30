@@ -13,26 +13,26 @@ size = 256 # 128
 res = size
 sigma = 4
 
-filename = './poisson_vor_150_100.txt'
-pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
+#filename = './poisson_vor_150_100.txt'
+#pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
 
-#filename = './turb_zoom_cluster.txt' # N=256
-#pos = np.loadtxt(fname=filename, delimiter=' ', skiprows=1, usecols=(1,2))
+filename = './turb_zoom_cluster.txt' # N=256
+pos = np.loadtxt(fname=filename, delimiter=' ', skiprows=1, usecols=(1,2))
 
 nb_points = pos.shape[0]
 
 x = torch.from_numpy(pos.T).type(torch.float).cuda() # (2,nbp)
 index = torch.arange(0, res).type(torch.float).cuda().unsqueeze(0)
 hf, om = get_hf_om(index,res,sigma,np.pi) # hf: (1,res)
-imf = pos_to_im_fourier3(x, hf, om) # res_, Mx_, My_, pi_, sigma)
+imf = pos_to_im_fourier3b(x, hf, om)
 print('imf',imf.shape)
 print('nb points',nb_points)
 
-#plt.figure()
-#from kymatio.phaseharmonics2d.utils import ifft2_c2r
-#im_ = ifft2_c2r(imf)
-#plt.imshow(im_[0,0,:,:].cpu())
-#plt.show()
+from kymatio.phaseharmonics2d.utils import ifft2_c2r
+plt.figure()
+im_ = ifft2_c2r(imf)
+plt.imshow(im_[0,0,:,:].cpu())
+plt.show()
 
 # Parameters for transforms
 J = 5 # 4
