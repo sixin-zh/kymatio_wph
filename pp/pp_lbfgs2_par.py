@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from torch.autograd import grad
 import scipy.optimize as opt
 import torch.nn.functional as F
@@ -13,6 +13,9 @@ size = 256
 res = size
 sigma = 4.0
 
+torch.manual_seed(999)
+torch.cuda.manual_seed_all(999)
+ 
 #filename = './poisson_vor_150_100.txt'
 #pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
 filename = './turb_zoom_cluster.txt' # N=256
@@ -30,8 +33,8 @@ im = pos_to_im3(x_, res_, Mx_, My_, pi_, sigma)
 print('im',im.shape)
 print('nb points',nb_points)
 
-plt.imshow(im[0,0,:,:].cpu())
-plt.show()
+#plt.imshow(im[0,0,:,:].cpu())
+#plt.show()
 
 # Parameters for transforms
 J = 5 # 4
@@ -40,9 +43,9 @@ M, N = im.shape[-2], im.shape[-1]
 delta_j = 0
 delta_l = L/2
 delta_k = 0
-nb_chunks = 2
+nb_chunks = 4
 nb_restarts = 1
-nGPU = 2
+nGPU = 4
 
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_simplephase \
     import PhaseHarmonics2d

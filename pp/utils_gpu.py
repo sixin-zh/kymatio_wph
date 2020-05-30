@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 def weight(index, pos, res, pi, sigma):
     # index: (1,res)

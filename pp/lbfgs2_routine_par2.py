@@ -23,15 +23,14 @@ def cut_x(x,nGPU):
     return xs
 
 def cat_gradxs(x,gradxs,nGPU):
-#    x.grad.fill_(0)
     nbp = x.shape[0]
     avgnbp = nbp//nGPU
     offset = 0
     for devid in range(nGPU):
         if devid < nGPU-1:
-            x.grad.narrow(0,offset,avgnbp).copy_(gradxs[devid])
+            x.grad.narrow(0,offset,avgnbp).copy_(gradxs[devid].detach())
         else:
-            x.grad.narrow(0,offset,nbp-offset).copy_(gradxs[devid])
+            x.grad.narrow(0,offset,nbp-offset).copy_(gradxs[devid].detach())
         offset += avgnbp
 
 def obj_func(x,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,nGPU):
@@ -53,31 +52,32 @@ def obj_func(x,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,nGPU):
             ims.append(im_t)
     torch.cuda.synchronize()
     
-    # then sum ims into one im, then copy it to all gpus
+    # then sum ims into one im, then copy it to each chunk
     for devid in range(nGPU):
         im_t = ims[devid]
         if devid == 0:
-            im = im_t.to(0)
+            im = im_t.detach().to(0)
         else:
-            im += im_t.to(0)    
-    ims2 = []
-    for devid in range(nGPU):
-        ims2.append(im.to(devid).requires_grad_(True))
+            im += im_t.detach().to(0)
+    im_a = []
+    for op_id in range(len(wph_ops)):
+        devid = op_id % nGPU
+        im_a.append(im.to(devid).requires_grad_(True))
         
     # compute gradients with respect to im, in parallel
     grad_a = []
     loss_a = []
     for op_id in range(len(wph_ops)):
         devid = op_id % nGPU
-        im_t = ims[devid]
         with torch.cuda.device(devid):
             torch.cuda.stream(wph_streams[devid])
             # compute wph grad on devid
-            wph_op = wph_ops[op_id]
-            p = wph_op(im_t)
-            diff_t = p-Sims[op_id]
+            im_t = im_a[op_id]
+            wph_op_t = wph_ops[op_id]
+            p_t = wph_op_t(im_t)
+            diff_t = p_t-Sims[op_id]
             loss_t = torch.mul(diff_t,diff_t).sum()
-            loss_t = loss_t*factr2           
+            loss_t = loss_t*factr2
             grad_err_t, = grad([loss_t],[im_t], retain_graph=False)
             grad_a.append(grad_err_t)
             loss_a.append(loss_t)
@@ -94,11 +94,11 @@ def obj_func(x,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,nGPU):
             gradim += grad_a[op_id].to(0)
 
     # then copy gradim into all gpus
+    # to compute gradient with respect to each group of points, in parallel
     gradims = []
     for devid in range(nGPU):
-        gradims.append(gradim.to(devid))
-
-    # to compute gradient with respect to each group of points, in parallel
+        gradims.append(gradim.to(devid))        
+        
     gradxs = []
     for devid in range(nGPU):
         with torch.cuda.device(devid):
@@ -106,8 +106,7 @@ def obj_func(x,wph_ops,wph_streams,Sims,factr2,sigma,ress,Mxs,Mys,pis,nGPU):
             im_t = ims[devid]
             x_t = xs[devid]
             gradim_t = gradims[devid]
-            gradx_t, = grad([im_t],[x_t],[gradim_t])
-            #print(gradx_t.shape)
+            gradx_t, = grad([im_t],[x_t],[gradim_t], retain_graph=False) # directional gradient
             gradxs.append(gradx_t)
     torch.cuda.synchronize()
     
@@ -126,7 +125,6 @@ def call_lbfgs2_routine(x0,sigma,res,wph_ops,wph_streams,Sims,nb_restarts,maxite
     Mxs = []
     Mys = []
     pis = []
-    x_a = []
     for devid in range(nGPU):
         res_ = torch.tensor(res).type(torch.float).cuda().to(devid)
         Mx_ =  torch.arange(0, res).type(torch.float).cuda().to(devid)
@@ -141,7 +139,6 @@ def call_lbfgs2_routine(x0,sigma,res,wph_ops,wph_streams,Sims,nb_restarts,maxite
         if start==0:
             x = x0.cuda()
             x.grad = x.clone().fill_(0)
-    #        x.requires_grad_(True)
         time0 = time()
         optimizer = optim.LBFGS({x}, max_iter=maxite, line_search_fn='strong_wolfe',\
                                 tolerance_grad = gtol, tolerance_change = ftol,\

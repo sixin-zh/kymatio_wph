@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from torch.autograd import grad
 import scipy.optimize as opt
 import torch.nn.functional as F
@@ -9,14 +9,17 @@ import sys
 from utils_gpu import pos_to_im3
 from lbfgs2_routine_par2 import call_lbfgs2_routine
 
-size = 128 # 256
+size = 256
 res = size
 sigma = 4.0
 
-filename = './poisson_vor_150_100.txt'
-pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
-#filename = './turb_zoom_cluster.txt' # N=256
-#pos = np.loadtxt(fname=filename, delimiter=' ', skiprows=1, usecols=(1,2))
+torch.manual_seed(999)
+torch.cuda.manual_seed_all(999)
+
+#filename = './poisson_vor_150_100.txt'
+#pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
+filename = './turb_zoom_cluster.txt' # N=256
+pos = np.loadtxt(fname=filename, delimiter=' ', skiprows=1, usecols=(1,2))
 nb_points = pos.shape[0]
 
 x_ = torch.from_numpy(pos).type(torch.float).cuda()
@@ -33,15 +36,15 @@ print('nb points',nb_points)
 #plt.show()
 
 # Parameters for transforms
-J = 4 # 5 # 4
-L = 4 #  # 4
+J = 5 # 4
+L = 8 # 4
 M, N = im.shape[-2], im.shape[-1]
 delta_j = 0
 delta_l = L/2
 delta_k = 0
-nb_chunks = 2
+nb_chunks = 4
 nb_restarts = 1
-nGPU = 2
+nGPU = 4
 
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_simplephase \
     import PhaseHarmonics2d
@@ -71,7 +74,7 @@ for chunk_id in range(nb_chunks+1):
         Sims.append(Sim_)
 
 torch.cuda.synchronize()
-    
+   
 x0 = torch.torch.Tensor(nb_points, 2).uniform_(0,size)
 maxite = 10 # 0 # 0
 x_fin = call_lbfgs2_routine(x0,sigma,res,wph_ops,wph_streams,Sims,nb_restarts,maxite,factr,nGPU)

@@ -26,6 +26,9 @@ res = size # 128
 gpu = True
 sigma = 4.0
 
+torch.manual_seed(999)
+torch.cuda.manual_seed_all(999)
+ 
 #filename = './poisson_vor_150_100.txt'
 #pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
 filename = './turb_zoom_cluster.txt' # N=256
@@ -44,7 +47,7 @@ M, N = im.shape[-2], im.shape[-1]
 delta_j = 0
 delta_l = L/2
 delta_k = 0
-nb_chunks = 2
+nb_chunks = 4
 nb_restarts = 1
 
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_simplephase \
