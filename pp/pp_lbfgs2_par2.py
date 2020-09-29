@@ -9,7 +9,7 @@ import sys
 from utils_gpu import pos_to_im3
 from lbfgs2_routine_par2 import call_lbfgs2_routine
 
-size = 128 # 256
+size = 256
 res = size
 sigma = 4.0
 
@@ -36,8 +36,8 @@ print('nb points',nb_points)
 #plt.show()
 
 # Parameters for transforms
-J = 4
-L = 4
+J = 5
+L = 8
 M, N = im.shape[-2], im.shape[-1]
 delta_j = 0
 delta_l = L/2

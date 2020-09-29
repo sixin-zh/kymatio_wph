@@ -13,18 +13,19 @@ import scipy.optimize as opt
 import torch
 
 #import matplotlib.pyplot as plt
-from torch.autograd import grad
-import torch.nn.functional as F
+#from torch.autograd import grad
+from utils import weight, pos_to_im3
+from lbfgs2_routine import call_lbfgs2_routine
+#import torch.nn.functional as F
+
 from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_simplephase \
     import PhaseHarmonics2d
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
+#print('cudnn?',torch.backends.cudnn.enabled)
 
 torch.manual_seed(999)
 np.random.seed(999)
-
-from utils import weight, pos_to_im3
-from lbfgs2_routine import call_lbfgs2_routine
 
 #sys.path.append('/users/trec/brochard/kymatio_wph')
 # load image
@@ -54,7 +55,6 @@ delta_l = L/2
 delta_k = 0
 nb_chunks = 4
 nb_restarts = 1
-
 
 Sims = []
 factr = 1e3 # 7

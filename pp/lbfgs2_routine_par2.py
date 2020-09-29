@@ -140,20 +140,23 @@ def call_lbfgs2_routine(x0,sigma,res,wph_ops,wph_streams,Sims,nb_restarts,maxite
             x = x0.cuda()
             x.grad = x.clone().fill_(0)
         time0 = time()
-        optimizer = optim.LBFGS({x}, max_iter=maxite, line_search_fn='strong_wolfe',\
+        optimizer = optim.LBFGS({x}, max_iter=maxite, max_eval=100*maxite, line_search_fn='strong_wolfe',\
                                 tolerance_grad = gtol, tolerance_change = ftol,\
                                 history_size = maxcor)
-        
+        #optimizer = optim.SGD({x}, lr=0.1, momentum=0.9)
+
         def closure():
             optimizer.zero_grad()
             loss = obj_func(x,wph_ops,wph_streams,Sims,factr**2,sigma,ress,Mxs,Mys,pis,nGPU)
             return loss
 
-        optimizer.step(closure)
+        final_loss = optimizer.step(closure)
 
-        opt_state = optimizer.state[optimizer._params[0]]
-        niter = opt_state['n_iter']
-        final_loss = opt_state['prev_loss']
-        print('At restart',start,'OPT fini avec:', final_loss,niter,'in',time()-time0,'sec')
+        #opt_state = optimizer.state[optimizer._params[0]]
+        #niter = opt_state['n_iter']
+        #final_loss = opt_state['prev_loss']
+
         
+        print('At restart',start,'OPT fini avec:', final_loss,'in',time()-time0,'sec')
+        #print('At restart',start,'OPT fini avec:', final_loss,niter,'in',time()-time0,'sec')
     return x
