@@ -21,7 +21,7 @@ from lbfgs2_routine import call_lbfgs2_routine
 #sys.path.append('/users/trec/brochard/kymatio_wph')
 # load image
 
-size = 256 # 128
+size = 128 # 256 # 128
 res = size # 128
 gpu = True
 sigma = 4.0
@@ -41,8 +41,8 @@ im = pos_to_im3(pos, res, gpu, sigma)
 print('nb points',nb_points)
 
 # Parameters for transforms
-J = 5 # 4
-L = 8 # 4
+J = 4
+L = 4
 M, N = im.shape[-2], im.shape[-1]
 delta_j = 0
 delta_l = L/2

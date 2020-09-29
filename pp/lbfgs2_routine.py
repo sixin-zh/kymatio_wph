@@ -46,12 +46,12 @@ def call_lbfgs2_routine(x0,sigma,res,wph_ops,Sims,nb_restarts,maxite,factr,\
             loss = obj_func(x,wph_ops,Sims,factr**2,sigma,res)
             return loss
 
-        optimizer.step(closure)
+        final_loss = optimizer.step(closure)
 
         opt_state = optimizer.state[optimizer._params[0]]
         niter = opt_state['n_iter']
-        final_loss = opt_state['prev_loss']
-        print('At restart',start,'OPT fini avec:', final_loss,niter,'in',time()-time0,'sec')
-                
+        #final_loss = opt_state['prev_loss']
+        print('At restart',start,'OPT fini avec:', final_loss,'niter',niter,'in',time()-time0,'sec')
+               
     return x
     
