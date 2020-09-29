@@ -7,14 +7,22 @@ Created on Wed Jan 30 11:33:42 2019
 @author: antoinebrochard
 """
 
+import sys
 import numpy as np
+import scipy.optimize as opt
 import torch
+
 #import matplotlib.pyplot as plt
 from torch.autograd import grad
-import scipy.optimize as opt
 import torch.nn.functional as F
+from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_simplephase \
+    import PhaseHarmonics2d
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
-import sys
+torch.manual_seed(999)
+np.random.seed(999)
+
 from utils import weight, pos_to_im3
 from lbfgs2_routine import call_lbfgs2_routine
 
@@ -25,10 +33,7 @@ size = 128 # 256 # 128
 res = size # 128
 gpu = True
 sigma = 4.0
-
-torch.manual_seed(999)
-torch.cuda.manual_seed_all(999)
- 
+#torch.cuda.manual_seed_all(999)
 #filename = './poisson_vor_150_100.txt'
 #pos = size*np.loadtxt(fname=filename, delimiter=',', skiprows=1, usecols=(1,2))
 filename = './turb_zoom_cluster.txt' # N=256
@@ -50,8 +55,6 @@ delta_k = 0
 nb_chunks = 4
 nb_restarts = 1
 
-from kymatio.phaseharmonics2d.phase_harmonics_k_bump_chunkid_simplephase \
-    import PhaseHarmonics2d
 
 Sims = []
 factr = 1e3 # 7
