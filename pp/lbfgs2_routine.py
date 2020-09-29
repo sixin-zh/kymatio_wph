@@ -37,7 +37,7 @@ def call_lbfgs2_routine(x0,sigma,res,wph_ops,Sims,nb_restarts,maxite,factr,\
             x = x0.cuda()
             x.requires_grad_(True)
         time0 = time()
-        optimizer = optim.LBFGS({x}, max_iter=maxite, line_search_fn='strong_wolfe',\
+        optimizer = optim.LBFGS({x}, max_iter=maxite, max_eval=10*maxite, line_search_fn='strong_wolfe',\
                                 tolerance_grad = gtol, tolerance_change = ftol,\
                                 history_size = maxcor)
             
