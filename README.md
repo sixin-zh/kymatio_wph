@@ -1,5 +1,4 @@
-Code to reproduce the results in the paper: 
-[2021] Sixin Zhang, Stéphane Mallat. Maximum Entropy Models from Phase Harmonic Covariances.
+Maximum Entropy Models from Phase Harmonic Covariances
 ======================================
 
 * Results about Model A,B,C,D can be obtained using the code in paperA and paper2
